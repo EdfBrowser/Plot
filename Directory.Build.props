@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project> 
+    <PropertyGroup>
+        <langVersion>7.3</langVersion>
+        <OutputPath>$(SolutionDir)bin\$(Configuration)</OutputPath>
+        <PlatformTarget>x86</PlatformTarget>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <!--<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>-->
+	</PropertyGroup>
+ </Project>
