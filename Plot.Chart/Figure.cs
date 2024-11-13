@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 
 namespace Plot.Chart
 {
@@ -13,11 +15,11 @@ namespace Plot.Chart
     public class Figure
     {
 
-        private Bitmap m_frame;
+        private Bitmap m_frameBmp;
         private Graphics m_gfxFrame;
 
 
-        private Bitmap m_graph;
+        private Bitmap m_graphBmp;
         private Graphics m_gfxGraph;
 
 
@@ -37,8 +39,13 @@ namespace Plot.Chart
             Alignment = StringAlignment.Far,
         };
 
-        private readonly System.Diagnostics.Stopwatch m_stopwatch;
+        private string m_labelTitle = "";
+        private string m_labelX = "";
+        private string m_labelY = "";
 
+        private long m_pointCount = 0;
+
+        private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
         public Figure(int width, int height)
         {
@@ -53,7 +60,7 @@ namespace Plot.Chart
 
 
         public Axis XAxis { get; set; } = new Axis(-10, 10, 100, false);
-        public Axis YAxis { get; set; } = new Axis(-10, 10, 100, false);
+        public Axis YAxis { get; set; } = new Axis(-10, 10, 100, true);
 
 
         public Color FrameBgColor { get; set; } = Color.White;
@@ -61,38 +68,79 @@ namespace Plot.Chart
         public Color AxisColor { get; set; } = Color.Black;
         public Color GridLineColor { get; set; } = Color.LightGray;
 
-        public string LabelY { get; set; } = "";
-        public string LabelX { get; set; } = "";
-        public string LabelTitle { get; set; } = "";
+        public string LabelY
+        {
+            get => m_labelY; set
+            {
+                m_labelY = value;
+                FrameReDraw();
+            }
+        }
+
+        public string LabelX
+        {
+            get => m_labelX; set
+            {
+                m_labelX = value;
+                FrameReDraw();
+            }
+        }
+
+        public string LabelTitle
+        {
+            get => m_labelTitle; set
+            {
+                m_labelTitle = value;
+                FrameReDraw();
+            }
+        }
 
         public int PadLeft { get; set; } = 50;
         public int PadRight { get; set; } = 50;
         public int PadTop { get; set; } = 47;
         public int PadBottom { get; set; } = 47;
 
-        public int XAxis_Pixel => PadTop + m_graph.Height;
-        public int YAxis_Pixel => PadLeft + m_graph.Width;
+        public int YAxis_Pixel => PadTop + m_graphBmp.Height;
+        public int XAxis_Pixel => PadLeft + m_graphBmp.Width;
         public bool ShowGrid { get; set; } = true;
+
+        public DataGen Gen { get; } = new DataGen();
+
+        public string BenchmarkMessage
+        {
+            get
+            {
+                double ms = m_stopwatch.ElapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+                double hz = 1.0 / ms * 1000.0;
+                string msg = "";
+                // argb
+                double imageSizeMB = m_frameBmp.Width * m_frameBmp.Height * 4.0 / 1024 / 1024;
+                msg += string.Format("{0} x {1} ({2:0.00} MB) ", m_frameBmp.Width, m_frameBmp.Height, imageSizeMB);
+                msg += string.Format("with {0:n0} data points rendered in ", m_pointCount);
+                msg += string.Format("{0:0.00 ms} ({1:0.00} Hz)", ms, hz);
+                return msg;
+            }
+        }
 
         public void Resize(int width, int height)
         {
             if (width - PadLeft - PadRight < 1) width = PadLeft + PadRight + 1;
             if (height - PadTop - PadBottom < 1) height = PadTop + PadBottom + 1;
 
-            m_frame?.Dispose();
-            m_graph?.Dispose();
+            m_frameBmp?.Dispose();
+            m_graphBmp?.Dispose();
 
             m_gfxFrame?.Dispose();
             m_gfxGraph?.Dispose();
 
-            m_frame = new Bitmap(width, height);
-            m_gfxFrame = Graphics.FromImage(m_frame);
+            m_frameBmp = new Bitmap(width, height);
+            m_gfxFrame = Graphics.FromImage(m_frameBmp);
 
             //FramePadding(null, null, null, null);
 
             // now resize the graph
-            m_graph = new Bitmap(width - PadLeft - PadRight, height - PadTop - PadBottom);
-            m_gfxGraph = Graphics.FromImage(m_graph);
+            m_graphBmp = new Bitmap(m_frameBmp.Width - PadLeft - PadRight, m_frameBmp.Height - PadTop - PadBottom);
+            m_gfxGraph = Graphics.FromImage(m_graphBmp);
 
             // set the smoothing and text rendering hints
             m_gfxFrame.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -103,13 +151,15 @@ namespace Plot.Chart
             m_graphOrigin = new Point(PadLeft, PadTop);
 
             // now resize the axis to the new dimensions
-            XAxis.Resize(m_graph.Width);
-            YAxis.Resize(m_graph.Height);
+            XAxis.Resize(m_graphBmp.Width);
+            YAxis.Resize(m_graphBmp.Height);
         }
 
         public void GraphClear()
         {
-            m_gfxGraph.DrawImage(m_frame, new Point(-PadLeft, -PadTop));
+            //m_gfxGraph.DrawImage(m_frameBmp, new Point(-PadLeft, -PadTop));
+            m_gfxGraph.Clear(GraphBgColor);
+            m_pointCount = 0;
         }
 
         public void FrameReDraw()
@@ -126,20 +176,30 @@ namespace Plot.Chart
                 DrawRectangle(penAxis, graphBgBrush);
                 DrawMajorTicks(penAxis, axisBrush);
                 DrawMinorTicks(penAxis, axisBrush, penGrid);
-
+                DrawTitle(axisBrush);
 
             }
 
-            //GraphClear();
+            GraphClear();
         }
 
-        public void Render(Bitmap bmp)
+        private void DrawTitle(SolidBrush axisBrush)
         {
-            using (Graphics g = Graphics.FromImage(bmp))
-            {
-                g.DrawImage(m_frame, new Rectangle(0, 0, m_frame.Width, m_frame.Height));
-            }
+            Point title = new Point(m_frameBmp.Width / 2, 2);
+            m_gfxFrame.DrawString(LabelTitle, m_fontTitle, axisBrush, title, m_sfCenter);
+            Point xLabel = new Point(m_frameBmp.Width / 2, YAxis_Pixel + 14);
+            m_gfxFrame.DrawString(LabelX, m_fontAxis, axisBrush, xLabel, m_sfCenter);
+
+            m_gfxFrame.TranslateTransform(m_gfxFrame.VisibleClipBounds.Width, 0);
+            m_gfxFrame.RotateTransform(-90);
+
+            Point yLabel = new Point(-(m_graphBmp.Height / 2 + PadTop), -m_frameBmp.Width + 2);
+            m_gfxFrame.DrawString(LabelY, m_fontAxis, axisBrush, yLabel, m_sfCenter);
+
+            m_gfxFrame.ResetTransform();
         }
+
+
 
         private void DrawMinorTicks(Pen penAxis, SolidBrush axisBrush, Pen penGrid)
         {
@@ -151,12 +211,12 @@ namespace Plot.Chart
                 if (ShowGrid)
                 {
                     Point start1 = new Point(PadLeft + tick.PosPixel, PadTop + 1);
-                    Point end1 = new Point(PadLeft + tick.PosPixel, XAxis_Pixel - 1);
+                    Point end1 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel - 1);
                     m_gfxFrame.DrawLine(penGrid, start1, end1);
                 }
-                Point start = new Point(PadLeft + tick.PosPixel, XAxis_Pixel + 1);
-                Point end = new Point(PadLeft + tick.PosPixel, XAxis_Pixel + tick_size_minor);
-                Point end2 = new Point(PadLeft + tick.PosPixel, XAxis_Pixel + tick_size_minor + 1);
+                Point start = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + 1);
+                Point end = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_minor);
+                Point end2 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_minor + 1);
                 m_gfxFrame.DrawLine(penAxis, start, end);
                 //m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end2, m_sfCenter);
             }
@@ -167,7 +227,7 @@ namespace Plot.Chart
                 if (ShowGrid)
                 {
                     Point start1 = new Point(PadLeft + 1, PadTop + tick.PosPixel);
-                    Point end1 = new Point(YAxis_Pixel - 1, PadTop + tick.PosPixel);
+                    Point end1 = new Point(XAxis_Pixel - 1, PadTop + tick.PosPixel);
                     m_gfxFrame.DrawLine(penGrid, start1, end1);
                 }
                 Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
@@ -184,9 +244,9 @@ namespace Plot.Chart
             // X-axis
             foreach (Tick tick in XAxis.TicksMajor)
             {
-                Point start = new Point(PadLeft + tick.PosPixel, XAxis_Pixel + 1);
-                Point end = new Point(PadLeft + tick.PosPixel, XAxis_Pixel + tick_size_major);
-                Point end1 = new Point(PadLeft + tick.PosPixel, XAxis_Pixel + tick_size_major + 1);
+                Point start = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + 1);
+                Point end = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_major);
+                Point end1 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_major + 1);
                 m_gfxFrame.DrawLine(penAxis, start, end);
                 m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end1, m_sfCenter);
             }
@@ -202,9 +262,76 @@ namespace Plot.Chart
             }
         }
 
+        public void AxisSet(double? x1, double? x2, double? y1, double? y2)
+        {
+            if (x1 != null || x2 != null) XAxis.AxisLimits(x1, x2);
+            if (y1 != null || y2 != null) YAxis.AxisLimits(y1, y2);
+
+            FrameReDraw();
+        }
+
+        public void AxisAuto(double[] xs, double[] ys, double? zoomX, double? zoomY)
+        {
+            if (xs != null && xs.Length > 0) AxisSet(xs.Min(), xs.Max(), null, null);
+            if (ys != null && ys.Length > 0) AxisSet(null, null, ys.Min(), ys.Max());
+
+            Zoom(zoomX, zoomY);
+        }
+
+        public void Zoom(double? xFrac, double? yFrac)
+        {
+            if (xFrac != null) XAxis.Zoom(xFrac.Value);
+            if (yFrac != null) YAxis.Zoom(yFrac.Value);
+
+            FrameReDraw();
+        }
+
+        public void Pan(double? dx, double? dy)
+        {
+            if (dx != null) XAxis.Pan(dx.Value);
+            if (dy != null) YAxis.Pan(dy.Value);
+
+            FrameReDraw();
+        }
+
+        public void BenchmarkThis(bool enable = true)
+        {
+            if (enable)
+            {
+                m_stopwatch.Restart();
+            }
+            else
+            {
+                m_pointCount = 0;
+
+                m_stopwatch.Stop();
+                m_stopwatch.Reset();
+            }
+        }
+
+        public void Render(Bitmap bmp)
+        {
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.DrawImage(m_frameBmp, new Rectangle(0, 0, m_frameBmp.Width, m_frameBmp.Height));
+                g.DrawImage(m_graphBmp, new Rectangle(PadLeft, PadTop, m_graphBmp.Width, m_graphBmp.Height));
+
+                if (m_stopwatch.ElapsedTicks > 0)
+                {
+                    using (Font font = new Font(m_font, 8, FontStyle.Regular))
+                    using (SolidBrush stampBrush = new SolidBrush(AxisColor))
+                    {
+                        Point stamp = new Point(m_frameBmp.Width - PadRight - 2, m_frameBmp.Height - PadBottom - 14);
+                        g.DrawString(BenchmarkMessage, font, stampBrush, stamp, m_sfRight);
+                    }
+                }
+            }
+        }
+
+
         private void DrawRectangle(Pen penAxis, SolidBrush graphBgBrush)
         {
-            Rectangle graphRect = new Rectangle(m_graphOrigin, m_graph.Size);
+            Rectangle graphRect = new Rectangle(m_graphOrigin, m_graphBmp.Size);
             m_gfxFrame.DrawRectangle(penAxis, graphRect);
             m_gfxFrame.FillRectangle(graphBgBrush, graphRect);
         }
@@ -216,5 +343,48 @@ namespace Plot.Chart
             AxisColor = Color.Black;
             GridLineColor = Color.LightGray;
         }
+
+
+
+
+
+
+
+
+
+
+        private Point[] PointsFromArrays(double[] Xs, double[] Ys)
+        {
+            int pointCount = Math.Min(Xs.Length, Ys.Length);
+            Point[] points = new Point[pointCount];
+            for (int i = 0; i < pointCount; i++)
+            {
+                points[i] = new Point(XAxis.GetPixel(Xs[i]), YAxis.GetPixel(Ys[i]));
+            }
+            return points;
+        }
+
+
+        public void PlotLines(double[] Xs, double[] Ys, float lineWidth = 1, Color? lineColor = null)
+        {
+            if (lineColor == null) lineColor = Color.Red;
+            Point[] points = PointsFromArrays(Xs, Ys);
+
+            using (SolidBrush brush = new SolidBrush(lineColor.Value))
+            using (Pen penLine = new Pen(brush, lineWidth))
+            {
+                // adjust the pen caps and joins to make it as smooth as possible
+                penLine.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                penLine.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                penLine.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+
+
+                // todo: prevent infinite zooming overflow errors
+                m_gfxGraph.DrawLines(penLine, points);
+
+                m_pointCount += points.Length;
+            }
+        }
+
     }
 }

@@ -12,19 +12,22 @@ namespace Plot.Chart
 
         public Axis(double min, double max, int pxSize, bool inverted)
         {
-            m_min = min;
-            m_max = max;
+            Min = min;
+            Max = max;
             m_pxSize = pxSize;
             m_inverted = inverted;
         }
 
         public double UnitsPerPx => Span / m_pxSize;
         public double PxsPerUnit => m_pxSize / Span;
-        public double Span => m_max - m_min;
-        public double Center => (m_max + m_min) / 2.0;
+        public double Span => Max - Min;
+        public double Center => (Max + Min) / 2.0;
 
         public Tick[] TicksMajor { get; private set; }
         public Tick[] TicksMinor { get; private set; }
+
+        public double Min { get => m_min; set => m_min = value; }
+        public double Max { get => m_max; set => m_max = value; }
 
 
         /// <summary>
@@ -43,8 +46,8 @@ namespace Plot.Chart
         /// <param name="shift"></param>
         public void Pan(double shift)
         {
-            m_min += shift;
-            m_max += shift;
+            Min += shift;
+            Max += shift;
             RecalculateTicks();
         }
 
@@ -56,8 +59,15 @@ namespace Plot.Chart
         {
             double newSpan = Span / frac;
             double center = Center;
-            m_min = center - newSpan / 2.0;
-            m_max = center + newSpan / 2.0;
+            Min = center - newSpan / 2.0;
+            Max = center + newSpan / 2.0;
+            RecalculateTicks();
+        }
+
+        public void AxisLimits(double? min, double? max)
+        {
+            if (min.HasValue)Min = min.Value;
+            if (max.HasValue) Max = max.Value;
             RecalculateTicks();
         }
 
@@ -68,7 +78,7 @@ namespace Plot.Chart
         /// <returns></returns>
         public int GetPixel(double unit)
         {
-            double px = (unit - m_min) * PxsPerUnit;
+            double px = (unit - Min) * PxsPerUnit;
             if (m_inverted) px = m_pxSize - px;
             return (int)px;
         }
@@ -81,7 +91,7 @@ namespace Plot.Chart
         public double GetUnit(int pixel)
         {
             if (m_inverted) pixel = m_pxSize - pixel;
-            double unit = pixel * UnitsPerPx + m_min;
+            double unit = pixel * UnitsPerPx + Min;
             return unit;
         }
 
@@ -107,7 +117,7 @@ namespace Plot.Chart
             // 
             for (int i = 0; i < m_pxSize; i++)
             {
-                double thisPos = i * UnitsPerPx + m_min;
+                double thisPos = i * UnitsPerPx + Min;
                 // 
                 int thisTick = (int)(thisPos / tickSize);
 
@@ -116,7 +126,7 @@ namespace Plot.Chart
                     lastTick = thisTick;
 
                     double thisPosRounded = (double)(thisTick * tickSize);
-                    if (thisPosRounded > m_min && thisPosRounded < m_max)
+                    if (thisPosRounded > Min && thisPosRounded < Max)
                     {
                         ticks.Add(new Tick(thisPosRounded, GetPixel(thisPosRounded), Span));
                     }
