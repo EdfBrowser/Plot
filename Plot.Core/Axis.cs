@@ -8,18 +8,18 @@ namespace Plot.Core
         private double m_min;
         private double m_max;
         private int m_pxSize;
-        private readonly bool m_inverted;
+        private bool m_inverted;
 
         public Axis(double min, double max, int pxSize, bool inverted)
         {
             Min = min;
             Max = max;
-            m_pxSize = pxSize;
+            PxSize = pxSize;
             m_inverted = inverted;
         }
 
-        public double UnitsPerPx => Span / m_pxSize;
-        public double PxsPerUnit => m_pxSize / Span;
+        public double UnitsPerPx => Span / PxSize;
+        public double PxsPerUnit => PxSize / Span;
         public double Span => Max - Min;
         public double Center => (Max + Min) / 2.0;
 
@@ -28,6 +28,8 @@ namespace Plot.Core
 
         public double Min { get => m_min; set => m_min = value; }
         public double Max { get => m_max; set => m_max = value; }
+        public int PxSize { get => m_pxSize; set => m_pxSize = value; }
+        public bool Inverted => m_inverted;
 
 
         /// <summary>
@@ -36,7 +38,7 @@ namespace Plot.Core
         /// <param name="sizePx"></param>
         public void Resize(int sizePx)
         {
-            m_pxSize = sizePx;
+            PxSize = sizePx;
             RecalculateTicks();
         }
 
@@ -79,7 +81,7 @@ namespace Plot.Core
         public int GetPixel(double unit)
         {
             double px = (unit - Min) * PxsPerUnit;
-            if (m_inverted) px = m_pxSize - px;
+            if (Inverted) px = PxSize - px;
             return (int)px;
         }
 
@@ -90,7 +92,7 @@ namespace Plot.Core
         /// <returns></returns>
         public double GetUnit(int pixel)
         {
-            if (m_inverted) pixel = m_pxSize - pixel;
+            if (Inverted) pixel = PxSize - pixel;
             double unit = pixel * UnitsPerPx + Min;
             return unit;
         }
@@ -99,7 +101,7 @@ namespace Plot.Core
         private readonly double m_pixelsPerTick = 70;
         private void RecalculateTicks()
         {
-            double tick_density = m_pxSize / m_pixelsPerTick;
+            double tick_density = PxSize / m_pixelsPerTick;
             TicksMinor = GenerateTicks((int)(tick_density * 5));
             TicksMajor = GenerateTicks((int)(tick_density * 1));
         }
@@ -115,7 +117,7 @@ namespace Plot.Core
             double tickSize = RoundNumberNear(Span / targetTickCount * 1.5);
             int lastTick = 123456789;
             // 
-            for (int i = 0; i < m_pxSize; i++)
+            for (int i = 0; i < PxSize; i++)
             {
                 double thisPos = i * UnitsPerPx + Min;
                 // 

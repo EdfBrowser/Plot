@@ -469,5 +469,32 @@ namespace Plot.Core
                 m_pointCount += points.Length;
             }
         }
+
+
+
+        /* MOUSE STUFF */
+
+        MouseAxes m_mousePan = null;
+        MouseAxes m_mouseZoom = null;
+
+        public void MousePanStart(int xPx, int yPx) { m_mousePan = new MouseAxes(XAxis, YAxis, xPx, yPx); }
+        public void MousePanEnd() { m_mousePan = null; }
+        public void MouseZoomStart(int xPx, int yPx) { m_mouseZoom = new MouseAxes(XAxis, YAxis, xPx, yPx); }
+        public void MouseZoomEnd() { m_mouseZoom = null; }
+        public bool MouseIsDragging() { return (m_mousePan != null || m_mouseZoom != null); }
+
+        public void MouseMove(int xPx, int yPx)
+        {
+            if (m_mousePan != null)
+            {
+                m_mousePan.Pan(xPx, yPx);
+                AxisSet(m_mousePan.X1, m_mousePan.X2, m_mousePan.Y1, m_mousePan.Y2);
+            }
+            else if (m_mouseZoom != null)
+            {
+                m_mouseZoom.Zoom(xPx, yPx);
+                AxisSet(m_mouseZoom.X1, m_mouseZoom.X2, m_mouseZoom.Y1, m_mouseZoom.Y2);
+            }
+        }
     }
 }

@@ -28,116 +28,113 @@ namespace Plot.App
         /// </summary>
         private void InitializeComponent()
         {
-            panel1 = new System.Windows.Forms.Panel();
-            label3 = new System.Windows.Forms.Label();
-            label2 = new System.Windows.Forms.Label();
-            label1 = new System.Windows.Forms.Label();
-            nud_sec = new System.Windows.Forms.NumericUpDown();
-            PlotSignalBtn = new System.Windows.Forms.Button();
-            PlotLineBtn = new System.Windows.Forms.Button();
+            components = new System.ComponentModel.Container();
+            tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            button4 = new System.Windows.Forms.Button();
+            button3 = new System.Windows.Forms.Button();
+            button2 = new System.Windows.Forms.Button();
+            button1 = new System.Windows.Forms.Button();
             plot1 = new WinForm.Plot();
-            panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)nud_sec).BeginInit();
+            timer1 = new System.Windows.Forms.Timer(components);
+            tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
             // 
-            // panel1
+            // tableLayoutPanel1
             // 
-            panel1.Controls.Add(label3);
-            panel1.Controls.Add(label2);
-            panel1.Controls.Add(label1);
-            panel1.Controls.Add(nud_sec);
-            panel1.Controls.Add(PlotSignalBtn);
-            panel1.Controls.Add(PlotLineBtn);
-            panel1.Dock = System.Windows.Forms.DockStyle.Top;
-            panel1.Location = new System.Drawing.Point(0, 0);
-            panel1.Name = "panel1";
-            panel1.Size = new System.Drawing.Size(800, 100);
-            panel1.TabIndex = 1;
+            tableLayoutPanel1.ColumnCount = 4;
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25F));
+            tableLayoutPanel1.Controls.Add(button4, 3, 0);
+            tableLayoutPanel1.Controls.Add(button3, 2, 0);
+            tableLayoutPanel1.Controls.Add(button2, 1, 0);
+            tableLayoutPanel1.Controls.Add(button1, 0, 0);
+            tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Top;
+            tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            tableLayoutPanel1.Name = "tableLayoutPanel1";
+            tableLayoutPanel1.RowCount = 1;
+            tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            tableLayoutPanel1.Size = new System.Drawing.Size(615, 40);
+            tableLayoutPanel1.TabIndex = 0;
             // 
-            // label3
+            // button4
             // 
-            label3.AutoSize = true;
-            label3.Location = new System.Drawing.Point(549, 41);
-            label3.Name = "label3";
-            label3.Size = new System.Drawing.Size(142, 17);
-            label3.TabIndex = 5;
-            label3.Text = "seconds of 500Hz data";
+            button4.Dock = System.Windows.Forms.DockStyle.Fill;
+            button4.Location = new System.Drawing.Point(462, 3);
+            button4.Name = "button4";
+            button4.Size = new System.Drawing.Size(150, 34);
+            button4.TabIndex = 3;
+            button4.Text = "random number(1M)";
+            button4.UseVisualStyleBackColor = true;
+            button4.Click += btn_oneMillionPoints;
             // 
-            // label2
+            // button3
             // 
-            label2.AutoSize = true;
-            label2.Location = new System.Drawing.Point(549, 24);
-            label2.Name = "label2";
-            label2.Size = new System.Drawing.Size(142, 17);
-            label2.TabIndex = 4;
-            label2.Text = "seconds of 500Hz data";
+            button3.Dock = System.Windows.Forms.DockStyle.Fill;
+            button3.Location = new System.Drawing.Point(309, 3);
+            button3.Name = "button3";
+            button3.Size = new System.Drawing.Size(147, 34);
+            button3.TabIndex = 2;
+            button3.Text = "clear";
+            button3.UseVisualStyleBackColor = true;
+            button3.Click += btn_clear;
             // 
-            // label1
+            // button2
             // 
-            label1.AutoSize = true;
-            label1.Location = new System.Drawing.Point(549, 7);
-            label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(142, 17);
-            label1.TabIndex = 3;
-            label1.Text = "seconds of 500Hz data";
+            button2.Dock = System.Windows.Forms.DockStyle.Fill;
+            button2.Location = new System.Drawing.Point(156, 3);
+            button2.Name = "button2";
+            button2.Size = new System.Drawing.Size(147, 34);
+            button2.TabIndex = 1;
+            button2.Text = "live signal (1K)";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += btn_animated_sine;
             // 
-            // nud_sec
+            // button1
             // 
-            nud_sec.Location = new System.Drawing.Point(465, 7);
-            nud_sec.Name = "nud_sec";
-            nud_sec.Size = new System.Drawing.Size(78, 23);
-            nud_sec.TabIndex = 2;
-            nud_sec.Value = new decimal(new int[] { 60, 0, 0, 0 });
-            // 
-            // PlotSignalBtn
-            // 
-            PlotSignalBtn.Location = new System.Drawing.Point(375, 7);
-            PlotSignalBtn.Name = "PlotSignalBtn";
-            PlotSignalBtn.Size = new System.Drawing.Size(84, 25);
-            PlotSignalBtn.TabIndex = 1;
-            PlotSignalBtn.Text = "PlotSignal";
-            PlotSignalBtn.UseVisualStyleBackColor = true;
-            // 
-            // PlotLineBtn
-            // 
-            PlotLineBtn.Location = new System.Drawing.Point(285, 7);
-            PlotLineBtn.Name = "PlotLineBtn";
-            PlotLineBtn.Size = new System.Drawing.Size(84, 22);
-            PlotLineBtn.TabIndex = 0;
-            PlotLineBtn.Text = "PlotLine";
-            PlotLineBtn.UseVisualStyleBackColor = true;
+            button1.Dock = System.Windows.Forms.DockStyle.Fill;
+            button1.Location = new System.Drawing.Point(3, 3);
+            button1.Name = "button1";
+            button1.Size = new System.Drawing.Size(147, 34);
+            button1.TabIndex = 0;
+            button1.Text = "X/Y Pairs";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += btn_xy_mode;
             // 
             // plot1
             // 
             plot1.Dock = System.Windows.Forms.DockStyle.Fill;
-            plot1.Location = new System.Drawing.Point(0, 100);
+            plot1.Location = new System.Drawing.Point(0, 40);
             plot1.Name = "plot1";
-            plot1.Size = new System.Drawing.Size(800, 350);
-            plot1.TabIndex = 2;
+            plot1.Size = new System.Drawing.Size(615, 390);
+            plot1.TabIndex = 1;
+            // 
+            // timer1
+            // 
+            timer1.Interval = 1;
+            timer1.Tick += timer1_Tick;
             // 
             // App
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(800, 450);
+            ClientSize = new System.Drawing.Size(615, 430);
             Controls.Add(plot1);
-            Controls.Add(panel1);
+            Controls.Add(tableLayoutPanel1);
             Name = "App";
             Text = "Form1";
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)nud_sec).EndInit();
+            tableLayoutPanel1.ResumeLayout(false);
             ResumeLayout(false);
         }
 
         #endregion
-        private System.Windows.Forms.Panel panel1;
-        private System.Windows.Forms.Button PlotSignalBtn;
-        private System.Windows.Forms.Button PlotLineBtn;
-        private System.Windows.Forms.NumericUpDown nud_sec;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+        private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button button1;
         private WinForm.Plot plot1;
+        private System.Windows.Forms.Timer timer1;
     }
 }

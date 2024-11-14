@@ -12,33 +12,44 @@ namespace Plot.App
             Text = "Plot.App";
 
 
-            PlotSignalBtn.Click += PlotSignalBtn_Click;
-            PlotLineBtn.Click += PlotLineBtn_Click;
 
-            nud_sec.ValueChanged += nud_sec_ValueChanged;
         }
 
-        readonly int m_sampleRate = 500;
-
-        private void nud_sec_ValueChanged(object sender, EventArgs e)
+        private void btn_xy_mode(object sender, System.EventArgs e)
         {
-            int pointCount = (int)(nud_sec.Value * m_sampleRate);
-            label2.Text = string.Format("{0:0.00} thousand data points", pointCount / 1000.0);
-            label3.Text = string.Format("{0:0.00} minutes of data", pointCount / m_sampleRate / 60.0);
+            timer1.Enabled = false; // turn off live mode
+            plot1.PlotXY(plot1.Figure.Gen.Sequence(50), plot1.Figure.Gen.RandomWalk(50, 100));
+            plot1.AxisAuto();
         }
 
-        private void PlotSignalBtn_Click(object sender, EventArgs e)
+        private void btn_animated_sine(object sender, System.EventArgs e)
         {
-            plot1.AddSignal((int)nud_sec.Value, m_sampleRate);
-
-            plot1.Render();
+            plot1.Figure.AxisSet(0, .05, -1.1, 1.1); // we know what the limits should be
+            timer1.Enabled = true; // start automatic updates
         }
 
-        private void PlotLineBtn_Click(object sender, EventArgs e)
+        private void btn_oneMillionPoints(object sender, EventArgs e)
         {
-            plot1.AddPlotLine();
+            timer1.Enabled = false; // turn off live mode
+            plot1.PlotSignal(plot1.Figure.Gen.RandomWalk(1_000_000, startRandom: true), 20_000);
+            plot1.AxisAuto();
+        }
 
-            plot1.Render();
+        private void btn_clear(object sender, EventArgs e)
+        {
+            timer1.Enabled = false; // turn off live mode
+            plot1.Clear(true);
+        }
+
+        private bool busyPlotting = false;
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (busyPlotting) return;
+            busyPlotting = true;
+            plot1.Clear();
+            plot1.PlotSignal(plot1.Figure.Gen.SineAnimated(20000), 20000);
+            Application.DoEvents();
+            busyPlotting = false;
         }
     }
 }
