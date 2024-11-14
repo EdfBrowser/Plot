@@ -2,12 +2,10 @@
 
     <PropertyGroup>
         <TargetFrameworks>net8.0-windows;net4.8</TargetFrameworks>
-        <OutputType>WinExe</OutputType>
-        <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
+        <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
     </ItemGroup>
 
 </Project>

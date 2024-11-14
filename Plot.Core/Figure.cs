@@ -1,9 +1,9 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
-namespace Plot.Chart
+namespace Plot.Core
 {
     /*
      * Figure:
@@ -24,15 +24,15 @@ namespace Plot.Chart
 
 
         private const string m_font = "Arial";
-        private Font m_fontTicks = new Font(m_font, 9, FontStyle.Regular);
-        private Font m_fontTitle = new Font(m_font, 20, FontStyle.Bold);
-        private Font m_fontAxis = new Font(m_font, 12, FontStyle.Bold);
+        private readonly Font m_fontTicks = new Font(m_font, 9, FontStyle.Regular);
+        private readonly Font m_fontTitle = new Font(m_font, 20, FontStyle.Bold);
+        private readonly Font m_fontAxis = new Font(m_font, 12, FontStyle.Bold);
 
-        private StringFormat m_sfCenter = new StringFormat()
+        private readonly StringFormat m_sfCenter = new StringFormat()
         {
             Alignment = StringAlignment.Center,
         };
-        private StringFormat m_sfRight = new StringFormat()
+        private readonly StringFormat m_sfRight = new StringFormat()
         {
             Alignment = StringAlignment.Far,
         };
@@ -45,6 +45,7 @@ namespace Plot.Chart
 
         private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
+
         public Figure(int width, int height)
         {
             m_stopwatch = new System.Diagnostics.Stopwatch();
@@ -52,8 +53,6 @@ namespace Plot.Chart
             StyleUI();
 
             Resize(width, height);
-
-            FrameReDraw();
         }
 
 
@@ -152,8 +151,8 @@ namespace Plot.Chart
 
         public void GraphClear()
         {
-            //m_gfxGraph.DrawImage(m_frameBmp, new Point(-PadLeft, -PadTop));
-            m_gfxGraph.Clear(GraphBgColor);
+            m_gfxGraph.DrawImage(m_frameBmp, new Point(-PadLeft, -PadTop));
+            //m_gfxGraph.Clear(GraphBgColor);
             m_pointCount = 0;
         }
 
@@ -174,15 +173,13 @@ namespace Plot.Chart
                 DrawTitle(axisBrush);
 
             }
-
-            GraphClear();
         }
 
 
 
         private void DrawRectangle(Pen penAxis, SolidBrush graphBgBrush)
         {
-            Rectangle graphRect = new Rectangle(PadLeft -1, PadTop -1, m_graphBmp.Width + 1, m_graphBmp.Height + 1);
+            Rectangle graphRect = new Rectangle(PadLeft - 1, PadTop - 1, m_graphBmp.Width + 1, m_graphBmp.Height + 1);
             m_gfxFrame.DrawRectangle(penAxis, graphRect);
             m_gfxFrame.FillRectangle(graphBgBrush, graphRect);
         }
@@ -376,12 +373,101 @@ namespace Plot.Chart
                 penLine.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
 
 
-                // todo: prevent infinite zooming overflow errors
                 m_gfxGraph.DrawLines(penLine, points);
 
                 m_pointCount += points.Length;
             }
         }
 
+        public void PlotSignal(double[] values, double pointSpacing = 1, double offsetX = 0, double offsetY = 0, float lineWidth = 1, Color? lineColor = null)
+        {
+            if (lineColor == null) lineColor = Color.Red;
+            if (values == null || values.Length == 0) return;
+
+            int pointCount = values.Length;
+            double lastPointX = pointCount * pointSpacing + offsetX;
+            int dataMinPx = (int)((offsetX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
+            int dataMaxPx = (int)((lastPointX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
+
+            double binningUnitsPerPx = XAxis.UnitsPerPx / pointSpacing;
+            double dataPointsPerPx = XAxis.UnitsPerPx / pointSpacing;
+
+            List<Point> points = new List<Point>();
+            List<double> ys = new List<double>();
+
+            for (int i = 0; i < values.Length; i++) ys.Add(values[i]); // copy entire array into list (SLOW!!!)
+
+
+            if (dataPointsPerPx < 1)
+            {
+                // LOW DENSITY
+                // TODO: 到底是offset  - min 还是 min - offset
+                int iLeft = (int)(((offsetX - XAxis.Min) / XAxis.UnitsPerPx) * dataPointsPerPx);
+                int iRight = iLeft + (int)(dataPointsPerPx * m_graphBmp.Width);
+                for (int i = Math.Max(0, iLeft - 2); i < Math.Min(iRight + 3, ys.Count - 1); i++)
+                {
+                    int xPx = XAxis.GetPixel(offsetX + i * pointSpacing);
+                    int yPx = YAxis.GetPixel(ys[i]);
+                    points.Add(new Point(xPx, yPx));
+                }
+            }
+            else
+            {
+                // HIGH DENSITY
+                for (int xPixel = Math.Max(0, dataMinPx); xPixel < Math.Min(m_graphBmp.Width, dataMaxPx); xPixel++)
+                {
+                    int iLeft = (int)(binningUnitsPerPx * (xPixel - dataMinPx));
+                    int iRight = (int)(iLeft + binningUnitsPerPx);
+                    iLeft = Math.Max(iLeft, 0);
+                    iRight = Math.Min(ys.Count - 1, iRight);
+                    iRight = Math.Max(iRight, 0);
+                    if (iLeft == iRight) continue;
+                    double yPxMin = ys.GetRange(iLeft, iRight - iLeft).Min() + offsetY;
+                    double yPxMax = ys.GetRange(iLeft, iRight - iLeft).Max() + offsetY;
+
+                    points.Add(new Point(xPixel, YAxis.GetPixel(yPxMin)));
+                    points.Add(new Point(xPixel, YAxis.GetPixel(yPxMax)));
+                }
+            }
+
+
+            if (points.Count < 2) return;
+            float markerSize = 3;
+
+            using (SolidBrush brush = new SolidBrush(lineColor.Value))
+            using (Pen penLine = new Pen(brush, lineWidth))
+            {
+                System.Drawing.Drawing2D.SmoothingMode originalSmoothingMode = m_gfxGraph.SmoothingMode;
+                m_gfxGraph.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None; // no antialiasing
+
+                m_gfxGraph.DrawLines(penLine, points.ToArray());
+                if (dataPointsPerPx < .5)
+                {
+                    foreach (Point pt in points)
+                    {
+                        m_gfxGraph.FillEllipse(brush, pt.X - markerSize / 2, pt.Y - markerSize / 2, markerSize, markerSize);
+                    }
+                }
+
+                m_gfxGraph.SmoothingMode = originalSmoothingMode;
+                m_pointCount += values.Length;
+            }
+        }
+
+        public void PlotScatter(double[] Xs, double[] Ys, float markerSize = 3, Color? markerColor = null)
+        {
+            if (markerColor == null) markerColor = Color.Red;
+            Point[] points = PointsFromArrays(Xs, Ys);
+            using (SolidBrush brush = new SolidBrush(markerColor.Value))
+            {
+                for (int i = 0; i < points.Length; i++)
+                {
+                    m_gfxGraph.FillEllipse(brush, points[i].X - markerSize / 2,
+                        points[i].Y - markerSize / 2,
+                        markerSize, markerSize);
+                }
+                m_pointCount += points.Length;
+            }
+        }
     }
 }

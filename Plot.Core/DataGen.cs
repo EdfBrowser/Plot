@@ -1,13 +1,13 @@
 using System;
-using System.Drawing;
 using System.Diagnostics;
+using System.Drawing;
 
-namespace Plot.Chart
+namespace Plot.Core
 {
     public class DataGen
     {
         public Random rand = new Random(0);
-        private Stopwatch stopwatch = Stopwatch.StartNew();
+        private readonly Stopwatch stopwatch = Stopwatch.StartNew();
 
         /// <summary>
         /// ascending sequence of evenly spaced numbers
@@ -15,7 +15,7 @@ namespace Plot.Chart
         public double[] Sequence(int count, double spacing = 1, double offset = 0)
         {
             double[] vals = new double[count];
-            for (int i=0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 vals[i] = i * spacing + offset;
             }
@@ -78,10 +78,10 @@ namespace Plot.Chart
         /// <param name="count"></param>
         /// <param name="mult"></param>
         /// <returns></returns>
-        public double[] RandomValues(int count, double mult=1, double offset=0)
+        public double[] RandomValues(int count, double mult = 1, double offset = 0)
         {
             double[] vals = new double[count];
-            for (int i = 0; i<count; i++)
+            for (int i = 0; i < count; i++)
             {
                 vals[i] = rand.NextDouble() * mult + offset;
             }
@@ -91,19 +91,19 @@ namespace Plot.Chart
         /// <summary>
         /// integrated white noise
         /// </summary>
-        public double[] RandomWalk(int count, double mult = 1, double offset = 0, bool startRandom=false)
+        public double[] RandomWalk(int count, double mult = 1, double offset = 0, bool startRandom = false)
         {
             double[] vals = new double[count];
-            double runningSum=0;
+            double runningSum = 0;
 
-            if (startRandom) runningSum+=rand.NextDouble() * count / 1000;
+            if (startRandom) runningSum += rand.NextDouble() * count / 1000;
 
             for (int i = 0; i < count; i++)
             {
-                runningSum += rand.NextDouble()-.5;
+                runningSum += rand.NextDouble() - .5;
                 vals[i] = runningSum * mult + offset;
             }
-            
+
             return vals;
         }
 
@@ -111,11 +111,11 @@ namespace Plot.Chart
         /// <summary>
         /// Return the given array with white noise added
         /// </summary>
-        public double[] AddNoise(double[] vals, double scale=1, bool integrated = true)
+        public double[] AddNoise(double[] vals, double scale = 1, bool integrated = true)
         {
             // generate white noise
             double[] noiseVals = new double[vals.Length];
-            for (int i = 0; i < noiseVals.Length; i++) noiseVals[i] += rand.NextDouble()-.5;
+            for (int i = 0; i < noiseVals.Length; i++) noiseVals[i] += rand.NextDouble() - .5;
 
             // integreate the noise to create a random walk
             if (integrated)
@@ -124,7 +124,7 @@ namespace Plot.Chart
                 for (int i = 0; i < vals.Length; i++)
                 {
                     // each point is pulled 75% to the last point and 25% to a new random one
-                    runningSum = (runningSum*3 + noiseVals[i]) / 4.0;
+                    runningSum = (runningSum * 3 + noiseVals[i]) / 4.0;
                     noiseVals[i] = runningSum;
                 }
             }
@@ -134,13 +134,14 @@ namespace Plot.Chart
             return vals;
         }
 
-        public Color RandomColor(double alpha=1)
+        public Color RandomColor(double alpha = 1)
         {
             alpha = Math.Max(0, Math.Min(alpha, 255));
             return Color.FromArgb((int)alpha, rand.Next(256), rand.Next(256), rand.Next(256));
         }
 
-        public Color randomColor {
+        public Color randomColor
+        {
             get
             {
                 return Color.FromArgb(255, rand.Next(256), rand.Next(256), rand.Next(256));

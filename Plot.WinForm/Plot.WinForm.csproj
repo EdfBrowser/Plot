@@ -2,12 +2,12 @@
 
     <PropertyGroup>
         <TargetFrameworks>net8.0-windows;net4.8</TargetFrameworks>
-        <OutputType>WinExe</OutputType>
+        <OutputType>Library</OutputType>
         <UseWindowsForms>true</UseWindowsForms>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
+      <ProjectReference Include="..\Plot.Core\Plot.Core.csproj" />
     </ItemGroup>
 
 </Project>

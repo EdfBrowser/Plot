@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
-namespace Plot.Chart.Draw
+namespace Plot.Core
 {
     internal class GDI
     {

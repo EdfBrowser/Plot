@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 
-namespace Plot.Chart
+namespace Plot.Core
 {
     public class Axis
     {
         private double m_min;
         private double m_max;
         private int m_pxSize;
-        private bool m_inverted;
+        private readonly bool m_inverted;
 
         public Axis(double min, double max, int pxSize, bool inverted)
         {
@@ -66,7 +66,7 @@ namespace Plot.Chart
 
         public void AxisLimits(double? min, double? max)
         {
-            if (min.HasValue)Min = min.Value;
+            if (min.HasValue) Min = min.Value;
             if (max.HasValue) Max = max.Value;
             RecalculateTicks();
         }
@@ -96,7 +96,7 @@ namespace Plot.Chart
         }
 
 
-        private double m_pixelsPerTick = 70;
+        private readonly double m_pixelsPerTick = 70;
         private void RecalculateTicks()
         {
             double tick_density = m_pxSize / m_pixelsPerTick;
