@@ -28,8 +28,6 @@ namespace Plot.Chart
         private Font m_fontTitle = new Font(m_font, 20, FontStyle.Bold);
         private Font m_fontAxis = new Font(m_font, 12, FontStyle.Bold);
 
-        private Point m_graphOrigin;
-
         private StringFormat m_sfCenter = new StringFormat()
         {
             Alignment = StringAlignment.Center,
@@ -147,9 +145,6 @@ namespace Plot.Chart
             m_gfxGraph.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             m_gfxFrame.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-            // reset the origin of the graph
-            m_graphOrigin = new Point(PadLeft, PadTop);
-
             // now resize the axis to the new dimensions
             XAxis.Resize(m_graphBmp.Width);
             YAxis.Resize(m_graphBmp.Height);
@@ -181,6 +176,15 @@ namespace Plot.Chart
             }
 
             GraphClear();
+        }
+
+
+
+        private void DrawRectangle(Pen penAxis, SolidBrush graphBgBrush)
+        {
+            Rectangle graphRect = new Rectangle(PadLeft -1, PadTop -1, m_graphBmp.Width + 1, m_graphBmp.Height + 1);
+            m_gfxFrame.DrawRectangle(penAxis, graphRect);
+            m_gfxFrame.FillRectangle(graphBgBrush, graphRect);
         }
 
         private void DrawTitle(SolidBrush axisBrush)
@@ -328,13 +332,6 @@ namespace Plot.Chart
             }
         }
 
-
-        private void DrawRectangle(Pen penAxis, SolidBrush graphBgBrush)
-        {
-            Rectangle graphRect = new Rectangle(m_graphOrigin, m_graphBmp.Size);
-            m_gfxFrame.DrawRectangle(penAxis, graphRect);
-            m_gfxFrame.FillRectangle(graphBgBrush, graphRect);
-        }
 
         private void StyleUI()
         {
