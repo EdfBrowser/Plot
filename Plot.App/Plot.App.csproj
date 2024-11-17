@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0-windows;net4.8</TargetFrameworks>
+        <OutputType>WinExe</OutputType>
+        <UseWindowsForms>true</UseWindowsForms>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
+    </ItemGroup>
+
+</Project>
