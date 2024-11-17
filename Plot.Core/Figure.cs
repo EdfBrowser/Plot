@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 
 namespace Plot.Core
 {
@@ -45,6 +46,8 @@ namespace Plot.Core
 
         private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
+        private List<PlotSignalSeries> SeriesList { get; set; } = new List<PlotSignalSeries>();
+
 
         public Figure(int width, int height)
         {
@@ -56,8 +59,14 @@ namespace Plot.Core
         }
 
 
-        public Axis XAxis { get; set; } = new Axis(-10, 10, 100, false);
-        public Axis YAxis { get; set; } = new Axis(-10, 10, 100, true);
+        public Axis XAxis { get; set; } = new Axis(-10, 10, 100, false, 0);
+        public Axis YAxis { get; set; } = new Axis(-10, 10, 100, true, 0);
+        // 
+        public List<Axis> YAxes { get; set; } = new List<Axis>()
+        {
+          new Axis(-10, 10, 100, true, 0),
+          new Axis(-10, 10, 100, true, 1),
+        };
 
 
         public Color FrameBgColor { get; set; } = Color.White;
@@ -146,7 +155,16 @@ namespace Plot.Core
 
             // now resize the axis to the new dimensions
             XAxis.Resize(m_graphBmp.Width);
-            YAxis.Resize(m_graphBmp.Height);
+
+
+            if (YAxes.Count > 0)
+            {
+                int pxSize = m_graphBmp.Height / YAxes.Count;
+                foreach (var axis in YAxes)
+                {
+                    axis.Resize(pxSize);
+                }
+            }
         }
 
         public void GraphClear()
@@ -223,18 +241,20 @@ namespace Plot.Core
             }
 
             // Y-axis
-            foreach (Tick tick in YAxis.TicksMinor)
+            foreach (Axis axis in YAxes)
             {
-                if (ShowGrid)
+                foreach (Tick tick in axis.TicksMajor)
                 {
-                    Point start1 = new Point(PadLeft + 1, PadTop + tick.PosPixel);
-                    Point end1 = new Point(XAxis_Pixel - 1, PadTop + tick.PosPixel);
-                    m_gfxFrame.DrawLine(penGrid, start1, end1);
+                    if (ShowGrid)
+                    {
+                        Point start1 = new Point(PadLeft + 1, PadTop + tick.PosPixel);
+                        Point end1 = new Point(XAxis_Pixel - 1, PadTop + tick.PosPixel);
+                        m_gfxFrame.DrawLine(penGrid, start1, end1);
+                    }
+                    Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
+                    Point end = new Point(PadLeft - tick_size_minor, PadTop + tick.PosPixel);
+                    m_gfxFrame.DrawLine(penAxis, start, end);
                 }
-                Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
-                Point end = new Point(PadLeft - tick_size_minor, PadTop + tick.PosPixel);
-                m_gfxFrame.DrawLine(penAxis, start, end);
-                //m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end, m_sfCenter);
             }
         }
 
@@ -253,13 +273,16 @@ namespace Plot.Core
             }
 
             // Y-axis
-            foreach (Tick tick in YAxis.TicksMajor)
+            foreach (Axis axis in YAxes)
             {
-                Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
-                Point end = new Point(PadLeft - tick_size_major, PadTop + tick.PosPixel);
-                Point end1 = new Point(PadLeft - tick_size_major - 1, PadTop + tick.PosPixel - 7);
-                m_gfxFrame.DrawLine(penAxis, start, end);
-                m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end1, m_sfRight);
+                foreach (Tick tick in axis.TicksMajor)
+                {
+                    Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
+                    Point end = new Point(PadLeft - tick_size_major, PadTop + tick.PosPixel);
+                    Point end1 = new Point(PadLeft - tick_size_major - 1, PadTop + tick.PosPixel - 7);
+                    m_gfxFrame.DrawLine(penAxis, start, end);
+                    m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end1, m_sfRight);
+                }
             }
         }
 
@@ -342,9 +365,91 @@ namespace Plot.Core
 
 
 
+        /// var series =new PlotSignalSeries();
+        /// SeriesPoint[] points = new SeriesPoint[capacity];
+        /// for (int i = 0; i < capacity; i++)
+        /// {
+        ///    points.X = i;
+        ///    points.Y = i * 2;
+        /// }
+        ///
+        /// series.Points = points;
+        /// Series.Add(series);
+
+        public void RenderPlot()
+        {
+            for (int i = 0; i < SeriesList.Count; i++)
+            {
+                float markerSize = 3;
+
+                using (SolidBrush brush = new SolidBrush(SeriesList[i].LineColor))
+                using (Pen penLine = new Pen(brush, SeriesList[i].LineWidth))
+                {
+                    System.Drawing.Drawing2D.SmoothingMode originalSmoothingMode = m_gfxGraph.SmoothingMode;
+                    m_gfxGraph.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None; // no antialiasing
+
+                    Point[] points = SeriesList[i].GetScreenPoints();
+                    m_gfxGraph.DrawLines(penLine, points);
+                    //if (dataPointsPerPx < .5)
+                    //{
+                    //    foreach (Point pt in points)
+                    //    {
+                    //        m_gfxGraph.FillEllipse(brush, pt.X - markerSize / 2, pt.Y - markerSize / 2, markerSize, markerSize);
+                    //    }
+                    //}
+
+                    m_gfxGraph.SmoothingMode = originalSmoothingMode;
+                    m_pointCount += points.Length;
+                }
+            }
+        }
+
+        public void ClearSeries()
+        {
+            SeriesList.Clear();
+        }
+
+        public void AddSignal(Axis xaxis, Axis yaxis, double[] values, double pointSpacing = 1,
+            double offsetX = 0, double offsetY = 0, float lineWidth = 1, Color? lineColor = null)
+        {
+            if (lineColor == null) lineColor = Color.Red;
+            if (values.Length == 0) return;
+
+            List<SeriesPoint> data = new List<SeriesPoint>();
+
+            int pointCount = values.Length;
+            double lastPointX = pointCount * pointSpacing + offsetX;
+            int dataMinPx = (int)((offsetX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
+            int dataMaxPx = (int)((lastPointX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
+
+            double binningUnitsPerPx = XAxis.UnitsPerPx / pointSpacing;
+            double dataPointsPerPx = XAxis.UnitsPerPx / pointSpacing;
+
+            List<double> ys = new List<double>();
+
+            for (int i = 0; i < values.Length; i++) ys.Add(values[i]); // copy entire array into list (SLOW!!!)
+
+            // HIGH DENSITY
+            for (int xPixel = Math.Max(0, dataMinPx); xPixel < Math.Min(m_graphBmp.Width, dataMaxPx); xPixel++)
+            {
+                int iLeft = (int)(binningUnitsPerPx * (xPixel - dataMinPx));
+                int iRight = (int)(iLeft + binningUnitsPerPx);
+                iLeft = Math.Max(iLeft, 0);
+                iRight = Math.Min(ys.Count - 1, iRight);
+                iRight = Math.Max(iRight, 0);
+                if (iLeft == iRight) continue;
+                double yPxMin = ys.GetRange(iLeft, iRight - iLeft).Min() + offsetY;
+                double yPxMax = ys.GetRange(iLeft, iRight - iLeft).Max() + offsetY;
 
 
+                data.Add(new SeriesPoint(xPixel, yaxis.GetPixel(yPxMin)));
+                data.Add(new SeriesPoint(xPixel, yaxis.GetPixel(yPxMax)));
+            }
 
+            PlotSignalSeries series = new PlotSignalSeries(xaxis, yaxis, lineColor.Value, lineWidth, data.ToArray());
+
+            SeriesList.Add(series);
+        }
 
 
         private Point[] PointsFromArrays(double[] Xs, double[] Ys)

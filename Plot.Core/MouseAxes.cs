@@ -11,8 +11,8 @@ namespace Plot.Core
 
         public MouseAxes(Axis xAxis, Axis yAxis, int mouseX, int mouseY)
         {
-            XAxStart = new Axis(xAxis.Min, xAxis.Max, xAxis.PxSize, xAxis.Inverted);
-            YAxStart = new Axis(yAxis.Min, yAxis.Max, yAxis.PxSize, yAxis.Inverted);
+            XAxStart = new Axis(xAxis.Min, xAxis.Max, xAxis.PxSize, xAxis.Inverted, xAxis.AxisIndex);
+            YAxStart = new Axis(yAxis.Min, yAxis.Max, yAxis.PxSize, yAxis.Inverted, yAxis.AxisIndex);
             XMouseStart = mouseX;
             YMouseStart = mouseY;
             Pan(0, 0);

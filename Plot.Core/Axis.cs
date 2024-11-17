@@ -10,12 +10,13 @@ namespace Plot.Core
         private int m_pxSize;
         private bool m_inverted;
 
-        public Axis(double min, double max, int pxSize, bool inverted)
+        public Axis(double min, double max, int pxSize, bool inverted, int axisIndex)
         {
             Min = min;
             Max = max;
             PxSize = pxSize;
             m_inverted = inverted;
+            AxisIndex = axisIndex;
         }
 
         public double UnitsPerPx => Span / PxSize;
@@ -31,6 +32,7 @@ namespace Plot.Core
         public int PxSize { get => m_pxSize; set => m_pxSize = value; }
         public bool Inverted => m_inverted;
 
+        public int AxisIndex { get; set; }
 
         /// <summary>
         /// Resizes the axis to the given pixel size.
@@ -98,6 +100,12 @@ namespace Plot.Core
         }
 
 
+        public int GetOffsetPixel()
+        {
+            return AxisIndex * PxSize;
+        }
+
+
         private readonly double m_pixelsPerTick = 70;
         private void RecalculateTicks()
         {
@@ -130,13 +138,14 @@ namespace Plot.Core
                     double thisPosRounded = (double)(thisTick * tickSize);
                     if (thisPosRounded > Min && thisPosRounded < Max)
                     {
-                        ticks.Add(new Tick(thisPosRounded, GetPixel(thisPosRounded), Span));
+                        ticks.Add(new Tick(thisPosRounded, GetPixel(thisPosRounded) + GetOffsetPixel(), Span));
                     }
                 }
             }
 
             return ticks.ToArray();
         }
+
 
         private double RoundNumberNear(double target)
         {

@@ -9,74 +9,74 @@ namespace Plot.WinForm
 {
     public partial class Plot : UserControl
     {
-        private struct SignalData
-        {
-            public double[] m_values;
-            public double m_sampleRate;
-            public double m_xSpacing;
-            public double m_offsetX;
-            public double m_offsetY;
-            public float m_lineWidth;
-            public Color m_lineColor;
-            public string m_label;
+        //private struct SignalData
+        //{
+        //    public double[] m_values;
+        //    public double m_sampleRate;
+        //    public double m_xSpacing;
+        //    public double m_offsetX;
+        //    public double m_offsetY;
+        //    public float m_lineWidth;
+        //    public Color m_lineColor;
+        //    public string m_label;
 
-            public SignalData(double[] values, double sampleRate, double offsetX = 0,
-                double offsetY = 0, float lineWidth = 1f, Color? lineColor = null, string label = null)
-            {
-                m_values = values;
-                m_sampleRate = sampleRate;
-                m_xSpacing = 1.0 / sampleRate;
-                m_offsetX = offsetX;
-                m_offsetY = offsetY;
-                m_lineWidth = lineWidth;
-                m_lineColor = lineColor ?? Color.Red;
-                m_label = label;
-            }
-        }
+        //    public SignalData(double[] values, double sampleRate, double offsetX = 0,
+        //        double offsetY = 0, float lineWidth = 1f, Color? lineColor = null, string label = null)
+        //    {
+        //        m_values = values;
+        //        m_sampleRate = sampleRate;
+        //        m_xSpacing = 1.0 / sampleRate;
+        //        m_offsetX = offsetX;
+        //        m_offsetY = offsetY;
+        //        m_lineWidth = lineWidth;
+        //        m_lineColor = lineColor ?? Color.Red;
+        //        m_label = label;
+        //    }
+        //}
 
-        private struct XYData
-        {
-            public double[] m_xs;
-            public double[] m_ys;
-            public float m_lineWidth;
-            public Color m_lineColor;
-            public float m_markerSize;
-            public Color m_markerColor;
-            public string m_label;
+        //private struct XYData
+        //{
+        //    public double[] m_xs;
+        //    public double[] m_ys;
+        //    public float m_lineWidth;
+        //    public Color m_lineColor;
+        //    public float m_markerSize;
+        //    public Color m_markerColor;
+        //    public string m_label;
 
-            public XYData(double[] xs, double[] ys, float lineWidth = 1f, Color? lineColor = null,
-                float markerSize = 3f, Color? markerColor = null, string label = null)
-            {
-                m_xs = xs;
-                m_ys = ys;
-                m_lineWidth = lineWidth;
-                m_lineColor = lineColor ?? Color.Red;
-                m_markerSize = markerSize;
-                m_markerColor = markerColor ?? Color.Red;
-                m_label = label;
-            }
-        }
+        //    public XYData(double[] xs, double[] ys, float lineWidth = 1f, Color? lineColor = null,
+        //        float markerSize = 3f, Color? markerColor = null, string label = null)
+        //    {
+        //        m_xs = xs;
+        //        m_ys = ys;
+        //        m_lineWidth = lineWidth;
+        //        m_lineColor = lineColor ?? Color.Red;
+        //        m_markerSize = markerSize;
+        //        m_markerColor = markerColor ?? Color.Red;
+        //        m_label = label;
+        //    }
+        //}
 
-        private struct AxisLine
-        {
-            public double m_value;
-            public float m_lineWidth;
-            public Color m_lineColor;
-            public string m_label;
+        //private struct AxisLine
+        //{
+        //    public double m_value;
+        //    public float m_lineWidth;
+        //    public Color m_lineColor;
+        //    public string m_label;
 
-            public AxisLine(double value, float lineWidth = 1f, Color? lineColor = null, string label = null)
-            {
-                m_value = value;
-                m_lineWidth = lineWidth;
-                m_lineColor = lineColor ?? Color.Black;
-                m_label = label;
-            }
-        }
+        //    public AxisLine(double value, float lineWidth = 1f, Color? lineColor = null, string label = null)
+        //    {
+        //        m_value = value;
+        //        m_lineWidth = lineWidth;
+        //        m_lineColor = lineColor ?? Color.Black;
+        //        m_label = label;
+        //    }
+        //}
 
-        private List<SignalData> m_signalDataList = new List<SignalData>();
-        private List<XYData> m_xyDataList = new List<XYData>();
-        private List<AxisLine> m_hLines = new List<AxisLine>();
-        private List<AxisLine> m_vLines = new List<AxisLine>();
+        //private List<SignalData> m_signalDataList = new List<SignalData>();
+        //private List<XYData> m_xyDataList = new List<XYData>();
+        //private List<AxisLine> m_hLines = new List<AxisLine>();
+        //private List<AxisLine> m_vLines = new List<AxisLine>();
 
 
         private Bitmap m_lastBmp;
@@ -108,47 +108,63 @@ namespace Plot.WinForm
         public Figure Figure => m_figure;
 
 
-        public void Hline(double Ypos, float lineWidth = 1f, Color? lineColor = null)
-        {
-            m_hLines.Add(new AxisLine(Ypos, lineWidth, lineColor));
-            Render();
-        }
+        //public void Hline(double Ypos, float lineWidth = 1f, Color? lineColor = null)
+        //{
+        //    m_hLines.Add(new AxisLine(Ypos, lineWidth, lineColor));
+        //    Render();
+        //}
 
-        public void Vline(double Xpos, float lineWidth = 1f, Color? lineColor = null)
-        {
-            m_vLines.Add(new AxisLine(Xpos, lineWidth, lineColor));
-            Render();
-        }
+        //public void Vline(double Xpos, float lineWidth = 1f, Color? lineColor = null)
+        //{
+        //    m_vLines.Add(new AxisLine(Xpos, lineWidth, lineColor));
+        //    Render();
+        //}
 
 
-        public void PlotXY(double[] Xs, double[] Ys, float lineWidth = 1f, Color? lineColor = null,
-            float markerSize = 5, Color? markerColor = null, string label = null, bool render = true)
+        //public void PlotXY(double[] Xs, double[] Ys, float lineWidth = 1f, Color? lineColor = null,
+        //    float markerSize = 5, Color? markerColor = null, string label = null, bool render = true)
+        //{
+        //    m_xyDataList.Add(
+        //        new XYData(Xs, Ys, lineWidth, lineColor, markerSize, markerColor, label));
+        //    m_figure.GraphClear();
+        //    if (render)
+        //        Render();
+        //}
+
+        public void PlotSignal(List<double[]> values, double sampleRate, double offsetX = 0,
+           double offsetY = 0, float lineWidth = 1f, Color? lineColor = null, string label = null, bool render = true)
         {
-            m_xyDataList.Add(
-                new XYData(Xs, Ys, lineWidth, lineColor, markerSize, markerColor, label));
-            m_figure.GraphClear();
+            m_figure.ClearSeries();
+            for( int i = 0; i < values.Count; i++)
+            {
+                m_figure.AddSignal(m_figure.XAxis, m_figure.YAxes[i], values[i],
+                 1.0 / sampleRate, offsetX, offsetY, lineWidth, lineColor);
+            }
+          
+            //m_figure.GraphClear();
             if (render)
                 Render();
         }
 
-        public void PlotSignal(double[] values, double sampleRate, double offsetX = 0,
-            double offsetY = 0, float lineWidth = 1f, Color? lineColor = null, string label = null, bool render = true)
-        {
-            m_signalDataList.Add(
-                new SignalData(values, sampleRate, offsetX, offsetY, lineWidth, lineColor, label));
-            m_figure.GraphClear();
-            if (render)
-                Render();
-        }
+        //public void PlotSignal(double[] values, double sampleRate, double offsetX = 0,
+        //    double offsetY = 0, float lineWidth = 1f, Color? lineColor = null, string label = null, bool render = true)
+        //{
+        //    m_figure.ClearSeries();
+        //    m_figure.AddSignal(m_figure.XAxis, m_figure.YAxes[0], values,
+        //           1.0 / sampleRate, offsetX, offsetY, lineWidth, lineColor);
+        //    //m_figure.GraphClear();
+        //    if (render)
+        //        Render();
+        //}
 
-        public void Clear(bool renderAfterClearing = false, bool clearXYdata = true, bool clearSignals = true, bool clearHlines = true, bool clearVlines = true)
-        {
-            if (clearXYdata) m_xyDataList.Clear();
-            if (clearSignals) m_signalDataList.Clear();
-            if (clearHlines) m_hLines.Clear();
-            if (clearVlines) m_vLines.Clear();
-            if (renderAfterClearing) Render();
-        }
+        //public void Clear(bool renderAfterClearing = false, bool clearXYdata = true, bool clearSignals = true, bool clearHlines = true, bool clearVlines = true)
+        //{
+        //    if (clearXYdata) m_xyDataList.Clear();
+        //    if (clearSignals) m_signalDataList.Clear();
+        //    if (clearHlines) m_hLines.Clear();
+        //    if (clearVlines) m_vLines.Clear();
+        //    if (renderAfterClearing) Render();
+        //}
 
         public void SaveDialog(string filename = "output.png")
         {
@@ -183,48 +199,48 @@ namespace Plot.WinForm
         {
             double x1 = 0, x2 = 0, y1 = 0, y2 = 0;
 
-            foreach (XYData xyData in m_xyDataList)
-            {
-                if (x1 == x2)
-                {
-                    // this is the first data we are scaling to, so just copy its bounds
-                    x1 = xyData.m_xs.Min();
-                    x2 = xyData.m_xs.Max();
-                    y1 = xyData.m_ys.Min();
-                    y2 = xyData.m_ys.Max();
-                }
-                else
-                {
-                    // we've seen some data before, so only take it if it expands the axes
-                    x1 = Math.Min(x1, xyData.m_xs.Min());
-                    x2 = Math.Max(x2, xyData.m_xs.Max());
-                    y1 = Math.Min(y1, xyData.m_ys.Min());
-                    y2 = Math.Max(y2, xyData.m_ys.Max());
-                }
-            }
-            foreach (SignalData signalData in m_signalDataList)
-            {
-                if (x1 == x2)
-                {
-                    // this is the first data we are scaling to, so just copy its bounds
-                    x1 = signalData.m_offsetX;
-                    x2 = signalData.m_offsetX + signalData.m_values.Length * signalData.m_xSpacing;
-                    y1 = signalData.m_values.Min() + signalData.m_offsetY;
-                    y2 = signalData.m_values.Max() + signalData.m_offsetY;
-                }
-                else
-                {
-                    // we've seen some data before, so only take it if it expands the axes
-                    x1 = Math.Min(x1, signalData.m_offsetX);
-                    x2 = Math.Max(x2, signalData.m_offsetX + signalData.m_values.Length * signalData.m_xSpacing);
-                    y1 = Math.Min(y1, signalData.m_values.Min() + signalData.m_offsetY);
-                    y2 = Math.Max(y2, signalData.m_values.Max() + signalData.m_offsetY);
-                }
-            }
+            //foreach (XYData xyData in m_xyDataList)
+            //{
+            //    if (x1 == x2)
+            //    {
+            //        // this is the first data we are scaling to, so just copy its bounds
+            //        x1 = xyData.m_xs.Min();
+            //        x2 = xyData.m_xs.Max();
+            //        y1 = xyData.m_ys.Min();
+            //        y2 = xyData.m_ys.Max();
+            //    }
+            //    else
+            //    {
+            //        // we've seen some data before, so only take it if it expands the axes
+            //        x1 = Math.Min(x1, xyData.m_xs.Min());
+            //        x2 = Math.Max(x2, xyData.m_xs.Max());
+            //        y1 = Math.Min(y1, xyData.m_ys.Min());
+            //        y2 = Math.Max(y2, xyData.m_ys.Max());
+            //    }
+            //}
+            //foreach (SignalData signalData in m_signalDataList)
+            //{
+            //    if (x1 == x2)
+            //    {
+            //        // this is the first data we are scaling to, so just copy its bounds
+            //        x1 = signalData.m_offsetX;
+            //        x2 = signalData.m_offsetX + signalData.m_values.Length * signalData.m_xSpacing;
+            //        y1 = signalData.m_values.Min() + signalData.m_offsetY;
+            //        y2 = signalData.m_values.Max() + signalData.m_offsetY;
+            //    }
+            //    else
+            //    {
+            //        // we've seen some data before, so only take it if it expands the axes
+            //        x1 = Math.Min(x1, signalData.m_offsetX);
+            //        x2 = Math.Max(x2, signalData.m_offsetX + signalData.m_values.Length * signalData.m_xSpacing);
+            //        y1 = Math.Min(y1, signalData.m_values.Min() + signalData.m_offsetY);
+            //        y2 = Math.Max(y2, signalData.m_values.Max() + signalData.m_offsetY);
+            //    }
+            //}
 
-            m_figure.AxisSet(x1, x2, y1, y2);
-            m_figure.Zoom(null, .9);
-            Render(true);
+            //m_figure.AxisSet(x1, x2, y1, y2);
+            //m_figure.Zoom(null, .9);
+            //Render(true);
         }
 
         public void Render(bool redraw = false, bool axisAuto = false)
@@ -233,39 +249,45 @@ namespace Plot.WinForm
             if (redraw) m_figure.FrameReDraw();
             else m_figure.GraphClear();
 
-            foreach (SignalData signalData in m_signalDataList)
-            {
-                m_figure.PlotSignal(signalData.m_values, signalData.m_xSpacing,
-                    signalData.m_offsetX, signalData.m_offsetY, signalData.m_lineWidth, signalData.m_lineColor);
-            }
+            //foreach (SignalData signalData in m_signalDataList)
+            //{
+            //    m_figure.AddSignal(m_figure.XAxis, m_figure.YAxes[0], signalData.m_values,
+            //        signalData.m_xSpacing, signalData.m_offsetX, signalData.m_offsetY,
+            //        signalData.m_lineWidth, signalData.m_lineColor);
+            //    //m_figure.PlotSignal(signalData.m_values, signalData.m_xSpacing,
+            //    //signalData.m_offsetX, signalData.m_offsetY, signalData.m_lineWidth, signalData.m_lineColor);
+            //}
+            
 
             // plot XY points
-            foreach (XYData xyData in m_xyDataList)
-            {
-                if (xyData.m_lineWidth > 0 && xyData.m_xs.Length > 1)
-                    m_figure.PlotLines(xyData.m_xs, xyData.m_ys, xyData.m_lineWidth, xyData.m_lineColor);
-                m_figure.PlotScatter(xyData.m_xs, xyData.m_ys, xyData.m_markerSize, xyData.m_markerColor);
-            }
+            //foreach (XYData xyData in m_xyDataList)
+            //{
+            //    if (xyData.m_lineWidth > 0 && xyData.m_xs.Length > 1)
+            //        m_figure.PlotLines(xyData.m_xs, xyData.m_ys, xyData.m_lineWidth, xyData.m_lineColor);
+            //    m_figure.PlotScatter(xyData.m_xs, xyData.m_ys, xyData.m_markerSize, xyData.m_markerColor);
+            //}
 
-            // plot axis lines
-            foreach (AxisLine axisLine in m_hLines)
-            {
-                m_figure.PlotLines(
-                    new double[] { m_figure.XAxis.Min, m_figure.XAxis.Max },
-                    new double[] { axisLine.m_value, axisLine.m_value },
-                    axisLine.m_lineWidth,
-                    axisLine.m_lineColor
-                    );
-            }
-            foreach (AxisLine axisLine in m_vLines)
-            {
-                m_figure.PlotLines(
-                    new double[] { axisLine.m_value, axisLine.m_value },
-                    new double[] { m_figure.YAxis.Min, m_figure.YAxis.Max },
-                    axisLine.m_lineWidth,
-                    axisLine.m_lineColor
-                    );
-            }
+            //// plot axis lines
+            //foreach (AxisLine axisLine in m_hLines)
+            //{
+            //    m_figure.PlotLines(
+            //        new double[] { m_figure.XAxis.Min, m_figure.XAxis.Max },
+            //        new double[] { axisLine.m_value, axisLine.m_value },
+            //        axisLine.m_lineWidth,
+            //        axisLine.m_lineColor
+            //        );
+            //}
+            //foreach (AxisLine axisLine in m_vLines)
+            //{
+            //    m_figure.PlotLines(
+            //        new double[] { axisLine.m_value, axisLine.m_value },
+            //        new double[] { m_figure.YAxis.Min, m_figure.YAxis.Max },
+            //        axisLine.m_lineWidth,
+            //        axisLine.m_lineColor
+            //        );
+            //}
+
+            m_figure.RenderPlot();
 
             if (m_lastBmp != null)
                 m_bitmapQueue.Enqueue(m_lastBmp);
