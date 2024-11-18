@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Reflection;
 
 namespace Plot.Core
 {
@@ -46,7 +43,7 @@ namespace Plot.Core
 
         private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
-        private List<PlotSignalSeries> SeriesList { get; set; } = new List<PlotSignalSeries>();
+        private List<BaseSeries> SeriesList { get; set; } = new List<BaseSeries>();
 
 
         public Figure()
@@ -58,7 +55,6 @@ namespace Plot.Core
 
 
         public Axis XAxis { get; set; } = new Axis(-10, 10, 100, false, 0);
-        public Axis YAxis { get; set; } = new Axis(-10, 10, 100, true, 0);
         // 
         public List<Axis> YAxes { get; set; } = new List<Axis>()
         {
@@ -77,7 +73,6 @@ namespace Plot.Core
             get => m_labelY; set
             {
                 m_labelY = value;
-                FrameReDraw();
             }
         }
 
@@ -86,7 +81,6 @@ namespace Plot.Core
             get => m_labelX; set
             {
                 m_labelX = value;
-                FrameReDraw();
             }
         }
 
@@ -95,7 +89,6 @@ namespace Plot.Core
             get => m_labelTitle; set
             {
                 m_labelTitle = value;
-                FrameReDraw();
             }
         }
 
@@ -140,7 +133,6 @@ namespace Plot.Core
             m_frameBmp = new Bitmap(width, height);
             m_gfxFrame = Graphics.FromImage(m_frameBmp);
 
-            //FramePadding(null, null, null, null);
 
             // now resize the graph
             m_graphBmp = new Bitmap(m_frameBmp.Width - PadLeft - PadRight, m_frameBmp.Height - PadTop - PadBottom);
@@ -163,36 +155,7 @@ namespace Plot.Core
                     axis.Resize(pxSize);
                 }
             }
-
-            FrameReDraw();
         }
-
-        public void GraphClear()
-        {
-            m_gfxGraph.DrawImage(m_frameBmp, new Point(-PadLeft, -PadTop));
-            //m_gfxGraph.Clear(GraphBgColor);
-            m_pointCount = 0;
-        }
-
-        public void FrameReDraw()
-        {
-            m_gfxFrame.Clear(FrameBgColor);
-
-            // prepare something useful for drawing
-            using (SolidBrush axisBrush = new SolidBrush(AxisColor))
-            using (SolidBrush graphBgBrush = new SolidBrush(GraphBgColor))
-            using (Pen penGrid = new Pen(GridLineColor))
-            using (Pen penAxis = new Pen(axisBrush))
-            {
-                // draw the rectangle and ticks and labels
-                DrawRectangle(penAxis, graphBgBrush);
-                DrawMajorTicks(penAxis, axisBrush);
-                DrawMinorTicks(penAxis, axisBrush, penGrid);
-                DrawTitle(axisBrush);
-
-            }
-        }
-
 
 
         private void DrawRectangle(Pen penAxis, SolidBrush graphBgBrush)
@@ -237,7 +200,6 @@ namespace Plot.Core
                 Point end = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_minor);
                 Point end2 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_minor + 1);
                 m_gfxFrame.DrawLine(penAxis, start, end);
-                //m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end2, m_sfCenter);
             }
 
             // Y-axis
@@ -286,38 +248,6 @@ namespace Plot.Core
             }
         }
 
-        public void AxisSet(double? x1, double? x2, double? y1, double? y2)
-        {
-            if (x1 != null || x2 != null) XAxis.AxisLimits(x1, x2);
-            if (y1 != null || y2 != null) YAxis.AxisLimits(y1, y2);
-
-            FrameReDraw();
-        }
-
-        public void AxisAuto(double[] xs, double[] ys, double? zoomX, double? zoomY)
-        {
-            if (xs != null && xs.Length > 0) AxisSet(xs.Min(), xs.Max(), null, null);
-            if (ys != null && ys.Length > 0) AxisSet(null, null, ys.Min(), ys.Max());
-
-            Zoom(zoomX, zoomY);
-        }
-
-        public void Zoom(double? xFrac, double? yFrac)
-        {
-            if (xFrac != null) XAxis.Zoom(xFrac.Value);
-            if (yFrac != null) YAxis.Zoom(yFrac.Value);
-
-            FrameReDraw();
-        }
-
-        public void Pan(double? dx, double? dy)
-        {
-            if (dx != null) XAxis.Pan(dx.Value);
-            if (dy != null) YAxis.Pan(dy.Value);
-
-            FrameReDraw();
-        }
-
         public void BenchmarkThis(bool enable = true)
         {
             if (enable)
@@ -335,9 +265,35 @@ namespace Plot.Core
 
         public void Render(Bitmap bmp)
         {
+            m_gfxGraph.DrawImage(m_frameBmp, new Point(-PadLeft, -PadTop));
+            //m_gfxGraph.Clear(GraphBgColor);
+            m_pointCount = 0;
+
+            foreach (var series in SeriesList)
+            {
+                series.Render(m_graphBmp);
+            }
+
+            m_gfxFrame.Clear(FrameBgColor);
+
+            // prepare something useful for drawing
+            using (SolidBrush axisBrush = new SolidBrush(AxisColor))
+            using (SolidBrush graphBgBrush = new SolidBrush(GraphBgColor))
+            using (Pen penGrid = new Pen(GridLineColor))
+            using (Pen penAxis = new Pen(axisBrush))
+            {
+                // draw the rectangle and ticks and labels
+                DrawRectangle(penAxis, graphBgBrush);
+                DrawMajorTicks(penAxis, axisBrush);
+                DrawMinorTicks(penAxis, axisBrush, penGrid);
+                DrawTitle(axisBrush);
+
+            }
+
             using (Graphics g = Graphics.FromImage(bmp))
             {
                 g.DrawImage(m_frameBmp, new Rectangle(0, 0, m_frameBmp.Width, m_frameBmp.Height));
+
                 g.DrawImage(m_graphBmp, new Rectangle(PadLeft, PadTop, m_graphBmp.Width, m_graphBmp.Height));
 
                 if (m_stopwatch.ElapsedTicks > 0)
@@ -364,242 +320,23 @@ namespace Plot.Core
 
 
 
-
-        /// var series =new PlotSignalSeries();
-        /// SeriesPoint[] points = new SeriesPoint[capacity];
-        /// for (int i = 0; i < capacity; i++)
-        /// {
-        ///    points.X = i;
-        ///    points.Y = i * 2;
-        /// }
-        ///
-        /// series.Points = points;
-        /// Series.Add(series);
-
-        public void RenderPlot()
+        public DataStreamSeries AddDataStreamer(int xIndex, int yIndex, int length)
         {
-            for (int i = 0; i < SeriesList.Count; i++)
-            {
-                float markerSize = 3;
-
-                using (SolidBrush brush = new SolidBrush(SeriesList[i].LineColor))
-                using (Pen penLine = new Pen(brush, SeriesList[i].LineWidth))
-                {
-                    System.Drawing.Drawing2D.SmoothingMode originalSmoothingMode = m_gfxGraph.SmoothingMode;
-                    m_gfxGraph.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None; // no antialiasing
-
-                    Point[] points = SeriesList[i].GetScreenPoints();
-                    m_gfxGraph.DrawLines(penLine, points);
-                    //if (dataPointsPerPx < .5)
-                    //{
-                    //    foreach (Point pt in points)
-                    //    {
-                    //        m_gfxGraph.FillEllipse(brush, pt.X - markerSize / 2, pt.Y - markerSize / 2, markerSize, markerSize);
-                    //    }
-                    //}
-
-                    m_gfxGraph.SmoothingMode = originalSmoothingMode;
-                    m_pointCount += points.Length;
-                }
-            }
+            double[] data = new double[length];
+            return AddDataStreamer(xIndex, yIndex, data);
         }
+
+        public DataStreamSeries AddDataStreamer(int xIndex, int yIndex, double[] values)
+        {
+            DataStreamSeries dataStreamSeries = new DataStreamSeries(xIndex, yIndex, this, values);
+            SeriesList.Add(dataStreamSeries);
+            return dataStreamSeries;
+        }
+
 
         public void ClearSeries()
         {
             SeriesList.Clear();
-        }
-
-        public void AddSignal(Axis xaxis, Axis yaxis, double[] values, double pointSpacing = 1,
-            double offsetX = 0, double offsetY = 0, float lineWidth = 1, Color? lineColor = null)
-        {
-            if (lineColor == null) lineColor = Color.Red;
-            if (values.Length == 0) return;
-
-            List<SeriesPoint> data = new List<SeriesPoint>();
-
-            int pointCount = values.Length;
-            double lastPointX = pointCount * pointSpacing + offsetX;
-            int dataMinPx = (int)((offsetX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
-            int dataMaxPx = (int)((lastPointX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
-
-            double binningUnitsPerPx = XAxis.UnitsPerPx / pointSpacing;
-            double dataPointsPerPx = XAxis.UnitsPerPx / pointSpacing;
-
-            List<double> ys = new List<double>();
-
-            for (int i = 0; i < values.Length; i++) ys.Add(values[i]); // copy entire array into list (SLOW!!!)
-
-            // HIGH DENSITY
-            for (int xPixel = Math.Max(0, dataMinPx); xPixel < Math.Min(m_graphBmp.Width, dataMaxPx); xPixel++)
-            {
-                int iLeft = (int)(binningUnitsPerPx * (xPixel - dataMinPx));
-                int iRight = (int)(iLeft + binningUnitsPerPx);
-                iLeft = Math.Max(iLeft, 0);
-                iRight = Math.Min(ys.Count - 1, iRight);
-                iRight = Math.Max(iRight, 0);
-                if (iLeft == iRight) continue;
-                double yPxMin = ys.GetRange(iLeft, iRight - iLeft).Min() + offsetY;
-                double yPxMax = ys.GetRange(iLeft, iRight - iLeft).Max() + offsetY;
-
-
-                data.Add(new SeriesPoint(xPixel, yaxis.GetPixel(yPxMin)));
-                data.Add(new SeriesPoint(xPixel, yaxis.GetPixel(yPxMax)));
-            }
-
-            PlotSignalSeries series = new PlotSignalSeries(xaxis, yaxis, lineColor.Value, lineWidth, data.ToArray());
-
-            SeriesList.Add(series);
-        }
-
-
-        private Point[] PointsFromArrays(double[] Xs, double[] Ys)
-        {
-            int pointCount = Math.Min(Xs.Length, Ys.Length);
-            Point[] points = new Point[pointCount];
-            for (int i = 0; i < pointCount; i++)
-            {
-                points[i] = new Point(XAxis.GetPixel(Xs[i]), YAxis.GetPixel(Ys[i]));
-            }
-            return points;
-        }
-
-
-        public void PlotLines(double[] Xs, double[] Ys, float lineWidth = 1, Color? lineColor = null)
-        {
-            if (lineColor == null) lineColor = Color.Red;
-            Point[] points = PointsFromArrays(Xs, Ys);
-
-            using (SolidBrush brush = new SolidBrush(lineColor.Value))
-            using (Pen penLine = new Pen(brush, lineWidth))
-            {
-                // adjust the pen caps and joins to make it as smooth as possible
-                penLine.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                penLine.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                penLine.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-
-
-                m_gfxGraph.DrawLines(penLine, points);
-
-                m_pointCount += points.Length;
-            }
-        }
-
-        public void PlotSignal(double[] values, double pointSpacing = 1, double offsetX = 0, double offsetY = 0, float lineWidth = 1, Color? lineColor = null)
-        {
-            if (lineColor == null) lineColor = Color.Red;
-            if (values == null || values.Length == 0) return;
-
-            int pointCount = values.Length;
-            double lastPointX = pointCount * pointSpacing + offsetX;
-            int dataMinPx = (int)((offsetX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
-            int dataMaxPx = (int)((lastPointX - XAxis.Min) / XAxis.UnitsPerPx); // pixel
-
-            double binningUnitsPerPx = XAxis.UnitsPerPx / pointSpacing;
-            double dataPointsPerPx = XAxis.UnitsPerPx / pointSpacing;
-
-            List<Point> points = new List<Point>();
-            List<double> ys = new List<double>();
-
-            for (int i = 0; i < values.Length; i++) ys.Add(values[i]); // copy entire array into list (SLOW!!!)
-
-
-            if (dataPointsPerPx < 1)
-            {
-                // LOW DENSITY
-                // TODO: 到底是offset  - min 还是 min - offset
-                int iLeft = (int)(((offsetX - XAxis.Min) / XAxis.UnitsPerPx) * dataPointsPerPx);
-                int iRight = iLeft + (int)(dataPointsPerPx * m_graphBmp.Width);
-                for (int i = Math.Max(0, iLeft - 2); i < Math.Min(iRight + 3, ys.Count - 1); i++)
-                {
-                    int xPx = XAxis.GetPixel(offsetX + i * pointSpacing);
-                    int yPx = YAxis.GetPixel(ys[i]);
-                    points.Add(new Point(xPx, yPx));
-                }
-            }
-            else
-            {
-                // HIGH DENSITY
-                for (int xPixel = Math.Max(0, dataMinPx); xPixel < Math.Min(m_graphBmp.Width, dataMaxPx); xPixel++)
-                {
-                    int iLeft = (int)(binningUnitsPerPx * (xPixel - dataMinPx));
-                    int iRight = (int)(iLeft + binningUnitsPerPx);
-                    iLeft = Math.Max(iLeft, 0);
-                    iRight = Math.Min(ys.Count - 1, iRight);
-                    iRight = Math.Max(iRight, 0);
-                    if (iLeft == iRight) continue;
-                    double yPxMin = ys.GetRange(iLeft, iRight - iLeft).Min() + offsetY;
-                    double yPxMax = ys.GetRange(iLeft, iRight - iLeft).Max() + offsetY;
-
-                    points.Add(new Point(xPixel, YAxis.GetPixel(yPxMin)));
-                    points.Add(new Point(xPixel, YAxis.GetPixel(yPxMax)));
-                }
-            }
-
-
-            if (points.Count < 2) return;
-            float markerSize = 3;
-
-            using (SolidBrush brush = new SolidBrush(lineColor.Value))
-            using (Pen penLine = new Pen(brush, lineWidth))
-            {
-                System.Drawing.Drawing2D.SmoothingMode originalSmoothingMode = m_gfxGraph.SmoothingMode;
-                m_gfxGraph.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None; // no antialiasing
-
-                m_gfxGraph.DrawLines(penLine, points.ToArray());
-                if (dataPointsPerPx < .5)
-                {
-                    foreach (Point pt in points)
-                    {
-                        m_gfxGraph.FillEllipse(brush, pt.X - markerSize / 2, pt.Y - markerSize / 2, markerSize, markerSize);
-                    }
-                }
-
-                m_gfxGraph.SmoothingMode = originalSmoothingMode;
-                m_pointCount += values.Length;
-            }
-        }
-
-        public void PlotScatter(double[] Xs, double[] Ys, float markerSize = 3, Color? markerColor = null)
-        {
-            if (markerColor == null) markerColor = Color.Red;
-            Point[] points = PointsFromArrays(Xs, Ys);
-            using (SolidBrush brush = new SolidBrush(markerColor.Value))
-            {
-                for (int i = 0; i < points.Length; i++)
-                {
-                    m_gfxGraph.FillEllipse(brush, points[i].X - markerSize / 2,
-                        points[i].Y - markerSize / 2,
-                        markerSize, markerSize);
-                }
-                m_pointCount += points.Length;
-            }
-        }
-
-
-
-        /* MOUSE STUFF */
-
-        MouseAxes m_mousePan = null;
-        MouseAxes m_mouseZoom = null;
-
-        public void MousePanStart(int xPx, int yPx) { m_mousePan = new MouseAxes(XAxis, YAxis, xPx, yPx); }
-        public void MousePanEnd() { m_mousePan = null; }
-        public void MouseZoomStart(int xPx, int yPx) { m_mouseZoom = new MouseAxes(XAxis, YAxis, xPx, yPx); }
-        public void MouseZoomEnd() { m_mouseZoom = null; }
-        public bool MouseIsDragging() { return (m_mousePan != null || m_mouseZoom != null); }
-
-        public void MouseMove(int xPx, int yPx)
-        {
-            if (m_mousePan != null)
-            {
-                m_mousePan.Pan(xPx, yPx);
-                AxisSet(m_mousePan.X1, m_mousePan.X2, m_mousePan.Y1, m_mousePan.Y2);
-            }
-            else if (m_mouseZoom != null)
-            {
-                m_mouseZoom.Zoom(xPx, yPx);
-                AxisSet(m_mouseZoom.X1, m_mouseZoom.X2, m_mouseZoom.Y1, m_mouseZoom.Y2);
-            }
         }
     }
 }

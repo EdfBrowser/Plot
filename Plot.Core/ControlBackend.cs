@@ -7,7 +7,7 @@ namespace Plot.Core
     public class ControlBackend
     {
         private Bitmap m_bmp;
-        private Queue<Bitmap> m_oldBitmaps = new Queue<Bitmap>();
+        private readonly Queue<Bitmap> m_oldBitmaps = new Queue<Bitmap>();
 
         private long m_bitmapRenderCount = 0;
 

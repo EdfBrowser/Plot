@@ -5,17 +5,12 @@ namespace Plot.Core
 {
     public class Axis
     {
-        private double m_min;
-        private double m_max;
-        private int m_pxSize;
-        private bool m_inverted;
-
         public Axis(double min, double max, int pxSize, bool inverted, int axisIndex)
         {
             Min = min;
             Max = max;
             PxSize = pxSize;
-            m_inverted = inverted;
+            Inverted = inverted;
             AxisIndex = axisIndex;
         }
 
@@ -27,12 +22,14 @@ namespace Plot.Core
         public Tick[] TicksMajor { get; private set; }
         public Tick[] TicksMinor { get; private set; }
 
-        public double Min { get => m_min; set => m_min = value; }
-        public double Max { get => m_max; set => m_max = value; }
-        public int PxSize { get => m_pxSize; set => m_pxSize = value; }
-        public bool Inverted => m_inverted;
+        public double Min { get; set; }
+        public double Max { get; set; }
+        public int PxSize { get; set; }
+        public bool Inverted { get; set; }
 
         public int AxisIndex { get; set; }
+
+        public string Label { get; set; }
 
         /// <summary>
         /// Resizes the axis to the given pixel size.

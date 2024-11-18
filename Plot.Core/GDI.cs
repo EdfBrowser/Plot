@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 
 namespace Plot.Core
 {
@@ -17,16 +18,19 @@ namespace Plot.Core
             return size;
         }
 
-        public static Graphics CreateGraphics(Bitmap bmp, bool lowQuality = false, double scale = 1.0)
+        public static Graphics Graphics(Bitmap bmp, bool lowQuality = false, double scale = 1.0)
         {
-            Graphics gfx = Graphics.FromImage(bmp);
+            Graphics gfx = System.Drawing.Graphics.FromImage(bmp);
             gfx.SmoothingMode = lowQuality ? SmoothingMode.HighSpeed : SmoothingMode.AntiAlias;
-            //gfx.TextRenderingHint = lowQuality ? LowQualityTextRenderingHint : HighQualityTextRenderingHint;
+            gfx.TextRenderingHint = lowQuality ? TextRenderingHint.SingleBitPerPixelGridFit : TextRenderingHint.AntiAlias;
             gfx.ScaleTransform((float)scale, (float)scale);
             return gfx;
         }
 
 
         public static Brush Brush(Color color, float alpha) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
+
+
+        public static Pen Pen(Color color, float width, float alpha) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
     }
 }

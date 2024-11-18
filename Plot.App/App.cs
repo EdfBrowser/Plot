@@ -1,54 +1,47 @@
+using Plot.Core;
 using System;
-using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace Plot.App
 {
+
     public partial class App : Form
     {
+        private readonly Timer addNewDataTimer = new Timer() { Interval = 10, Enabled = true };
+        private readonly Timer updatePlotTimer = new Timer() { Interval = 50, Enabled = true };
+        private readonly DataStreamSeries dataStreamer1;
+        private readonly DataStreamSeries dataStreamer2;
+        private readonly Random rand = new Random();
+
+        private double lastPointValue1 = 0;
+        private double lastPointValue2 = 0;
         public App()
         {
             InitializeComponent();
 
+
             Text = "Plot.App";
+            addNewDataTimer.Tick += AddNewData;
+            updatePlotTimer.Tick += updatePlot;
+            dataStreamer1 = formPlot1.Figure.AddDataStreamer(0, 0, 1000);
+            dataStreamer2 = formPlot1.Figure.AddDataStreamer(0, 1, 1000);
         }
 
-        private void btn_xy_mode(object sender, System.EventArgs e)
+        private void updatePlot(object sender, EventArgs e)
         {
+            formPlot1.Refresh();
         }
 
-        private void btn_animated_sine(object sender, System.EventArgs e)
+        private void AddNewData(object sender, EventArgs e)
         {
-            plot1.Figure.AxisSet(0, .05, -1.1, 1.1); // we know what the limits should be
-            //plot1.PlotSignal(plot1.Figure.Gen.SineAnimated(20000), 20000);
-            timer1.Enabled = true; // start automatic updates
-        }
-
-        private void btn_oneMillionPoints(object sender, EventArgs e)
-        {
-        }
-
-        private void btn_clear(object sender, EventArgs e)
-        {
-        }
-
-        private bool busyPlotting = false;
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            if (busyPlotting) return;
-            busyPlotting = true;
-            //plot1.Clear();
-            //plot1.PlotSignal(plot1.Figure.Gen.SineAnimated(20000), 20000);
-            plot1.PlotSignal(
-                new List<double[]>
-                {
-                plot1.Figure.Gen.SineAnimated(20000) ,
-                plot1.Figure.Gen.SineAnimated(20000),
-
-                }, 20000);
-
-            Application.DoEvents();
-            busyPlotting = false;
+            int count = rand.Next(10);
+            for (int i = 0; i < count; i++)
+            {
+                lastPointValue1 += rand.NextDouble() - .5;
+                lastPointValue2 += rand.NextDouble() - .5;
+                dataStreamer1.Add(lastPointValue1);
+                dataStreamer2.Add(lastPointValue2);
+            }
         }
     }
 }
