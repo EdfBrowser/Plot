@@ -34,7 +34,7 @@ namespace Plot.App
             button3 = new System.Windows.Forms.Button();
             button2 = new System.Windows.Forms.Button();
             button1 = new System.Windows.Forms.Button();
-            plot1 = new WinForm.Plot();
+            plot1 = new WinForm.FormPlot();
             timer1 = new System.Windows.Forms.Timer(components);
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
@@ -134,7 +134,7 @@ namespace Plot.App
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button button1;
-        private WinForm.Plot plot1;
+        private WinForm.FormPlot plot1;
         private System.Windows.Forms.Timer timer1;
     }
 }

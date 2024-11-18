@@ -1,6 +1,6 @@
 ﻿namespace Plot.WinForm
 {
-    partial class Plot
+    partial class FormPlot
     {
         /// <summary> 
         /// Required designer variable.

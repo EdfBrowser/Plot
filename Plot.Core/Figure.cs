@@ -49,13 +49,11 @@ namespace Plot.Core
         private List<PlotSignalSeries> SeriesList { get; set; } = new List<PlotSignalSeries>();
 
 
-        public Figure(int width, int height)
+        public Figure()
         {
             m_stopwatch = new System.Diagnostics.Stopwatch();
 
             StyleUI();
-
-            Resize(width, height);
         }
 
 
@@ -165,6 +163,8 @@ namespace Plot.Core
                     axis.Resize(pxSize);
                 }
             }
+
+            FrameReDraw();
         }
 
         public void GraphClear()
@@ -243,7 +243,7 @@ namespace Plot.Core
             // Y-axis
             foreach (Axis axis in YAxes)
             {
-                foreach (Tick tick in axis.TicksMajor)
+                foreach (Tick tick in axis.TicksMinor)
                 {
                     if (ShowGrid)
                     {
