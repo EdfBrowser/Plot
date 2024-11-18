@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Plot.Core
 {
@@ -12,7 +14,6 @@ namespace Plot.Core
      */
     public class Figure
     {
-
         private Bitmap m_frameBmp;
         private Graphics m_gfxFrame;
 
@@ -36,8 +37,7 @@ namespace Plot.Core
         };
 
         private string m_labelTitle = "";
-        private string m_labelX = "";
-        private string m_labelY = "";
+
 
         private long m_pointCount = 0;
 
@@ -67,22 +67,6 @@ namespace Plot.Core
         public Color GraphBgColor { get; set; } = Color.Gray;
         public Color AxisColor { get; set; } = Color.Black;
         public Color GridLineColor { get; set; } = Color.LightGray;
-
-        public string LabelY
-        {
-            get => m_labelY; set
-            {
-                m_labelY = value;
-            }
-        }
-
-        public string LabelX
-        {
-            get => m_labelX; set
-            {
-                m_labelX = value;
-            }
-        }
 
         public string LabelTitle
         {
@@ -158,96 +142,6 @@ namespace Plot.Core
         }
 
 
-        private void DrawRectangle(Pen penAxis, SolidBrush graphBgBrush)
-        {
-            Rectangle graphRect = new Rectangle(PadLeft - 1, PadTop - 1, m_graphBmp.Width + 1, m_graphBmp.Height + 1);
-            m_gfxFrame.DrawRectangle(penAxis, graphRect);
-            m_gfxFrame.FillRectangle(graphBgBrush, graphRect);
-        }
-
-        private void DrawTitle(SolidBrush axisBrush)
-        {
-            Point title = new Point(m_frameBmp.Width / 2, 2);
-            m_gfxFrame.DrawString(LabelTitle, m_fontTitle, axisBrush, title, m_sfCenter);
-            Point xLabel = new Point(m_frameBmp.Width / 2, YAxis_Pixel + 14);
-            m_gfxFrame.DrawString(LabelX, m_fontAxis, axisBrush, xLabel, m_sfCenter);
-
-            m_gfxFrame.TranslateTransform(m_gfxFrame.VisibleClipBounds.Width, 0);
-            m_gfxFrame.RotateTransform(-90);
-
-            Point yLabel = new Point(-(m_graphBmp.Height / 2 + PadTop), -m_frameBmp.Width + 2);
-            m_gfxFrame.DrawString(LabelY, m_fontAxis, axisBrush, yLabel, m_sfCenter);
-
-            m_gfxFrame.ResetTransform();
-        }
-
-
-
-        private void DrawMinorTicks(Pen penAxis, SolidBrush axisBrush, Pen penGrid)
-        {
-            int tick_size_minor = 2;
-
-            // X-axis
-            foreach (Tick tick in XAxis.TicksMinor)
-            {
-                if (ShowGrid)
-                {
-                    Point start1 = new Point(PadLeft + tick.PosPixel, PadTop + 1);
-                    Point end1 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel - 1);
-                    m_gfxFrame.DrawLine(penGrid, start1, end1);
-                }
-                Point start = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + 1);
-                Point end = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_minor);
-                Point end2 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_minor + 1);
-                m_gfxFrame.DrawLine(penAxis, start, end);
-            }
-
-            // Y-axis
-            foreach (Axis axis in YAxes)
-            {
-                foreach (Tick tick in axis.TicksMinor)
-                {
-                    if (ShowGrid)
-                    {
-                        Point start1 = new Point(PadLeft + 1, PadTop + tick.PosPixel);
-                        Point end1 = new Point(XAxis_Pixel - 1, PadTop + tick.PosPixel);
-                        m_gfxFrame.DrawLine(penGrid, start1, end1);
-                    }
-                    Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
-                    Point end = new Point(PadLeft - tick_size_minor, PadTop + tick.PosPixel);
-                    m_gfxFrame.DrawLine(penAxis, start, end);
-                }
-            }
-        }
-
-        private void DrawMajorTicks(Pen penAxis, SolidBrush axisBrush)
-        {
-            int tick_size_major = 5;
-
-            // X-axis
-            foreach (Tick tick in XAxis.TicksMajor)
-            {
-                Point start = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + 1);
-                Point end = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_major);
-                Point end1 = new Point(PadLeft + tick.PosPixel, YAxis_Pixel + tick_size_major + 1);
-                m_gfxFrame.DrawLine(penAxis, start, end);
-                m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end1, m_sfCenter);
-            }
-
-            // Y-axis
-            foreach (Axis axis in YAxes)
-            {
-                foreach (Tick tick in axis.TicksMajor)
-                {
-                    Point start = new Point(PadLeft - 1, PadTop + tick.PosPixel);
-                    Point end = new Point(PadLeft - tick_size_major, PadTop + tick.PosPixel);
-                    Point end1 = new Point(PadLeft - tick_size_major - 1, PadTop + tick.PosPixel - 7);
-                    m_gfxFrame.DrawLine(penAxis, start, end);
-                    m_gfxFrame.DrawString(tick.Label, m_fontTicks, axisBrush, end1, m_sfRight);
-                }
-            }
-        }
-
         public void BenchmarkThis(bool enable = true)
         {
             if (enable)
@@ -265,48 +159,151 @@ namespace Plot.Core
 
         public void Render(Bitmap bmp)
         {
-            m_gfxGraph.DrawImage(m_frameBmp, new Point(-PadLeft, -PadTop));
-            //m_gfxGraph.Clear(GraphBgColor);
-            m_pointCount = 0;
+            //XAxis.Dims.Resize(bmp.Width);
+            //XAxis.Dims.SetPadding(PadLeft, PadRight);
+            //foreach(var axis in YAxes)
+            //{
+            //    axis.Dims.Resize(bmp.Height);
+            //}
 
-            foreach (var series in SeriesList)
+
+
+
+            SizeF figureSize = new SizeF(bmp.Width, bmp.Height);
+            SizeF dataSize = new SizeF(bmp.Width - PadLeft - PadRight, bmp.Height - PadTop - PadBottom);
+            PointF offset = new PointF(PadLeft, PadTop);
+            PlotDimensions dims = new PlotDimensions(figureSize, dataSize, offset);
+            RenderClear(bmp, dims);
+            RenderBeforePlot(bmp, dims);
+            PlotRender(bmp, dims);
+            PlotAfterRender(bmp, dims);
+        }
+
+
+        private void RenderClear(Bitmap bmp, PlotDimensions dims)
+        {
+            Color figureColor = Color.LightGray;
+            // clear and set the background of figure
+            using (var gfx = GDI.Graphics(bmp))
             {
-                series.Render(m_graphBmp);
+                gfx.Clear(figureColor);
+            }
+        }
+
+
+        private void RenderBeforePlot(Bitmap bmp, PlotDimensions dims)
+        {
+            Color dataAreaColor = Color.White;
+            // set the background of data area
+            using (var brush = GDI.Brush(dataAreaColor, 1f))
+            using (var gfx = GDI.Graphics(bmp))
+            {
+                var dataRect = new RectangleF(
+                      x: dims.DataOffsetX,
+                      y: dims.DataOffsetY,
+                      width: dims.DataWidth,
+                      height: dims.DataHeight);
+
+                gfx.FillRectangle(brush, dataRect);
             }
 
-            m_gfxFrame.Clear(FrameBgColor);
-
-            // prepare something useful for drawing
-            using (SolidBrush axisBrush = new SolidBrush(AxisColor))
-            using (SolidBrush graphBgBrush = new SolidBrush(GraphBgColor))
-            using (Pen penGrid = new Pen(GridLineColor))
-            using (Pen penAxis = new Pen(axisBrush))
+            // Draw Axes
+            // X-axis
+            // Draw X-axis line
+            using (var pen = GDI.Pen(AxisColor, 1f, 1f))
+            using (var gfx = GDI.Graphics(bmp))
             {
-                // draw the rectangle and ticks and labels
-                DrawRectangle(penAxis, graphBgBrush);
-                DrawMajorTicks(penAxis, axisBrush);
-                DrawMinorTicks(penAxis, axisBrush, penGrid);
-                DrawTitle(axisBrush);
+                float left = dims.DataOffsetX;
+                float right = left + dims.DataWidth;
+                float top = dims.DataOffsetY;
+                float bottom = dims.DataOffsetY + dims.DataHeight;
 
+                gfx.DrawLine(pen, left, bottom, right, bottom);
+                gfx.DrawLine(pen, left, top, right, top);
+                gfx.DrawLine(pen, left, top, left, bottom);
+                gfx.DrawLine(pen, right, top, right, bottom);
             }
 
-            using (Graphics g = Graphics.FromImage(bmp))
+
+            // Draw X-Axis Ticks
+            bool rulerMode = false;
+            bool ticksExtendOutward = true;
+
+            bool majorTickVisible = true;
+            float majorTickWidth = 1f;
+            float majorTickLength = 5f;
+            Color majorTickColor = Color.Black;
+
+            bool minorTickVisible = true;
+            float minorTickLength = 2f;
+            float minorTickWidth = 1f;
+            Color minorTickColor = Color.Black;
+
+            using (var gfx = GDI.Graphics(bmp))
             {
-                g.DrawImage(m_frameBmp, new Rectangle(0, 0, m_frameBmp.Width, m_frameBmp.Height));
-
-                g.DrawImage(m_graphBmp, new Rectangle(PadLeft, PadTop, m_graphBmp.Width, m_graphBmp.Height));
-
-                if (m_stopwatch.ElapsedTicks > 0)
+                // Major ticks
+                if (majorTickVisible)
                 {
-                    using (Font font = new Font(m_font, 8, FontStyle.Regular))
-                    using (SolidBrush stampBrush = new SolidBrush(AxisColor))
+                    float tickLength = majorTickLength;
+                    if (rulerMode)
+                        tickLength *= 4;
+                    tickLength = ticksExtendOutward ? tickLength : -tickLength;
+                    DrawTicks(dims, gfx, XAxis.TicksMajor, tickLength, majorTickColor, true, majorTickWidth);
+                }
+                
+
+                // Minor ticks
+                if (minorTickVisible)
+                {
+                    float tickLength = ticksExtendOutward ? minorTickLength : -minorTickLength;
+                    DrawTicks(dims, gfx, XAxis.TicksMinor, tickLength, minorTickColor, true, minorTickWidth);
+                }
+            }
+        }
+
+
+        private void PlotAfterRender(Bitmap bmp, PlotDimensions dims)
+        {
+        }
+
+        private void PlotRender(Bitmap bmp, PlotDimensions dims)
+        {
+        }
+
+        private static void DrawTicks(PlotDimensions dims, Graphics gfx, Tick[] ticks, float tickLength, Color color, bool isHorizontal, float tickWidth)
+        {
+            if (ticks == null || ticks.Length == 0) return;
+
+            if (isHorizontal)
+            {
+                float y = dims.DataOffsetY + dims.DataHeight;
+                float tickDelta = tickLength;
+
+                var xs = ticks.Select(t => dims.GetPixelX(t.PosPixel));
+                using (var pen = GDI.Pen(color, tickWidth, 1f))
+                {
+                    foreach (float x in xs)
                     {
-                        Point stamp = new Point(m_frameBmp.Width - PadRight - 2, m_frameBmp.Height - PadBottom - 14);
-                        g.DrawString(BenchmarkMessage, font, stampBrush, stamp, m_sfRight);
+                        gfx.DrawLine(pen, x, y, x, y + tickDelta);
+                    }
+                }
+            }
+            else
+            {
+                float x = dims.DataOffsetX;
+                float tickDelta = -tickLength;
+
+                var ys = ticks.Select(t => dims.GetPixelY(t.PosPixel));
+                using (var pen = GDI.Pen(color, tickWidth, 1f))
+                {
+                    foreach (float y in ys)
+                    {
+                        gfx.DrawLine(pen, x, y, x + tickDelta, y);
                     }
                 }
             }
         }
+
 
 
         private void StyleUI()

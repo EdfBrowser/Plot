@@ -5,6 +5,8 @@ namespace Plot.Core
 {
     public class Axis
     {
+        public AxisDimensions Dims { get; } = new AxisDimensions();
+
         public Axis(double min, double max, int pxSize, bool inverted, int axisIndex)
         {
             Min = min;
@@ -28,6 +30,12 @@ namespace Plot.Core
         public bool Inverted { get; set; }
 
         public int AxisIndex { get; set; }
+
+        public Edge Edge { get; set; }
+
+        public bool IsHorizontal => Edge.IsHorizontal();
+
+        public bool IsVertical => Edge.IsVertical();
 
         public string Label { get; set; }
 
@@ -157,6 +165,24 @@ namespace Plot.Core
                 else lastDivision = 2;
             }
             return 0;
+        }
+    }
+
+    public enum Edge
+    {
+        Left, Right, Top, Bottom
+    }
+
+    public static class EdgeExtensions
+    {
+        public static bool IsHorizontal(this Edge edge)
+        {
+            return edge == Edge.Top || edge == Edge.Bottom;
+        }
+
+        public static bool IsVertical(this Edge edge)
+        {
+            return edge == Edge.Left || edge == Edge.Right;
         }
     }
 
