@@ -83,8 +83,8 @@ namespace Plot.Core
 
             RenderClear(m_bmp, primaryDims);
             RenderBeforePlot(m_bmp, primaryDims);
-            PlotRender(m_bmp, primaryDims);
-            PlotAfterRender(m_bmp, primaryDims);
+            RenderPlot(m_bmp, primaryDims);
+            RenderAfterPlot(m_bmp, primaryDims);
 
             m_bitmapRenderCount += 1;
 
@@ -149,6 +149,7 @@ namespace Plot.Core
             }
         }
 
+        // TODO: 多个x轴和y轴应该有一个对应关系
         private PlotDimensions GetDimensions(int xIndex, int yIndex)
         {
             var yAxis = YAxes[yIndex];
@@ -221,13 +222,27 @@ namespace Plot.Core
         }
 
 
-        private void PlotAfterRender(Bitmap bmp, PlotDimensions dims)
+        private void RenderAfterPlot(Bitmap bmp, PlotDimensions dims)
         {
         }
 
-        private void PlotRender(Bitmap bmp, PlotDimensions dims)
+        private void RenderPlot(Bitmap bmp, PlotDimensions dims)
         {
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         public DataStreamSeries AddDataStreamer(int xIndex, int yIndex, int length)

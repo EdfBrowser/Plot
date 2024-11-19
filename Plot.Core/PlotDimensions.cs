@@ -13,6 +13,7 @@ namespace Plot.Core
         public float DataHeight;
         public float DataOffsetX;
         public float DataOffsetY;
+        // TODO: 修改成更好的方式来管理布局
         public float PlotWidth;
         public float PlotHeight;
 
