@@ -12,12 +12,15 @@ namespace Plot.WinForm
 
         public FormPlot()
         {
-            Figure = new Figure(1, 1);
+            Figure = new Figure();
             Figure.OnBitmapChanged += OnBitmapChanged;
             Figure.OnBitmapUpdated += OnBitmapUpdated;
 
             InitializeComponent();
 
+            //pictureBox1.BackColor = System.Drawing.Color.White;
+
+            Load += FormPlot_Load;
             pictureBox1.SizeChanged += pictureBox1_SizeChanged;
             pictureBox1.MouseWheel += pictureBox1_MouseWheel;
             pictureBox1.MouseDown += pictureBox1_MouseDown;
@@ -27,11 +30,14 @@ namespace Plot.WinForm
             pictureBox1.MouseDoubleClick += pictureBox1_MouseDoubleClick;
         }
 
-        public override void Refresh()
+        private void FormPlot_Load(object sender, EventArgs e)
         {
-            base.Refresh();
+            Figure.Resize(pictureBox1.Width, pictureBox1.Height);
+        }
 
-            Figure.Render();
+        public void Refresh(bool lowQuality = false, float scale = 1.0f)
+        {
+            Figure.Render(lowQuality, scale);
         }
 
         private void OnBitmapUpdated(object sender, EventArgs e)

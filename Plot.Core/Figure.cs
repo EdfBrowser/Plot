@@ -9,19 +9,18 @@ namespace Plot.Core
     {
         private Bitmap m_bmp;
         private readonly Queue<Bitmap> m_oldBitmaps = new Queue<Bitmap>();
-
         private long m_bitmapRenderCount = 0;
 
         private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
         private List<BaseSeries> SeriesList { get; set; } = new List<BaseSeries>();
 
+        // TODO: 修改成c#的锁机制
+        private object m_lockObj = new object();
 
-        public Figure(float width, float height)
+        public Figure()
         {
             m_stopwatch = new System.Diagnostics.Stopwatch();
-
-            Resize(width, height);
         }
 
         public List<Axis> Axes { get; set; } = new List<Axis>()
@@ -39,6 +38,7 @@ namespace Plot.Core
         public float PadRight { get; set; } = 50;
         public float PadTop { get; set; } = 47;
         public float PadBottom { get; set; } = 47;
+        public float AxisSpace { get; set; } = 10;
 
         public event EventHandler OnBitmapChanged;
         public event EventHandler OnBitmapUpdated;
@@ -55,7 +55,9 @@ namespace Plot.Core
 
         public void Resize(float width, float height)
         {
-            if (width < 1 || height < 1) return;
+            // TODO: 自动计算PadLeft, PadRight, PadTop, PadBottom
+            if (width - PadLeft - PadRight < 1) width = PadLeft + PadRight + AxisSpace * (XAxes.Count - 1) + 100;
+            if (height - PadTop - PadBottom < 1) height = PadTop + PadBottom + AxisSpace * (YAxes.Count - 1) + 100;
 
             if (m_bmp != null)
             {
@@ -72,29 +74,32 @@ namespace Plot.Core
             Render();
         }
 
-        public void Render()
+        public void Render(bool lowQuality = false, float scale = 1.0f)
         {
-            if (m_bmp == null) return;
-
-            Layout(m_bmp.Width, m_bmp.Height);
-            var primaryDims = GetDimensions(0, 0);
-
-            CalculateTicks(primaryDims);
-
-            RenderClear(m_bmp, primaryDims);
-            RenderBeforePlot(m_bmp, primaryDims);
-            RenderPlot(m_bmp, primaryDims);
-            RenderAfterPlot(m_bmp, primaryDims);
-
-            m_bitmapRenderCount += 1;
-
-            if (m_bitmapRenderCount == 1)
+            lock (m_lockObj)
             {
-                OnBitmapChanged?.Invoke(null, null);
-            }
-            else
-            {
-                OnBitmapUpdated?.Invoke(null, null);
+                if (m_bmp == null) return;
+
+                Layout(m_bmp.Width / scale, m_bmp.Height / scale);
+                var primaryDims = GetDimensions(0, 0, scale);
+
+                CalculateTicks(primaryDims);
+
+                RenderClear(m_bmp, lowQuality, primaryDims);
+                RenderBeforePlot(m_bmp, lowQuality, primaryDims);
+                RenderPlot(m_bmp, lowQuality, primaryDims);
+                RenderAfterPlot(m_bmp, lowQuality, primaryDims);
+
+                m_bitmapRenderCount += 1;
+
+                if (m_bitmapRenderCount == 1)
+                {
+                    OnBitmapChanged?.Invoke(null, null);
+                }
+                else
+                {
+                    OnBitmapUpdated?.Invoke(null, null);
+                }
             }
         }
 
@@ -107,12 +112,10 @@ namespace Plot.Core
 
         private void LayoutY(float height)
         {
-            float m_spacing = 10;
-
             int axisCount = YAxes.Count;
             if (axisCount == 0) return;
 
-            float totalSpacing = m_spacing * (axisCount - 1);
+            float totalSpacing = AxisSpace * (axisCount - 1);
             float dataSize = height - PadTop - PadBottom;
             float availableSize = dataSize - totalSpacing;
 
@@ -123,7 +126,7 @@ namespace Plot.Core
             foreach (var axis in YAxes)
             {
                 axis.Dims.Resize(height, axisSize, offset, dataSize);
-                offset += axisSize + m_spacing;
+                offset += axisSize + AxisSpace;
             }
         }
 
@@ -150,7 +153,7 @@ namespace Plot.Core
         }
 
         // TODO: 多个x轴和y轴应该有一个对应关系
-        private PlotDimensions GetDimensions(int xIndex, int yIndex)
+        private PlotDimensions GetDimensions(int xIndex, int yIndex, float scale)
         {
             var yAxis = YAxes[yIndex];
             var xAxis = XAxes[xIndex];
@@ -169,7 +172,7 @@ namespace Plot.Core
                 plotSize,
                 offset,
                 ((xMin, xMax), (yMin, yMax)),
-                1f,
+                scale,
                 xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
 
         }
@@ -178,31 +181,29 @@ namespace Plot.Core
         {
             foreach (var axis in Axes)
             {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0) :
-                    GetDimensions(0, axis.AxisIndex);
+                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.ScaleFactor) :
+                    GetDimensions(0, axis.AxisIndex, dims.ScaleFactor);
                 axis.Generator.RecalculateTicks(dims2);
             }
         }
 
-
-
-        private void RenderClear(Bitmap bmp, PlotDimensions dims)
+        private void RenderClear(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
             Color figureColor = Color.LightGray;
             // clear and set the background of figure
-            using (var gfx = GDI.Graphics(bmp))
+            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
                 gfx.Clear(figureColor);
             }
         }
 
 
-        private void RenderBeforePlot(Bitmap bmp, PlotDimensions dims)
+        private void RenderBeforePlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
             Color dataAreaColor = Color.White;
             // set the background of data area
             using (var brush = GDI.Brush(dataAreaColor, 1))
-            using (var gfx = GDI.Graphics(bmp))
+            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
                 var dataRect = new RectangleF(
                       x: dims.DataOffsetX,
@@ -215,18 +216,18 @@ namespace Plot.Core
 
             foreach (var axis in Axes)
             {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0) :
-                   GetDimensions(0, axis.AxisIndex);
-                axis.Render(dims2, bmp);
+                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.ScaleFactor) :
+                   GetDimensions(0, axis.AxisIndex, dims.ScaleFactor);
+                axis.Render(bmp, dims2, lowQuality);
             }
         }
 
 
-        private void RenderAfterPlot(Bitmap bmp, PlotDimensions dims)
+        private void RenderAfterPlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
         }
 
-        private void RenderPlot(Bitmap bmp, PlotDimensions dims)
+        private void RenderPlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
         }
 

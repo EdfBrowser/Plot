@@ -28,7 +28,7 @@ namespace Plot.Core
             return size;
         }
 
-        public static Graphics Graphics(Bitmap bmp, bool lowQuality = false, float scale = 1f)
+        public static Graphics Graphics(Bitmap bmp, bool lowQuality, float scale)
         {
             Graphics gfx = System.Drawing.Graphics.FromImage(bmp);
             gfx.SmoothingMode = lowQuality ? SmoothingMode.HighSpeed : SmoothingMode.AntiAlias;
@@ -36,6 +36,9 @@ namespace Plot.Core
             gfx.ScaleTransform(scale, scale);
             return gfx;
         }
+
+        public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality)
+            => Graphics(bmp, lowQuality, dims.ScaleFactor);
 
 
         public static Brush Brush(Color color, int alpha) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));

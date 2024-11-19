@@ -29,7 +29,7 @@ namespace Plot.App
 
         private void updatePlot(object sender, EventArgs e)
         {
-            //formPlot1.Refresh();
+            //formPlot1.Refresh(false, 1.0f);
         }
 
         private void AddNewData(object sender, EventArgs e)

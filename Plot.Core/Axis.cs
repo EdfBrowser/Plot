@@ -60,10 +60,10 @@ namespace Plot.Core
         public Color MinorTickColor { get; set; } = Color.Black;
 
 
-        public void Render(PlotDimensions dims, Bitmap bmp)
+        public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             // Draw axis line
-            using (var gfx = GDI.Graphics(bmp))
+            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
                 // Major ticks
                 if (MajorTickVisible)
