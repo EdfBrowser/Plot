@@ -19,7 +19,6 @@ namespace Plot.App
         {
             InitializeComponent();
 
-
             Text = "Plot.App";
             addNewDataTimer.Tick += AddNewData;
             updatePlotTimer.Tick += updatePlot;

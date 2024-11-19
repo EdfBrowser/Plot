@@ -4,11 +4,11 @@ namespace Plot.Core
 {
     public struct PlotDimensions
     {
-        // figure dimensions (pixel units)
+        // figure dimensions (pixel)
         public float FigureWidth;
         public float FigureHeight;
 
-        // data area dimensions (pixel units)
+        // data area dimensions (pixel)
         public float DataWidth;
         public float DataHeight;
         public float DataOffsetX;
@@ -17,6 +17,7 @@ namespace Plot.Core
         public float PlotWidth;
         public float PlotHeight;
 
+        // data limits (units)
         public float XMin;
         public float XMax;
         public float YMin;
@@ -26,7 +27,6 @@ namespace Plot.Core
         public float XCenter;
         public float YCenter;
 
-        // pixel/coordinate conversions
         public float PxPerUnitX;
         public float PxPerUnitY;
         public float UnitsPerPxX;

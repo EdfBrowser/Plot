@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace Plot.Core
 {
@@ -15,7 +16,7 @@ namespace Plot.Core
             AxisIndex = axisIndex;
         }
 
-        public string Label { get; set; }
+        public string AxisLabel { get; set; }
 
         public int AxisIndex { get; }
 
@@ -40,11 +41,21 @@ namespace Plot.Core
         public float PixelOffset { get; set; } = 0;
         public bool RulerMode { get; set; } = false;
         // Direction
-        public bool TicksExtendOutward { get; set; } = true;
+        public bool TicksExtendOutward { get; } = true;
 
-        // Tick Label
+        // Axis AxisLabel
+        public bool AxisLabelVisible { get; set; } = true;
+        public Color AxisLabelColor { get; set; } = Color.Black;
+        public float AxisLabelWidth { get; set; } = 1;
+
+        // Axis Line
+        public bool AxisLineVisible { get; set; } = true;
+        public Color AxisLineColor { get; set; } = Color.Black;
+        public float AxisLineWidth { get; set; } = 1;
+
+        // Tick AxisLabel
         public bool TickLabelVisible { get; set; } = true;
-        public float TickLabelRotation { get; set; } = 0;
+        public int TickLabelRotation { get; set; } = 0;
         public Color TickLabelColor { get; set; } = Color.Black;
 
         // Major Tick
@@ -90,7 +101,21 @@ namespace Plot.Core
                     DrawTicksLabel(dims, gfx, Generator.TicksMajor, null, Edge, TickLabelRotation, RulerMode, PixelOffset, MajorTickLength);
                 }
 
-                DrawLines(dims, gfx, Color.Black, 1, Edge, PixelOffset);
+                if (AxisLabelVisible)
+                {
+                    float labelHeight = 0;
+                    using (var font = GDI.Font(null))
+                    {
+                        SizeF size = GDI.MeasureString(gfx, Generator.TicksMajor.First().Label, font);
+                        labelHeight = Edge.IsHorizontal() ? size.Height : size.Width;
+                    }
+                    DrawLabels(dims, gfx, AxisLabel, null, AxisLabelColor, AxisLabelWidth, Edge, PixelOffset, MajorTickLength, labelHeight);
+                }
+
+                if (AxisLineVisible)
+                {
+                    DrawLines(dims, gfx, AxisLineColor, AxisLineWidth, Edge, PixelOffset);
+                }
             }
         }
 
@@ -123,6 +148,77 @@ namespace Plot.Core
                 }
             }
         }
+
+        private void DrawLabels(PlotDimensions dims, Graphics gfx, string label, string tickFont,
+            Color color, float lineWidth, Edge edge, float pixelOffset, float tickLength, float labelHeight)
+        {
+            if (string.IsNullOrWhiteSpace(label)) return;
+
+
+            // 如何解析这个元组返回值
+            var (x, y) = GetAxisCenter(dims, edge, pixelOffset, tickLength, labelHeight);
+
+            int rotation = 0;
+            switch (edge)
+            {
+                case Edge.Left:
+                    rotation = -90;
+                    break;
+                case Edge.Right:
+                    rotation = 90;
+                    break;
+                case Edge.Top:
+                    rotation = 0;
+                    break;
+                case Edge.Bottom:
+                    rotation = 0;
+                    break;
+                default:
+                    throw new NotImplementedException($"unsupported edge type {edge}");
+            }
+
+            using (var font = GDI.Font(tickFont))
+            using (var brush = GDI.Brush(color))
+            using (var sf = new StringFormat())
+            {
+                switch (edge)
+                {
+                    case Edge.Left:
+                        sf.LineAlignment = StringAlignment.Near;
+                        sf.Alignment = StringAlignment.Center;
+                        break;
+                    case Edge.Right:
+                        sf.LineAlignment = StringAlignment.Near;
+                        sf.Alignment = StringAlignment.Center;
+                        break;
+                    case Edge.Top:
+                        sf.LineAlignment = StringAlignment.Far;
+                        sf.Alignment = StringAlignment.Center;
+                        break;
+                    case Edge.Bottom:
+                        sf.LineAlignment = StringAlignment.Far;
+                        sf.Alignment = StringAlignment.Center;
+                        break;
+                    default:
+                        throw new NotImplementedException($"unsupported edge type {edge}");
+                }
+
+                SizeF size = GDI.MeasureString(gfx, label, font);
+                if (edge.IsHorizontal())
+                {
+                    y += size.Height;
+                }
+                else if (edge.IsVertical())
+                {
+                    x -= size.Height;
+                }
+                gfx.TranslateTransform(x, y);
+                gfx.RotateTransform(rotation);
+                gfx.DrawString(label, font, brush, 0, 0, sf);
+                gfx.ResetTransform();
+            }
+        }
+
 
         private static void DrawTicks(PlotDimensions dims, Graphics gfx, float[] ticks, float tickLength,
             Color color, Edge edge, float pixelOffset, float tickWidth)
@@ -179,8 +275,6 @@ namespace Plot.Core
                             float x = dims.DataOffsetX - pixelOffset - majorTickLength;
                             float y = dims.GetPixelY(majorTicks[i].PosPixel);
 
-                            gfx.TranslateTransform(x, y);
-                            gfx.RotateTransform(-rotation);
                             sf.Alignment = StringAlignment.Far;
                             sf.LineAlignment = rulerMode ? StringAlignment.Far : StringAlignment.Center;
                             if (rotation == 90)
@@ -188,6 +282,9 @@ namespace Plot.Core
                                 sf.Alignment = StringAlignment.Center;
                                 sf.LineAlignment = StringAlignment.Far;
                             }
+
+                            gfx.TranslateTransform(x, y);
+                            gfx.RotateTransform(-rotation);
                             gfx.DrawString(majorTicks[i].Label, font, brush, 0, 0, sf);
                             gfx.ResetTransform();
                         }
@@ -202,11 +299,12 @@ namespace Plot.Core
                             float x = dims.GetPixelX(majorTicks[i].PosPixel);
                             float y = dims.DataOffsetY + dims.PlotHeight + majorTickLength + pixelOffset;
 
-                            gfx.TranslateTransform(x, y);
-                            gfx.RotateTransform(-rotation);
                             sf.Alignment = rotation == 0 ? StringAlignment.Center : StringAlignment.Far;
                             if (rulerMode) sf.Alignment = StringAlignment.Near;
                             sf.LineAlignment = rotation == 0 ? StringAlignment.Near : StringAlignment.Center;
+
+                            gfx.TranslateTransform(x, y);
+                            gfx.RotateTransform(-rotation);
                             gfx.DrawString(majorTicks[i].Label, font, brush, 0, 0, sf);
                             gfx.ResetTransform();
                         }
@@ -216,6 +314,49 @@ namespace Plot.Core
                 }
             }
         }
+
+        private (float x, float y) GetAxisCenter(PlotDimensions dims, Edge edge, float pixelOffset, float tickLength, float labelHeight)
+        {
+            float x = 0, y = 0;
+            switch (edge)
+            {
+                case Edge.Left:
+                    x = dims.DataOffsetX - pixelOffset - tickLength - labelHeight;
+                    break;
+                case Edge.Right:
+                    x = dims.DataOffsetX + dims.PlotWidth + pixelOffset + tickLength + labelHeight;
+                    break;
+                case Edge.Top:
+                    x = dims.DataOffsetX + dims.DataWidth / 2;
+                    break;
+                case Edge.Bottom:
+                    x = dims.DataOffsetX + dims.DataWidth / 2;
+                    break;
+                default:
+                    throw new NotImplementedException($"unsupported edge type {edge}");
+            }
+
+            switch (edge)
+            {
+                case Edge.Left:
+                    y = dims.DataOffsetY + dims.DataHeight / 2;
+                    break;
+                case Edge.Right:
+                    y = dims.DataOffsetY + dims.DataHeight / 2;
+                    break;
+                case Edge.Top:
+                    y = dims.DataOffsetY - pixelOffset - tickLength - labelHeight;
+                    break;
+                case Edge.Bottom:
+                    y = dims.DataOffsetY + dims.PlotHeight + pixelOffset + tickLength + labelHeight;
+                    break;
+                default:
+                    throw new NotImplementedException($"unsupported edge type {edge}");
+            }
+
+            return (x, y);
+        }
+
     }
 
     public class TickGenerator

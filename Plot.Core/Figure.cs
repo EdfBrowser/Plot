@@ -25,9 +25,9 @@ namespace Plot.Core
 
         public List<Axis> Axes { get; set; } = new List<Axis>()
         {
-            new Axis(Edge.Bottom, 0),
-            new Axis(Edge.Left, 0),
-            new Axis(Edge.Left, 1),
+            new Axis(Edge.Bottom, 0) {AxisLabel = "X Axis"},
+            new Axis(Edge.Left, 0) {AxisLabel = "Y1 Axis"},
+            new Axis(Edge.Left, 1) {AxisLabel = "Y2 Axis"},
         };
 
         public List<Axis> YAxes => Axes.Where(i => i.IsVertical).ToList();

@@ -41,9 +41,9 @@ namespace Plot.Core
             => Graphics(bmp, lowQuality, dims.ScaleFactor);
 
 
-        public static Brush Brush(Color color, int alpha) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
+        public static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
 
 
-        public static Pen Pen(Color color, float width, int alpha) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
+        public static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
     }
 }
