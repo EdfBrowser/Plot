@@ -2,39 +2,36 @@ namespace Plot.Core
 {
     public class AxisDimensions
     {
-        public double FigureSizePx { get; private set; }
-        public double DataSizePx { get; private set; }
-        public double DataOffsetPx { get; private set; }
-        public double IsInverted { get; private set; }
+        public float FigureSizePx { get; private set; }
+        public float DataSizePx { get; private set; }
+        // The size of the plot area in pixels.
+        public float PlotSizePx { get; set; }
+        public float DataOffsetPx { get; private set; }
 
-        public double Min { get; private set; } = double.NaN;
-        public double Max { get; private set; } = double.NaN;
+        public bool IsInverted { get; set; }
 
-        public double Span => Max - Min;
-        public double Center => (Max + Min) / 2.0;
+        public float Min { get; private set; } = float.MaxValue;
+        public float Max { get; private set; } = float.MinValue;
 
-        public double UnitsPerPx => Span / DataSizePx;
-        public double PxsPerUnit => DataSizePx / Span;
+        public float Span => Max - Min;
+        public float Center => (Max + Min) / 2;
 
-        public (double min, double max) RationalLimits()
+        public float UnitsPerPx => Span / DataSizePx;
+        public float PxsPerUnit => DataSizePx / Span;
+
+        public (float min, float max) RationalLimits()
         {
-            double min = double.IsNaN(Min) ? -10 : Min;
-            double max = double.IsNaN(Max) ? 10 : Max;
-            return (min == max) ? (min - .5, max + .5) : (min, max);
+            float min = Min == float.MaxValue ? -10 : Min;
+            float max = Max == float.MinValue ? 10 : Max;
+            return (min == max) ? (min - 1, max + 1) : (min, max);
         }
 
-
-        public void Resize(double figureSizePx, double? dataSizePx = null, double? dataOffsetPx = null)
+        public void Resize(float figureSizePx, float dataSizePx, float dataOffsetPx, float? plotSizePx = null)
         {
             FigureSizePx = figureSizePx;
-            DataSizePx = dataSizePx ?? DataSizePx;
-            DataOffsetPx = dataOffsetPx ?? DataOffsetPx;
-        }
-
-        public void SetPadding(float padBefore, float padAfter)
-        {
-            DataOffsetPx = padBefore;
-            DataSizePx = FigureSizePx - padBefore - padAfter;
+            DataSizePx = dataSizePx;
+            DataOffsetPx = dataOffsetPx;
+            PlotSizePx = plotSizePx ?? dataSizePx;
         }
     }
 }

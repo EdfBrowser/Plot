@@ -49,47 +49,47 @@ namespace Plot.Core
             double yMin = DataMin + OffsetY;
             double yMax = DataMax + OffsetY;
 
-            Figure.XAxis.AxisLimits(xMin, xMax);
-            if (yMin != double.PositiveInfinity && yMax != double.NegativeInfinity)
-                Figure.YAxes[YIndex].AxisLimits(yMin, yMax);
+            //Figure.XAxis.AxisLimits(xMin, xMax);
+            //if (yMin != double.PositiveInfinity && yMax != double.NegativeInfinity)
+            //    Figure.Axes[YIndex].AxisLimits(yMin, yMax);
         }
 
         public override void Render(Bitmap bmp)
         {
-            // axis auto scaling
-            AxisAuto();
+            //// axis auto scaling
+            //AxisAuto();
 
-            // render data
-            int newestCount = NextIndex;
-            int oldestCount = Data.Length - newestCount;
-            double xMax = Data.Length * XSpacing + OffsetX;
-            PointF[] newest = new PointF[newestCount];
-            PointF[] oldest = new PointF[oldestCount];
+            //// render data
+            //int newestCount = NextIndex;
+            //int oldestCount = Data.Length - newestCount;
+            //double xMax = Data.Length * XSpacing + OffsetX;
+            //PointF[] newest = new PointF[newestCount];
+            //PointF[] oldest = new PointF[oldestCount];
 
-            for (int i = 0; i < newest.Length; i++)
-            {
-                double xPos = i * XSpacing + OffsetX;
-                float x = Figure.XAxis.GetPixel(xPos);
-                float y = Figure.YAxes[YIndex].GetPixel(Data[i] + OffsetY) + Figure.YAxes[YIndex].GetOffsetPixel();
-                newest[i] = new PointF(x, y);
-            }
+            //for (int i = 0; i < newest.Length; i++)
+            //{
+            //    double xPos = i * XSpacing + OffsetX;
+            //    float x = Figure.XAxis.GetPixel(xPos);
+            //    float y = Figure.Axes[YIndex].GetPixel(Data[i] + OffsetY) + Figure.Axes[YIndex].GetOffsetPixel();
+            //    newest[i] = new PointF(x, y);
+            //}
 
-            for (int i = 0; i < oldest.Length; i++)
-            {
-                double xPos = (i + NextIndex) * XSpacing + OffsetX;
-                float x = Figure.XAxis.GetPixel(xPos);
-                float y = Figure.YAxes[YIndex].GetPixel(Data[i + NextIndex] + OffsetY) + Figure.YAxes[YIndex].GetOffsetPixel();
-                oldest[i] = new PointF(x, y);
-            }
+            //for (int i = 0; i < oldest.Length; i++)
+            //{
+            //    double xPos = (i + NextIndex) * XSpacing + OffsetX;
+            //    float x = Figure.XAxis.GetPixel(xPos);
+            //    float y = Figure.Axes[YIndex].GetPixel(Data[i + NextIndex] + OffsetY) + Figure.Axes[YIndex].GetOffsetPixel();
+            //    oldest[i] = new PointF(x, y);
+            //}
 
-            using (var gfx = GDI.Graphics(bmp))
-            using (var pen = GDI.Pen(Color, LineWidth, 1))
-            {
-                if (oldest.Length > 1)
-                    gfx.DrawLines(pen, oldest);
-                if (newest.Length > 1)
-                    gfx.DrawLines(pen, newest);
-            }
+            //using (var gfx = GDI.Graphics(m_bmp))
+            //using (var pen = GDI.Pen(Color, LineWidth, 1))
+            //{
+            //    if (oldest.Length > 1)
+            //        gfx.DrawLines(pen, oldest);
+            //    if (newest.Length > 1)
+            //        gfx.DrawLines(pen, newest);
+            //}
         }
     }
 }

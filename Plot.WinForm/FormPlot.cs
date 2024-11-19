@@ -6,15 +6,15 @@ namespace Plot.WinForm
 {
     public partial class FormPlot : UserControl
     {
-        private readonly ControlBackend m_backend;
+        public Figure Figure { get; }
         private readonly bool m_showBenchMark = false;
         private readonly bool m_busy = false;
 
         public FormPlot()
         {
-            m_backend = new ControlBackend(1, 1);
-            m_backend.OnBitmapChanged += OnBitmapChanged;
-            m_backend.OnBitmapUpdated += OnBitmapUpdated;
+            Figure = new Figure(1, 1);
+            Figure.OnBitmapChanged += OnBitmapChanged;
+            Figure.OnBitmapUpdated += OnBitmapUpdated;
 
             InitializeComponent();
 
@@ -31,7 +31,7 @@ namespace Plot.WinForm
         {
             base.Refresh();
 
-            m_backend.Render();
+            Figure.Render();
         }
 
         private void OnBitmapUpdated(object sender, EventArgs e)
@@ -41,15 +41,12 @@ namespace Plot.WinForm
 
         private void OnBitmapChanged(object sender, EventArgs e)
         {
-            pictureBox1.Image = m_backend.GetLatestBitmap();
+            pictureBox1.Image = Figure.GetLatestBitmap();
         }
-
-        public Figure Figure => m_backend.Plt;
-
 
         private void pictureBox1_SizeChanged(object sender, EventArgs e)
         {
-            m_backend.Resize(pictureBox1.Width, pictureBox1.Height);
+            Figure.Resize(pictureBox1.Width, pictureBox1.Height);
         }
 
         private void pictureBox1_MouseWheel(object sender, MouseEventArgs e)

@@ -1,125 +1,272 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace Plot.Core
 {
     public class Axis
     {
-        public AxisDimensions Dims { get; } = new AxisDimensions();
+        private Edge m_edge;
 
-        public Axis(double min, double max, int pxSize, bool inverted, int axisIndex)
+        public Axis(Edge edge, int axisIndex)
         {
-            Min = min;
-            Max = max;
-            PxSize = pxSize;
-            Inverted = inverted;
+            Edge = edge;
             AxisIndex = axisIndex;
         }
 
-        public double UnitsPerPx => Span / PxSize;
-        public double PxsPerUnit => PxSize / Span;
-        public double Span => Max - Min;
-        public double Center => (Max + Min) / 2.0;
+        public string Label { get; set; }
 
-        public Tick[] TicksMajor { get; private set; }
-        public Tick[] TicksMinor { get; private set; }
+        public int AxisIndex { get; }
 
-        public double Min { get; set; }
-        public double Max { get; set; }
-        public int PxSize { get; set; }
-        public bool Inverted { get; set; }
-
-        public int AxisIndex { get; set; }
-
-        public Edge Edge { get; set; }
+        public AxisDimensions Dims { get; } = new AxisDimensions();
+        public TickGenerator Generator { get; } = new TickGenerator();
 
         public bool IsHorizontal => Edge.IsHorizontal();
 
         public bool IsVertical => Edge.IsVertical();
 
-        public string Label { get; set; }
-
-        /// <summary>
-        /// Resizes the axis to the given pixel size.
-        /// </summary>
-        /// <param name="sizePx"></param>
-        public void Resize(int sizePx)
+        public Edge Edge
         {
-            PxSize = sizePx;
-            RecalculateTicks();
+            get => m_edge;
+            private set
+            {
+                m_edge = value;
+                Generator.IsVertical = value.IsVertical();
+                Dims.IsInverted = value.IsVertical();
+            }
         }
 
-        /// <summary>
-        /// Shift the axis by the given amount.
-        /// </summary>
-        /// <param name="shift"></param>
-        public void Pan(double shift)
+        public float PixelOffset { get; set; } = 0;
+        public bool RulerMode { get; set; } = false;
+        // Direction
+        public bool TicksExtendOutward { get; set; } = true;
+
+        // Tick Label
+        public bool TickLabelVisible { get; set; } = true;
+        public float TickLabelRotation { get; set; } = 0;
+        public Color TickLabelColor { get; set; } = Color.Black;
+
+        // Major Tick
+        public bool MajorTickVisible { get; set; } = true;
+        public float MajorTickWidth { get; set; } = 1;
+        public float MajorTickLength { get; set; } = 5;
+        public Color MajorTickColor { get; set; } = Color.Black;
+
+        // Minor Tick
+        public bool MinorTickVisible { get; set; } = true;
+        public float MinorTickLength { get; set; } = 2;
+        public float MinorTickWidth { get; set; } = 1;
+        public Color MinorTickColor { get; set; } = Color.Black;
+
+
+        public void Render(PlotDimensions dims, Bitmap bmp)
         {
-            Min += shift;
-            Max += shift;
-            RecalculateTicks();
+            // Draw axis line
+            using (var gfx = GDI.Graphics(bmp))
+            {
+                // Major ticks
+                if (MajorTickVisible)
+                {
+                    float tickLength = MajorTickLength;
+                    if (RulerMode)
+                        tickLength *= 4;
+                    tickLength = TicksExtendOutward ? tickLength : -tickLength;
+                    float[] ticks = Generator.TicksMajor.Select(t => t.PosPixel).ToArray();
+                    DrawTicks(dims, gfx, ticks, tickLength, MajorTickColor, Edge, PixelOffset, MajorTickWidth);
+                }
+
+
+                // Minor ticks
+                if (MinorTickVisible)
+                {
+                    float[] ticks = Generator.TicksMajor.Select(t => t.PosPixel).ToArray();
+                    float tickLength = TicksExtendOutward ? MinorTickLength : -MinorTickLength;
+                    DrawTicks(dims, gfx, ticks, tickLength, MinorTickColor, Edge, PixelOffset, MinorTickWidth);
+                }
+
+                if (TickLabelVisible)
+                {
+                    DrawTicksLabel(dims, gfx, Generator.TicksMajor, null, Edge, TickLabelRotation, RulerMode, PixelOffset, MajorTickLength);
+                }
+
+                DrawLines(dims, gfx, Color.Black, 1, Edge, PixelOffset);
+            }
         }
 
-        /// <summary>
-        /// Zoom in on the center of Axis by a fraction.
-        /// </summary>
-        /// <param name="frac"></param>
-        public void Zoom(double frac)
+        private void DrawLines(PlotDimensions dims, Graphics gfx, Color color, float lineWidth, Edge edge, float pixelOffset)
         {
-            double newSpan = Span / frac;
-            double center = Center;
-            Min = center - newSpan / 2.0;
-            Max = center + newSpan / 2.0;
-            RecalculateTicks();
+            using (var pen = GDI.Pen(color, lineWidth, 1))
+            {
+                float left = dims.DataOffsetX - pixelOffset;
+                float right = left + dims.PlotWidth + pixelOffset;
+                float top = dims.DataOffsetY - pixelOffset;
+                float bottom = dims.DataOffsetY + dims.PlotHeight + pixelOffset;
+                float bottom1 = dims.DataOffsetY + dims.DataHeight + pixelOffset;
+
+                switch (edge)
+                {
+                    case Edge.Left:
+                        gfx.DrawLine(pen, left, top, left, bottom1);
+                        break;
+                    case Edge.Right:
+                        gfx.DrawLine(pen, right, top, right, bottom1);
+                        break;
+                    case Edge.Top:
+                        gfx.DrawLine(pen, left, top, right, top);
+                        break;
+                    case Edge.Bottom:
+                        gfx.DrawLine(pen, left, bottom, right, bottom);
+                        break;
+                    default:
+                        throw new NotImplementedException($"unsupported edge type {Edge}");
+                }
+            }
         }
 
-        public void AxisLimits(double? min, double? max)
+        private static void DrawTicks(PlotDimensions dims, Graphics gfx, float[] ticks, float tickLength,
+            Color color, Edge edge, float pixelOffset, float tickWidth)
         {
-            if (min.HasValue) Min = min.Value;
-            if (max.HasValue) Max = max.Value;
-            RecalculateTicks();
+            if (ticks == null || ticks.Length == 0) return;
+
+            if (edge.IsHorizontal())
+            {
+                float y = (edge == Edge.Top) ?
+                    dims.DataOffsetY - pixelOffset : dims.DataOffsetY + dims.PlotHeight + pixelOffset;
+                float tickDelta = (edge == Edge.Top) ? -tickLength : tickLength;
+
+                var xs = ticks.Select(t => dims.GetPixelX(t));
+                using (var pen = GDI.Pen(color, tickWidth, 1))
+                {
+                    foreach (var x in xs)
+                    {
+                        gfx.DrawLine(pen, x, y, x, y + tickDelta);
+                    }
+                }
+            }
+            else if (edge.IsVertical())
+            {
+                float x = (edge == Edge.Left) ?
+                     dims.DataOffsetX - pixelOffset : dims.DataOffsetX + dims.PlotWidth + pixelOffset;
+                float tickDelta = (edge == Edge.Left) ? -tickLength : tickLength;
+
+                var ys = ticks.Select(t => dims.GetPixelY(t));
+                using (var pen = GDI.Pen(color, tickWidth, 1))
+                {
+                    foreach (var y in ys)
+                    {
+                        gfx.DrawLine(pen, x, y, x + tickDelta, y);
+                    }
+                }
+            }
         }
 
-        /// <summary>
-        /// Returns the pixel position corresponding to the given unit value on the axis.
-        /// </summary>
-        /// <param name="unit">position (units)</param>
-        /// <returns></returns>
-        public int GetPixel(double unit)
+
+        private void DrawTicksLabel(PlotDimensions dims, Graphics gfx, Tick[] majorTicks, string tickFont, Edge edge,
+            float rotation, bool rulerMode, float pixelOffset, float majorTickLength)
         {
-            double px = (unit - Min) * PxsPerUnit;
-            if (Inverted) px = PxSize - px;
-            return (int)px;
+            if (majorTicks == null || majorTicks.Length == 0) return;
+
+            using (var font = GDI.Font(tickFont))
+            using (var brush = GDI.Brush(TickLabelColor, 1))
+            using (var sf = new StringFormat())
+            {
+                switch (Edge)
+                {
+                    case Edge.Left:
+                        for (int i = 0; i < majorTicks.Length; i++)
+                        {
+                            float x = dims.DataOffsetX - pixelOffset - majorTickLength;
+                            float y = dims.GetPixelY(majorTicks[i].PosPixel);
+
+                            gfx.TranslateTransform(x, y);
+                            gfx.RotateTransform(-rotation);
+                            sf.Alignment = StringAlignment.Far;
+                            sf.LineAlignment = rulerMode ? StringAlignment.Far : StringAlignment.Center;
+                            if (rotation == 90)
+                            {
+                                sf.Alignment = StringAlignment.Center;
+                                sf.LineAlignment = StringAlignment.Far;
+                            }
+                            gfx.DrawString(majorTicks[i].Label, font, brush, 0, 0, sf);
+                            gfx.ResetTransform();
+                        }
+                        break;
+                    case Edge.Right:
+                        break;
+                    case Edge.Top:
+                        break;
+                    case Edge.Bottom:
+                        for (int i = 0; i < majorTicks.Length; i++)
+                        {
+                            float x = dims.GetPixelX(majorTicks[i].PosPixel);
+                            float y = dims.DataOffsetY + dims.PlotHeight + majorTickLength + pixelOffset;
+
+                            gfx.TranslateTransform(x, y);
+                            gfx.RotateTransform(-rotation);
+                            sf.Alignment = rotation == 0 ? StringAlignment.Center : StringAlignment.Far;
+                            if (rulerMode) sf.Alignment = StringAlignment.Near;
+                            sf.LineAlignment = rotation == 0 ? StringAlignment.Near : StringAlignment.Center;
+                            gfx.DrawString(majorTicks[i].Label, font, brush, 0, 0, sf);
+                            gfx.ResetTransform();
+                        }
+                        break;
+                    default:
+                        throw new NotImplementedException($"unsupported edge type {edge}");
+                }
+            }
+        }
+    }
+
+    public class TickGenerator
+    {
+        public Tick[] TicksMajor { get; private set; }
+        public Tick[] TicksMinor { get; private set; }
+
+        public bool IsVertical { get; set; } = true;
+
+        private float m_pixelsPerTick = 70;
+
+        public void RecalculateTicks(PlotDimensions dims)
+        {
+            float tick_density = 0;
+            if (IsVertical)
+            {
+                tick_density = dims.DataHeight / m_pixelsPerTick;
+            }
+            else
+            {
+                tick_density = dims.DataWidth / m_pixelsPerTick;
+            }
+            TicksMinor = AutoCalculate(dims, (int)(tick_density * 5));
+            TicksMajor = AutoCalculate(dims, (int)(tick_density * 1));
         }
 
-        /// <summary>
-        /// Returns the unit value corresponding to the given pixel value on the axis.
-        /// </summary>
-        /// <param name="pixel">position (pixels)</param>
-        /// <returns></returns>
-        public double GetUnit(int pixel)
+        private Tick[] AutoCalculate(PlotDimensions dims, int targetTickCount)
         {
-            if (Inverted) pixel = PxSize - pixel;
-            double unit = pixel * UnitsPerPx + Min;
-            return unit;
+            float span, pxSize, unitsPerPx, min, max;
+            if (IsVertical)
+            {
+                span = dims.YSpan;
+                pxSize = dims.DataHeight;
+                unitsPerPx = dims.UnitsPerPxY;
+                min = dims.YMin;
+                max = dims.YMax;
+            }
+            else
+            {
+                span = dims.XSpan;
+                pxSize = dims.DataWidth;
+                unitsPerPx = dims.UnitsPerPxX;
+                min = dims.XMin;
+                max = dims.XMax;
+            }
+
+            return GenerateTicks(span, pxSize, unitsPerPx, min, max, targetTickCount);
         }
 
-
-        public int GetOffsetPixel()
-        {
-            return AxisIndex * PxSize;
-        }
-
-
-        private readonly double m_pixelsPerTick = 70;
-        private void RecalculateTicks()
-        {
-            double tick_density = PxSize / m_pixelsPerTick;
-            TicksMinor = GenerateTicks((int)(tick_density * 5));
-            TicksMajor = GenerateTicks((int)(tick_density * 1));
-        }
-
-        private Tick[] GenerateTicks(int targetTickCount)
+        private Tick[] GenerateTicks(float span, float pxSize, float unitsPerPx,
+            float min, float max, float targetTickCount)
         {
             if (targetTickCount <= 0)
                 return new Tick[0];
@@ -127,12 +274,12 @@ namespace Plot.Core
             List<Tick> ticks = new List<Tick>();
 
             // Size value of every tick
-            double tickSize = RoundNumberNear(Span / targetTickCount * 1.5);
+            double tickSize = RoundNumberNear(span / targetTickCount * 1.5);
             int lastTick = 123456789;
             // 
-            for (int i = 0; i < PxSize; i++)
+            for (int i = 0; i < pxSize; i++)
             {
-                double thisPos = i * UnitsPerPx + Min;
+                float thisPos = i * unitsPerPx + min;
                 // 
                 int thisTick = (int)(thisPos / tickSize);
 
@@ -140,10 +287,10 @@ namespace Plot.Core
                 {
                     lastTick = thisTick;
 
-                    double thisPosRounded = (double)(thisTick * tickSize);
-                    if (thisPosRounded > Min && thisPosRounded < Max)
+                    float thisPosRounded = (float)(thisTick * tickSize);
+                    if (thisPosRounded > min && thisPosRounded < max)
                     {
-                        ticks.Add(new Tick(thisPosRounded, GetPixel(thisPosRounded) + GetOffsetPixel(), Span));
+                        ticks.Add(new Tick(thisPosRounded, thisPosRounded, span));
                     }
                 }
             }
@@ -189,11 +336,11 @@ namespace Plot.Core
 
     public class Tick
     {
-        public double PosUnit { get; set; }
-        public int PosPixel { get; set; }
-        public double SpanUnit { get; set; }
+        public float PosUnit { get; set; }
+        public float PosPixel { get; set; }
+        public float SpanUnit { get; set; }
 
-        public Tick(double posUnit, int posPixel, double spanUnit)
+        public Tick(float posUnit, float posPixel, float spanUnit)
         {
             PosUnit = posUnit;
             PosPixel = posPixel;
