@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
 
 namespace Plot.Core
 {
@@ -129,6 +128,13 @@ namespace Plot.Core
                 Layout(m_bmp.Width / scale, m_bmp.Height / scale);
                 var primaryDims = GetDimensions(0, 0, scale);
 
+                // Axis Auto
+                foreach (var series in SeriesList)
+                {
+                    series.AxisAuto();
+                }
+
+
                 CalculateTicks(primaryDims);
 
                 RenderClear(m_bmp, lowQuality, primaryDims);
@@ -162,14 +168,14 @@ namespace Plot.Core
             float dataSize = height - PadTop - PadBottom;
             float availableSize = dataSize - totalSpacing;
 
-            float axisSize = availableSize / axisCount;
+            float plotSize = availableSize / axisCount;
 
-            float offset = 0;
-            offset += PadTop;
+            float plotOffset = 0;
+            plotOffset += PadTop;
             foreach (var axis in YAxes)
             {
-                axis.Dims.Resize(height, axisSize, offset, dataSize);
-                offset += axisSize + AxisSpace;
+                axis.Dims.Resize(height, plotSize, dataSize, PadTop, plotOffset);
+                plotOffset += plotSize + AxisSpace;
             }
         }
 
@@ -182,14 +188,14 @@ namespace Plot.Core
             float dataSize = width - PadLeft - PadRight;
             float availableSize = dataSize - totalSpacing;
 
-            float axisSize = availableSize / axisCount;
+            float plotSize = availableSize / axisCount;
 
-            float offset = 0;
-            offset += PadTop;
+            float plotOffset = 0;
+            plotOffset += PadLeft;
             foreach (var axis in XAxes)
             {
-                axis.Dims.Resize(width, axisSize, offset, dataSize);
-                offset += axisSize + AxisSpace;
+                axis.Dims.Resize(width, plotSize, dataSize, PadLeft, plotOffset);
+                plotOffset += plotSize + AxisSpace;
             }
         }
 
@@ -200,9 +206,10 @@ namespace Plot.Core
             var yAxis = GetYAxis(yIndex);
 
             SizeF figureSize = new SizeF(xAxis.Dims.FigureSizePx, yAxis.Dims.FigureSizePx);
-            SizeF plotSize = new SizeF(xAxis.Dims.PlotSizePx, yAxis.Dims.PlotSizePx);
-            SizeF dataSize = new SizeF(xAxis.Dims.DataSizePx, yAxis.Dims.DataSizePx);
-            PointF offset = new PointF(xAxis.Dims.DataOffsetPx, yAxis.Dims.DataOffsetPx);
+            SizeF plotSize = new SizeF(xAxis.Dims.DataSizePx, yAxis.Dims.DataSizePx);
+            SizeF dataSize = new SizeF(xAxis.Dims.PlotSizePx, yAxis.Dims.PlotSizePx);
+            PointF plotOffset = new PointF(xAxis.Dims.PlotOffsetPx, yAxis.Dims.PlotOffsetPx);
+            PointF dataOffset = new PointF(xAxis.Dims.DataOffsetPx, yAxis.Dims.DataOffsetPx);
 
             (float xMin, float xMax) = xAxis.Dims.RationalLimits();
             (float yMin, float yMax) = yAxis.Dims.RationalLimits();
@@ -211,7 +218,8 @@ namespace Plot.Core
             return new PlotDimensions(figureSize,
                 dataSize,
                 plotSize,
-                offset,
+                plotOffset,
+                dataOffset,
                 ((xMin, xMax), (yMin, yMax)),
                 scale,
                 xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
@@ -224,7 +232,7 @@ namespace Plot.Core
             {
                 PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.ScaleFactor) :
                     GetDimensions(0, axis.AxisIndex, dims.ScaleFactor);
-                axis.Generator.RecalculateTicks(dims2);
+                axis.Generator.GetTicks(dims2);
             }
         }
 
@@ -238,7 +246,7 @@ namespace Plot.Core
             }
         }
 
-
+        // TODO: IDEA 是否可以渲染成多个表
         private void RenderBeforePlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
             Color dataAreaColor = Color.White;
@@ -247,10 +255,10 @@ namespace Plot.Core
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
                 var dataRect = new RectangleF(
-                      x: dims.DataOffsetX,
-                      y: dims.DataOffsetY,
-                      width: dims.PlotWidth,
-                      height: dims.PlotHeight);
+                      x: dims.PlotOffsetX,
+                      y: dims.PlotOffsetY,
+                      width: dims.DataWidth,
+                      height: dims.DataHeight);
 
                 gfx.FillRectangle(brush, dataRect);
             }

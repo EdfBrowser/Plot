@@ -24,24 +24,24 @@ namespace Plot.App
             dataStreamer1 = formPlot1.Figure.AddDataStreamer(0, 0);
             dataStreamer1.SampleRate = 1000; // 1000 Hz
             dataStreamer1.AddSamples(DataGen.SineAnimated(1000));
-            dataStreamer1.AxisAuto();
+            //dataStreamer1.AxisAuto();
 
             dataStreamer2 = formPlot1.Figure.AddDataStreamer(0, 1);
             dataStreamer2.SampleRate = 1000; // 1000 Hz
             dataStreamer2.AddSamples(DataGen.SineAnimated(1000));
-            dataStreamer2.AxisAuto();
+            //dataStreamer2.AxisAuto();
         }
 
         private void updatePlot(object sender, EventArgs e)
         {
-            //formPlot1.Refresh(false, 1.0f);
+            formPlot1.Refresh(false, 1.0f);
         }
 
         private void AddNewData(object sender, EventArgs e)
         {
-            //dataStreamer1.AddSamples(DataGen.SineAnimated(1000));
+            dataStreamer1.AddSamples(DataGen.SineAnimated(1000));
             //dataStreamer1.AxisAuto();
-            //dataStreamer2.AddSamples(DataGen.RandomWalk(1000));
+            dataStreamer2.AddSamples(DataGen.RandomWalk(1000));
             //dataStreamer2.AxisAuto();
         }
     }
