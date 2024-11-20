@@ -56,12 +56,14 @@ namespace Plot.Core.Series
 
         public AxisLimits GetAxisLimits()
         {
-            double xMin = XAxisValues.Min();
-            double xMax = XAxisValues.Max();
+            //double xMin = XAxisValues.Min();
+            //double xMax = XAxisValues.Max();
             double yMin = DataMin;
             double yMax = DataMax;
 
-            return new AxisLimits(xMin, xMax, yMin, yMax);
+            // TODO: 限制溢出Plot范围
+            // DONE: clip the outer range
+            return new AxisLimits((int)(NextIndex / SampleRate) - 1, (int)(NextIndex / SampleRate), -1, 1);
         }
 
         public void AxisAuto()
@@ -80,11 +82,17 @@ namespace Plot.Core.Series
             List<PointF> points = new List<PointF>();
             for (int i = 0; i < xs.Length; i++)
             {
+                //if (ys[i] < dims.DataOffsetY || ys[i] > (dims.PlotOffsetY + dims.PlotHeight))
+                //    continue;
+
+                //if (xs[i] < dims.DataOffsetX || xs[i] > (dims.PlotOffsetX + dims.PlotWidth))
+                //    continue;
+
                 points.Add(new PointF(xs[i], ys[i]));
             }
 
             using (var pen = GDI.Pen(Color, LineWidth))
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuailty))
+            using (var gfx = GDI.Graphics(bmp, dims, lowQuailty, true))
             {
                 gfx.DrawLines(pen, points.ToArray());
             }

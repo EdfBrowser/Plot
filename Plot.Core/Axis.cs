@@ -122,11 +122,11 @@ namespace Plot.Core
         {
             using (var pen = GDI.Pen(color, lineWidth, 1))
             {
-                float left = dims.DataOffsetX - pixelOffset;
-                float right = left + dims.PlotWidth + pixelOffset;
-                float top = dims.DataOffsetY - pixelOffset;
-                float bottom = dims.DataOffsetY + dims.PlotHeight + pixelOffset;
-                float bottom1 = dims.DataOffsetY + dims.DataHeight + pixelOffset;
+                float left = dims.PlotOffsetX - pixelOffset;
+                float right = left + dims.DataWidth + pixelOffset;
+                float top = dims.PlotOffsetY - pixelOffset;
+                float bottom = dims.PlotOffsetY + dims.DataHeight + pixelOffset;
+                float bottom1 = dims.PlotOffsetY + dims.PlotHeight + pixelOffset;
 
                 switch (edge)
                 {
@@ -227,7 +227,7 @@ namespace Plot.Core
             if (edge.IsHorizontal())
             {
                 float y = (edge == Edge.Top) ?
-                    dims.DataOffsetY - pixelOffset : dims.DataOffsetY + dims.PlotHeight + pixelOffset;
+                    dims.PlotOffsetY - pixelOffset : dims.PlotOffsetY + dims.DataHeight + pixelOffset;
                 float tickDelta = (edge == Edge.Top) ? -tickLength : tickLength;
 
                 var xs = ticks.Select(t => dims.GetPixelX(t));
@@ -242,7 +242,7 @@ namespace Plot.Core
             else if (edge.IsVertical())
             {
                 float x = (edge == Edge.Left) ?
-                     dims.DataOffsetX - pixelOffset : dims.DataOffsetX + dims.PlotWidth + pixelOffset;
+                     dims.PlotOffsetX - pixelOffset : dims.PlotOffsetX + dims.DataWidth + pixelOffset;
                 float tickDelta = (edge == Edge.Left) ? -tickLength : tickLength;
 
                 var ys = ticks.Select(t => dims.GetPixelY(t));
@@ -271,7 +271,7 @@ namespace Plot.Core
                     case Edge.Left:
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
-                            float x = dims.DataOffsetX - pixelOffset - majorTickLength;
+                            float x = dims.PlotOffsetX - pixelOffset - majorTickLength;
                             float y = dims.GetPixelY(majorTicks[i].PosPixel);
 
                             sf.Alignment = StringAlignment.Far;
@@ -296,7 +296,7 @@ namespace Plot.Core
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
                             float x = dims.GetPixelX(majorTicks[i].PosPixel);
-                            float y = dims.DataOffsetY + dims.PlotHeight + majorTickLength + pixelOffset;
+                            float y = dims.PlotOffsetY + dims.DataHeight + majorTickLength + pixelOffset;
 
                             sf.Alignment = rotation == 0 ? StringAlignment.Center : StringAlignment.Far;
                             if (rulerMode) sf.Alignment = StringAlignment.Near;
@@ -320,16 +320,16 @@ namespace Plot.Core
             switch (edge)
             {
                 case Edge.Left:
-                    x = dims.DataOffsetX - pixelOffset - tickLength - labelHeight;
+                    x = dims.PlotOffsetX - pixelOffset - tickLength - labelHeight;
                     break;
                 case Edge.Right:
-                    x = dims.DataOffsetX + dims.PlotWidth + pixelOffset + tickLength + labelHeight;
+                    x = dims.PlotOffsetX + dims.DataWidth + pixelOffset + tickLength + labelHeight;
                     break;
                 case Edge.Top:
-                    x = dims.DataOffsetX + dims.DataWidth / 2;
+                    x = dims.PlotOffsetX + dims.PlotWidth / 2;
                     break;
                 case Edge.Bottom:
-                    x = dims.DataOffsetX + dims.DataWidth / 2;
+                    x = dims.PlotOffsetX + dims.PlotWidth / 2;
                     break;
                 default:
                     throw new NotImplementedException($"unsupported edge type {edge}");
@@ -338,16 +338,16 @@ namespace Plot.Core
             switch (edge)
             {
                 case Edge.Left:
-                    y = dims.DataOffsetY + dims.DataHeight / 2;
+                    y = dims.PlotOffsetY + dims.PlotHeight / 2;
                     break;
                 case Edge.Right:
-                    y = dims.DataOffsetY + dims.DataHeight / 2;
+                    y = dims.PlotOffsetY + dims.PlotHeight / 2;
                     break;
                 case Edge.Top:
-                    y = dims.DataOffsetY - pixelOffset - tickLength - labelHeight;
+                    y = dims.PlotOffsetY - pixelOffset - tickLength - labelHeight;
                     break;
                 case Edge.Bottom:
-                    y = dims.DataOffsetY + dims.PlotHeight + pixelOffset + tickLength + labelHeight;
+                    y = dims.PlotOffsetY + dims.DataHeight + pixelOffset + tickLength + labelHeight;
                     break;
                 default:
                     throw new NotImplementedException($"unsupported edge type {edge}");
@@ -375,14 +375,14 @@ namespace Plot.Core
             if (IsVertical)
             {
                 span = dims.YSpan;
-                pxSize = dims.DataHeight;
+                pxSize = dims.PlotHeight;
                 min = dims.YMin;
                 max = dims.YMax;
             }
             else
             {
                 span = dims.XSpan;
-                pxSize = dims.DataWidth;
+                pxSize = dims.PlotWidth;
                 min = dims.XMin;
                 max = dims.XMax;
             }
@@ -409,12 +409,12 @@ namespace Plot.Core
             // becoming an integer scale
             float tickOffsetFromMin = min % tickSpacing;
 
-            for (int i = 0; i < tickCount + 1; i++)
+            for (int i = 0; i < tickCount ; i++)
             {
                 float tickDelta = i * tickSpacing - tickOffsetFromMin;
                 float posUnit = min + tickDelta;
 
-                if (posUnit > min && posUnit < max)
+                if (posUnit >= min && posUnit <= max)
                 {
                     ticks.Add(new Tick(posUnit, posUnit, tickSpacing));
                 }
@@ -452,11 +452,11 @@ namespace Plot.Core
             float tick_density = 0;
             if (IsVertical)
             {
-                tick_density = dims.DataHeight / m_pixelsPerTick;
+                tick_density = dims.PlotHeight / m_pixelsPerTick;
             }
             else
             {
-                tick_density = dims.DataWidth / m_pixelsPerTick;
+                tick_density = dims.PlotWidth / m_pixelsPerTick;
             }
             TicksMinor = AutoCalculate(dims, (int)(tick_density * 5));
             TicksMajor = AutoCalculate(dims, (int)(tick_density * 1));
@@ -469,7 +469,7 @@ namespace Plot.Core
             if (IsVertical)
             {
                 span = dims.YSpan;
-                pxSize = dims.DataHeight;
+                pxSize = dims.PlotHeight;
                 unitsPerPx = dims.UnitsPerPxY;
                 min = dims.YMin;
                 max = dims.YMax;
@@ -477,7 +477,7 @@ namespace Plot.Core
             else
             {
                 span = dims.XSpan;
-                pxSize = dims.DataWidth;
+                pxSize = dims.PlotWidth;
                 unitsPerPx = dims.UnitsPerPxX;
                 min = dims.XMin;
                 max = dims.XMax;
@@ -573,10 +573,10 @@ namespace Plot.Core
         {
             get
             {
-                if (SpanUnit < .01) return string.Format("{0:0.0000}", PosUnit);
-                if (SpanUnit < .1) return string.Format("{0:0.000}", PosUnit);
-                if (SpanUnit < 1) return string.Format("{0:0.00}", PosUnit);
-                if (SpanUnit < 10) return string.Format("{0:0.0}", PosUnit);
+                if (SpanUnit < .001) return string.Format("{0:0.0000}", PosUnit);
+                if (SpanUnit < .01) return string.Format("{0:0.000}", PosUnit);
+                if (SpanUnit < .1) return string.Format("{0:0.00}", PosUnit);
+                if (SpanUnit < 1) return string.Format("{0:0.0}", PosUnit);
                 return string.Format("{0:0}", PosUnit);
             }
         }

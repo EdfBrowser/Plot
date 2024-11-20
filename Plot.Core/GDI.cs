@@ -37,8 +37,21 @@ namespace Plot.Core
             return gfx;
         }
 
-        public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality)
-            => Graphics(bmp, lowQuality, dims.ScaleFactor);
+        public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality, bool clip = false)
+
+        {
+            Graphics gfx = Graphics(bmp, lowQuality, dims.ScaleFactor);
+            if (clip)
+            {
+                float left = (float)Math.Round(dims.DataOffsetX) + 1;
+                float top = (float)Math.Round(dims.DataOffsetY) + 1;
+                float width = (float)Math.Round(dims.DataWidth) - 1;
+                float height = (float)Math.Round(dims.DataHeight) - 1;
+                gfx.Clip = new Region(new RectangleF(left, top, width, height));
+            }
+
+            return gfx;
+        }
 
 
         public static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
