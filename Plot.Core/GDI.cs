@@ -1,11 +1,22 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 
 namespace Plot.Core
 {
     internal class GDI
     {
+        public static Font Font(string fontName = null, float fontSize = 12, bool bold = false, FontFamily fontFamily = null)
+        {
+            if (fontName != null)
+            {
+                fontFamily = fontFamily ?? new FontFamily(fontName);
+            }
+            fontFamily = fontFamily ?? SystemFonts.DefaultFont.FontFamily;
+            FontStyle fontStyle = bold ? FontStyle.Bold : FontStyle.Regular;
+            return new Font(fontFamily, fontSize, fontStyle, GraphicsUnit.Pixel);
+        }
 
         public static SizeF MeasureString(Graphics gfx, string text, Font font)
         {
@@ -17,16 +28,22 @@ namespace Plot.Core
             return size;
         }
 
-        public static Graphics CreateGraphics(Bitmap bmp, bool lowQuality = false, double scale = 1.0)
+        public static Graphics Graphics(Bitmap bmp, bool lowQuality, float scale)
         {
-            Graphics gfx = Graphics.FromImage(bmp);
+            Graphics gfx = System.Drawing.Graphics.FromImage(bmp);
             gfx.SmoothingMode = lowQuality ? SmoothingMode.HighSpeed : SmoothingMode.AntiAlias;
-            //gfx.TextRenderingHint = lowQuality ? LowQualityTextRenderingHint : HighQualityTextRenderingHint;
-            gfx.ScaleTransform((float)scale, (float)scale);
+            gfx.TextRenderingHint = lowQuality ? TextRenderingHint.SingleBitPerPixelGridFit : TextRenderingHint.AntiAlias;
+            gfx.ScaleTransform(scale, scale);
             return gfx;
         }
 
+        public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality)
+            => Graphics(bmp, lowQuality, dims.ScaleFactor);
 
-        public static Brush Brush(Color color, float alpha) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
+
+        public static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
+
+
+        public static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
     }
 }
