@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Reflection.Emit;
 
 namespace Plot.Core
 {
@@ -106,7 +105,7 @@ namespace Plot.Core
                     float labelHeight = 0;
                     using (var font = GDI.Font(null))
                     {
-                        SizeF size = GDI.MeasureString(gfx, Generator.TicksMajor.First().Label, font);
+                        SizeF size = GDI.MeasureString(gfx, Generator.TicksMajor.FirstOrDefault()?.Label, font);
                         labelHeight = Edge.IsHorizontal() ? size.Height : size.Width;
                     }
                     DrawLabels(dims, gfx, AxisLabel, null, AxisLabelColor, AxisLabelWidth, Edge, PixelOffset, MajorTickLength, labelHeight);
@@ -356,7 +355,6 @@ namespace Plot.Core
 
             return (x, y);
         }
-
     }
 
     public class TickGenerator
@@ -366,7 +364,7 @@ namespace Plot.Core
 
         public bool IsVertical { get; set; } = true;
 
-        private float m_pixelsPerTick = 70;
+        private readonly float m_pixelsPerTick = 70;
 
         public void RecalculateTicks(PlotDimensions dims)
         {
@@ -410,7 +408,7 @@ namespace Plot.Core
             float min, float max, float targetTickCount)
         {
             if (targetTickCount <= 0)
-                return new Tick[0];
+                return Array.Empty<Tick>();
 
             List<Tick> ticks = new List<Tick>();
 

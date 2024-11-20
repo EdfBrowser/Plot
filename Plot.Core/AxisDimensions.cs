@@ -33,5 +33,11 @@ namespace Plot.Core
             DataOffsetPx = dataOffsetPx;
             PlotSizePx = plotSizePx ?? dataSizePx;
         }
+
+        public void SetLimits(double xMin, double xMax)
+        {
+            Min = (float)xMin;
+            Max = (float)xMax;
+        }
     }
 }

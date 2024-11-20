@@ -1,4 +1,5 @@
 using Plot.Core;
+using Plot.Core.Series;
 using System;
 using System.Windows.Forms;
 
@@ -7,14 +8,11 @@ namespace Plot.App
 
     public partial class App : Form
     {
-        private readonly Timer addNewDataTimer = new Timer() { Interval = 10, Enabled = true };
-        private readonly Timer updatePlotTimer = new Timer() { Interval = 50, Enabled = true };
-        private readonly DataStreamSeries dataStreamer1;
-        private readonly DataStreamSeries dataStreamer2;
-        private readonly Random rand = new Random();
+        private readonly Timer addNewDataTimer = new Timer() { Interval = 100, Enabled = true };
+        private readonly Timer updatePlotTimer = new Timer() { Interval = 500, Enabled = true };
+        private readonly SampleDataSeries dataStreamer1;
+        private readonly SampleDataSeries dataStreamer2;
 
-        private double lastPointValue1 = 0;
-        private double lastPointValue2 = 0;
         public App()
         {
             InitializeComponent();
@@ -22,8 +20,16 @@ namespace Plot.App
             Text = "Plot.App";
             addNewDataTimer.Tick += AddNewData;
             updatePlotTimer.Tick += updatePlot;
-            dataStreamer1 = formPlot1.Figure.AddDataStreamer(0, 0, 1000);
-            dataStreamer2 = formPlot1.Figure.AddDataStreamer(0, 1, 1000);
+
+            dataStreamer1 = formPlot1.Figure.AddDataStreamer(0, 0);
+            dataStreamer1.SampleRate = 1000; // 1000 Hz
+            dataStreamer1.AddSamples(DataGen.SineAnimated(1000));
+            dataStreamer1.AxisAuto();
+
+            dataStreamer2 = formPlot1.Figure.AddDataStreamer(0, 1);
+            dataStreamer2.SampleRate = 1000; // 1000 Hz
+            dataStreamer2.AddSamples(DataGen.SineAnimated(1000));
+            dataStreamer2.AxisAuto();
         }
 
         private void updatePlot(object sender, EventArgs e)
@@ -33,14 +39,10 @@ namespace Plot.App
 
         private void AddNewData(object sender, EventArgs e)
         {
-            int count = rand.Next(10);
-            for (int i = 0; i < count; i++)
-            {
-                lastPointValue1 += rand.NextDouble() - .5;
-                lastPointValue2 += rand.NextDouble() - .5;
-                dataStreamer1.Add(lastPointValue1);
-                dataStreamer2.Add(lastPointValue2);
-            }
+            //dataStreamer1.AddSamples(DataGen.SineAnimated(1000));
+            //dataStreamer1.AxisAuto();
+            //dataStreamer2.AddSamples(DataGen.RandomWalk(1000));
+            //dataStreamer2.AxisAuto();
         }
     }
 }

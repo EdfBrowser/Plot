@@ -1,37 +1,40 @@
+using Plot.Core.Series;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 
 namespace Plot.Core
 {
     public class Figure
     {
         private Bitmap m_bmp;
-        private readonly Queue<Bitmap> m_oldBitmaps = new Queue<Bitmap>();
-        private long m_bitmapRenderCount = 0;
+        private readonly Bitmap[] m_oldBitmaps = new Bitmap[3]; // 固定大小为3的数组
+        private int m_currentIndex = 0; // 当前索引
 
         private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
-        private List<BaseSeries> SeriesList { get; set; } = new List<BaseSeries>();
+        private List<Axis> Axes { get; } = new List<Axis>()
+        {
+            new Axis(Edge.Bottom, 0),
+            new Axis(Edge.Left, 0)
+        };
+
+        public List<Axis> XAxes => Axes.Where(x => x.IsHorizontal).ToList();
+        public List<Axis> YAxes => Axes.Where(x => x.IsVertical).ToList();
+
+        private List<SampleDataSeries> SeriesList { get; set; } = new List<SampleDataSeries>();
 
         // TODO: 修改成c#的锁机制
-        private object m_lockObj = new object();
+        private readonly object m_lockObj = new object();
 
         public Figure()
         {
             m_stopwatch = new System.Diagnostics.Stopwatch();
         }
 
-        public List<Axis> Axes { get; set; } = new List<Axis>()
-        {
-            new Axis(Edge.Bottom, 0) {AxisLabel = "X Axis"},
-            new Axis(Edge.Left, 0) {AxisLabel = "Y1 Axis"},
-            new Axis(Edge.Left, 1) {AxisLabel = "Y2 Axis"},
-        };
-
-        public List<Axis> YAxes => Axes.Where(i => i.IsVertical).ToList();
-        public List<Axis> XAxes => Axes.Where(i => i.IsHorizontal).ToList();
+        // TODO: Draw Title
         public string LabelTitle { get; set; }
 
         public float PadLeft { get; set; } = 50;
@@ -43,14 +46,58 @@ namespace Plot.Core
         public event EventHandler OnBitmapChanged;
         public event EventHandler OnBitmapUpdated;
 
-        public Bitmap GetLatestBitmap()
+
+        public bool ExistXAxis(int index) => XAxes.Exists(x => x.AxisIndex == index);
+        public bool ExistYAxis(int index) => YAxes.Exists(x => x.AxisIndex == index);
+
+        public Axis GetXAxis(int index)
         {
-            while (m_oldBitmaps.Count > 3)
+            Axis[] axes = XAxes.Where(x => x.AxisIndex == index).ToArray();
+
+            if (axes.Length == 0)
+                throw new InvalidOperationException($"There no X axes with an axis index of {index}");
+            return axes[0];
+        }
+
+        public Axis GetYAxis(int index)
+        {
+            Axis[] axes = YAxes.Where(x => x.AxisIndex == index).ToArray();
+
+            if (axes.Length == 0)
+                throw new InvalidOperationException($"There no X axes with an axis index of {index}");
+            return axes[0];
+        }
+
+        public Axis AddYAxis(int? index = null)
+        {
+            index = index ?? (YAxes.Max(i => i.AxisIndex) + 1);
+            Axis axis = new Axis(Edge.Left, index.Value);
+
+            Axes.Add(axis);
+            return axis;
+        }
+
+        public Axis AddXAxis(int? index = null)
+        {
+            index = index ?? (XAxes.Max(i => i.AxisIndex) + 1);
+            Axis axis = new Axis(Edge.Bottom, index.Value);
+
+            Axes.Add(axis);
+            return axis;
+        }
+
+
+        public Bitmap GetLatestBitmap() => m_bmp;
+
+        private void AddBitmap(Bitmap bitmap)
+        {
+            if (m_oldBitmaps[m_currentIndex] != null)
             {
-                m_oldBitmaps.Dequeue()?.Dispose();
+                m_oldBitmaps[m_currentIndex].Dispose();
             }
 
-            return m_bmp;
+            m_oldBitmaps[m_currentIndex] = bitmap;
+            m_currentIndex = (m_currentIndex + 1) % m_oldBitmaps.Length;
         }
 
         public void Resize(float width, float height)
@@ -63,13 +110,12 @@ namespace Plot.Core
             {
                 if (m_bmp.Width == width && m_bmp.Height == height) return;
 
-                m_oldBitmaps.Enqueue(m_bmp);
+                AddBitmap(m_bmp);
             }
-
 
             m_bmp = new Bitmap((int)width, (int)height);
 
-            m_bitmapRenderCount = 0;
+            OnBitmapChanged?.Invoke(null, null);
 
             Render();
         }
@@ -90,17 +136,14 @@ namespace Plot.Core
                 RenderPlot(m_bmp, lowQuality, primaryDims);
                 RenderAfterPlot(m_bmp, lowQuality, primaryDims);
 
-                m_bitmapRenderCount += 1;
-
-                if (m_bitmapRenderCount == 1)
-                {
-                    OnBitmapChanged?.Invoke(null, null);
-                }
-                else
-                {
-                    OnBitmapUpdated?.Invoke(null, null);
-                }
+                OnBitmapUpdated?.Invoke(null, null);
             }
+        }
+
+        public void SetAxisLimits(AxisLimits axisLimits, int xIndex, int yIndex)
+        {
+            GetXAxis(xIndex).Dims.SetLimits(axisLimits.XMin, axisLimits.XMax);
+            GetYAxis(yIndex).Dims.SetLimits(axisLimits.YMin, axisLimits.YMax);
         }
 
         private void Layout(float width, float height)
@@ -132,12 +175,10 @@ namespace Plot.Core
 
         private void LayoutX(float width)
         {
-            float m_spacing = 10;
-
             int axisCount = XAxes.Count;
             if (axisCount == 0) return;
 
-            float totalSpacing = m_spacing * (axisCount - 1);
+            float totalSpacing = AxisSpace * (axisCount - 1);
             float dataSize = width - PadLeft - PadRight;
             float availableSize = dataSize - totalSpacing;
 
@@ -148,15 +189,15 @@ namespace Plot.Core
             foreach (var axis in XAxes)
             {
                 axis.Dims.Resize(width, axisSize, offset, dataSize);
-                offset += axisSize + m_spacing;
+                offset += axisSize + AxisSpace;
             }
         }
 
         // TODO: 多个x轴和y轴应该有一个对应关系
         private PlotDimensions GetDimensions(int xIndex, int yIndex, float scale)
         {
-            var yAxis = YAxes[yIndex];
-            var xAxis = XAxes[xIndex];
+            var xAxis = GetXAxis(xIndex);
+            var yAxis = GetYAxis(yIndex);
 
             SizeF figureSize = new SizeF(xAxis.Dims.FigureSizePx, yAxis.Dims.FigureSizePx);
             SizeF plotSize = new SizeF(xAxis.Dims.PlotSizePx, yAxis.Dims.PlotSizePx);
@@ -223,38 +264,39 @@ namespace Plot.Core
         }
 
 
+        private void RenderPlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
+        {
+            foreach (var series in SeriesList)
+            {
+                PlotDimensions dims2 = GetDimensions(series.XIndex, series.YIndex, dims.ScaleFactor);
+                series.Render(bmp, dims2, lowQuality);
+            }
+        }
+
+
         private void RenderAfterPlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
         }
 
-        private void RenderPlot(Bitmap bmp, bool lowQuality, PlotDimensions dims)
+
+
+
+
+
+
+
+
+
+
+
+        public SampleDataSeries AddDataStreamer(int xIndex, int yIndex)
         {
-        }
+            if (!ExistXAxis(xIndex))
+                AddXAxis(xIndex);
+            if (!ExistYAxis(yIndex))
+                AddYAxis(yIndex);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public DataStreamSeries AddDataStreamer(int xIndex, int yIndex, int length)
-        {
-            double[] data = new double[length];
-            return AddDataStreamer(xIndex, yIndex, data);
-        }
-
-        public DataStreamSeries AddDataStreamer(int xIndex, int yIndex, double[] values)
-        {
-            DataStreamSeries dataStreamSeries = new DataStreamSeries(xIndex, yIndex, this, values);
+            SampleDataSeries dataStreamSeries = new SampleDataSeries(xIndex, yIndex, this);
             SeriesList.Add(dataStreamSeries);
             return dataStreamSeries;
         }

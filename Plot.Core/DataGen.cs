@@ -4,15 +4,15 @@ using System.Drawing;
 
 namespace Plot.Core
 {
-    public class DataGen
+    public static class DataGen
     {
-        public Random rand = new Random(0);
-        private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+        private static readonly Random rand = new Random(0);
+        private static readonly Stopwatch stopwatch = Stopwatch.StartNew();
 
         /// <summary>
         /// ascending sequence of evenly spaced numbers
         /// </summary>
-        public double[] Sequence(int count, double spacing = 1, double offset = 0)
+        public static double[] Sequence(int count, double spacing = 1, double offset = 0)
         {
             double[] vals = new double[count];
             for (int i = 0; i < count; i++)
@@ -25,7 +25,7 @@ namespace Plot.Core
         /// <summary>
         /// ascending sequence of randomly-spaced X data
         /// </summary>
-        public double[] SequenceUneven(int count, double spacing = 1, double offset = 0)
+        public static double[] SequenceUneven(int count, double spacing = 1, double offset = 0)
         {
             double[] vals = new double[count];
             double sum = 0;
@@ -40,7 +40,7 @@ namespace Plot.Core
         /// <summary>
         /// the same value over and over
         /// </summary>
-        public double[] SingleValue(int count, double value)
+        public static double[] SingleValue(int count, double value)
         {
             double[] vals = new double[count];
             for (int i = 0; i < count; i++)
@@ -53,7 +53,7 @@ namespace Plot.Core
         /// <summary>
         /// Return the Sine(X) given an array of Xs
         /// </summary>
-        public double[] Sine(double[] Xs)
+        public static double[] Sine(double[] Xs)
         {
             double[] vals = new double[Xs.Length];
             for (int i = 0; i < vals.Length; i++)
@@ -63,7 +63,7 @@ namespace Plot.Core
             return vals;
         }
 
-        public double[] SineAnimated(int pointCount = 1000)
+        public static double[] SineAnimated(int pointCount = 1000)
         {
             double offset = stopwatch.ElapsedMilliseconds / 10;
             double[] vals = new double[pointCount];
@@ -78,7 +78,7 @@ namespace Plot.Core
         /// <param name="count"></param>
         /// <param name="mult"></param>
         /// <returns></returns>
-        public double[] RandomValues(int count, double mult = 1, double offset = 0)
+        public static double[] RandomValues(int count, double mult = 1, double offset = 0)
         {
             double[] vals = new double[count];
             for (int i = 0; i < count; i++)
@@ -91,7 +91,7 @@ namespace Plot.Core
         /// <summary>
         /// integrated white noise
         /// </summary>
-        public double[] RandomWalk(int count, double mult = 1, double offset = 0, bool startRandom = false)
+        public static double[] RandomWalk(int count, double mult = 1, double offset = 0, bool startRandom = false)
         {
             double[] vals = new double[count];
             double runningSum = 0;
@@ -111,7 +111,7 @@ namespace Plot.Core
         /// <summary>
         /// Return the given array with white noise added
         /// </summary>
-        public double[] AddNoise(double[] vals, double scale = 1, bool integrated = true)
+        public static double[] AddNoise(double[] vals, double scale = 1, bool integrated = true)
         {
             // generate white noise
             double[] noiseVals = new double[vals.Length];
@@ -134,13 +134,13 @@ namespace Plot.Core
             return vals;
         }
 
-        public Color RandomColor(double alpha = 1)
+        public static Color RandomColor(double alpha = 1)
         {
             alpha = Math.Max(0, Math.Min(alpha, 255));
             return Color.FromArgb((int)alpha, rand.Next(256), rand.Next(256), rand.Next(256));
         }
 
-        public Color randomColor
+        public static Color randomColor
         {
             get
             {
