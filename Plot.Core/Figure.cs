@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
 
 namespace Plot.Core
 {
@@ -224,7 +223,7 @@ namespace Plot.Core
             {
                 PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.ScaleFactor) :
                     GetDimensions(0, axis.AxisIndex, dims.ScaleFactor);
-                axis.Generator.RecalculateTicks(dims2);
+                axis.Generator.GetTicks(dims2);
             }
         }
 

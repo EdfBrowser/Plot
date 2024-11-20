@@ -90,7 +90,7 @@ namespace Plot.Core
                 // Minor ticks
                 if (MinorTickVisible)
                 {
-                    float[] ticks = Generator.TicksMajor.Select(t => t.PosPixel).ToArray();
+                    float[] ticks = Generator.TicksMinor.Select(t => t.PosPixel).ToArray();
                     float tickLength = TicksExtendOutward ? MinorTickLength : -MinorTickLength;
                     DrawTicks(dims, gfx, ticks, tickLength, MinorTickColor, Edge, PixelOffset, MinorTickWidth);
                 }
@@ -366,6 +366,87 @@ namespace Plot.Core
 
         private readonly float m_pixelsPerTick = 70;
 
+        public float TickSpacingPx { get; set; } = 100;
+
+
+        public void GetTicks(PlotDimensions dims)
+        {
+            float span, pxSize, min, max;
+            if (IsVertical)
+            {
+                span = dims.YSpan;
+                pxSize = dims.DataHeight;
+                min = dims.YMin;
+                max = dims.YMax;
+            }
+            else
+            {
+                span = dims.XSpan;
+                pxSize = dims.DataWidth;
+                min = dims.XMin;
+                max = dims.XMax;
+            }
+
+            TicksMajor = Calculate(pxSize, span, min, max, true);
+            TicksMinor = Calculate(pxSize, span, min, max, false);
+        }
+
+        private Tick[] Calculate(float pxSize, float span, float min, float max, bool major = true)
+        {
+            List<Tick> ticks = new List<Tick>();
+
+            if (pxSize < TickSpacingPx / 2) return Array.Empty<Tick>();
+
+            float minimumTickCount = pxSize / TickSpacingPx;
+            if (major == false) minimumTickCount *= 5;
+
+            float tickSpacing = (float)GetIdealTickSpacing(span, (int)minimumTickCount);
+            int tickCount = (int)(span / tickSpacing) + 1;
+
+            // To get an integer scale
+            // For example, spacing = 1, min = 5.7
+            // min % spacing = 0.7 , Therefore, the first scale will move from 5.7 to 0.7,
+            // becoming an integer scale
+            float tickOffsetFromMin = min % tickSpacing;
+
+            for (int i = 0; i < tickCount + 1; i++)
+            {
+                float tickDelta = i * tickSpacing - tickOffsetFromMin;
+                float posUnit = min + tickDelta;
+
+                if (posUnit > min && posUnit < max)
+                {
+                    ticks.Add(new Tick(posUnit, posUnit, tickSpacing));
+                }
+            }
+
+            return ticks.ToArray();
+        }
+
+        private double GetIdealTickSpacing(float span, int tickCountTarget)
+        {
+            double tickSpacing = 0;
+            for (int powerOfTen = 10; powerOfTen > -10; powerOfTen--)
+            {
+                tickSpacing = Math.Pow(10, powerOfTen);
+
+                if (tickSpacing > span) continue;
+
+                double tickCount = span / tickSpacing;
+                if (tickCount >= tickCountTarget)
+                {
+                    // a good tick density
+                    if (tickCount >= tickCountTarget * 5) return tickSpacing * 5;
+                    if (tickCount >= tickCountTarget * 2) return tickSpacing * 2;
+                    return tickSpacing;
+                }
+            }
+
+            return 0;
+        }
+
+
+        [Obsolete("use GetTicks instead")]
         public void RecalculateTicks(PlotDimensions dims)
         {
             float tick_density = 0;
@@ -381,6 +462,7 @@ namespace Plot.Core
             TicksMajor = AutoCalculate(dims, (int)(tick_density * 1));
         }
 
+        [Obsolete]
         private Tick[] AutoCalculate(PlotDimensions dims, int targetTickCount)
         {
             float span, pxSize, unitsPerPx, min, max;
@@ -403,7 +485,7 @@ namespace Plot.Core
 
             return GenerateTicks(span, pxSize, unitsPerPx, min, max, targetTickCount);
         }
-
+        [Obsolete]
         private Tick[] GenerateTicks(float span, float pxSize, float unitsPerPx,
             float min, float max, float targetTickCount)
         {
@@ -437,7 +519,7 @@ namespace Plot.Core
             return ticks.ToArray();
         }
 
-
+        [Obsolete]
         private double RoundNumberNear(double target)
         {
             target = Math.Abs(target);
