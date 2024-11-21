@@ -7,8 +7,6 @@ namespace Plot.WinForm
     public partial class FormPlot : UserControl
     {
         public Figure Figure { get; }
-        private readonly bool m_showBenchMark = false;
-        private readonly bool m_busy = false;
 
         public FormPlot()
         {
@@ -30,10 +28,15 @@ namespace Plot.WinForm
             pictureBox1.MouseDoubleClick += pictureBox1_MouseDoubleClick;
         }
 
-        private void FormPlot_Load(object sender, EventArgs e)
-        {
-            Figure.Resize(pictureBox1.Width, pictureBox1.Height);
-        }
+
+        private InputState GetInputState(MouseEventArgs e)
+        => new InputState(
+            (e.X, e.Y),
+            (e.Button == MouseButtons.Left, e.Button == MouseButtons.Right, e.Button == MouseButtons.Middle),
+            (ModifierKeys.HasFlag(Keys.Shift), ModifierKeys.HasFlag(Keys.Control), ModifierKeys.HasFlag(Keys.Alt)),
+            e.Delta);
+
+
 
         public void Refresh(bool lowQuality = false, float scale = 1.0f)
         {
@@ -50,38 +53,18 @@ namespace Plot.WinForm
             pictureBox1.Image = Figure.GetLatestBitmap();
         }
 
-        private void pictureBox1_SizeChanged(object sender, EventArgs e)
-        {
-            Figure.Resize(pictureBox1.Width, pictureBox1.Height);
-        }
-
-        private void pictureBox1_MouseWheel(object sender, MouseEventArgs e)
-        {
-        }
-
-        private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
-        {
-        }
-
-        private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
-        {
-
-        }
-
-        private void pictureBox1_MouseClick(object sender, MouseEventArgs e)
-        {
-
-        }
-
-        private void pictureBox1_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-
-        }
 
 
-        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
-        {
 
-        }
+        private void FormPlot_Load(object sender, EventArgs e) => pictureBox1_SizeChanged(this, e);
+        private void pictureBox1_SizeChanged(object sender, EventArgs e) => Figure.Resize(pictureBox1.Width, pictureBox1.Height);
+
+        private void pictureBox1_MouseWheel(object sender, MouseEventArgs e) => Figure.MouseWheel(GetInputState(e));
+        private void pictureBox1_MouseDown(object sender, MouseEventArgs e) => Figure.MouseDown(GetInputState(e));
+        private void pictureBox1_MouseUp(object sender, MouseEventArgs e) => Figure.MouseUp(GetInputState(e));
+        private void pictureBox1_MouseMove(object sender, MouseEventArgs e) => Figure.MouseMove(GetInputState(e));
+        private void pictureBox1_MouseDoubleClick(object sender, MouseEventArgs e)  => Figure.MouseDoubleClick(GetInputState(e));
+        private void pictureBox1_MouseClick(object sender, MouseEventArgs e) { }
+        
     }
 }

@@ -1,15 +1,15 @@
 namespace Plot.Core
 {
-    public struct AxisLimits
+    internal struct AxisLimits
     {
-        public double XMin;
-        public double XMax;
-        public double YMin;
-        public double YMax;
+        internal double m_xMin;
+        internal double m_xMax;
+        internal double m_yMin;
+        internal double m_yMax;
 
-        public AxisLimits(double xMin, double xMax, double yMin, double yMax)
+        internal AxisLimits(double xMin, double xMax, double yMin, double yMax)
         {
-            (XMin, XMax, YMin, YMax) = (xMin, xMax, yMin, yMax);
+            (m_xMin, m_xMax, m_yMin, m_yMax) = (xMin, xMax, yMin, yMax);
         }
     }
 }

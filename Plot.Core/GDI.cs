@@ -7,7 +7,7 @@ namespace Plot.Core
 {
     internal class GDI
     {
-        public static Font Font(string fontName = null, float fontSize = 12, bool bold = false, FontFamily fontFamily = null)
+        internal static Font Font(string fontName = null, float fontSize = 12, bool bold = false, FontFamily fontFamily = null)
         {
             if (fontName != null)
             {
@@ -18,7 +18,7 @@ namespace Plot.Core
             return new Font(fontFamily, fontSize, fontStyle, GraphicsUnit.Pixel);
         }
 
-        public static SizeF MeasureString(Graphics gfx, string text, Font font)
+        internal static SizeF MeasureString(Graphics gfx, string text, Font font)
         {
             SizeF size = gfx.MeasureString(text, font);
 
@@ -28,7 +28,7 @@ namespace Plot.Core
             return size;
         }
 
-        public static Graphics Graphics(Bitmap bmp, bool lowQuality, float scale)
+        internal static Graphics Graphics(Bitmap bmp, bool lowQuality, float scale)
         {
             Graphics gfx = System.Drawing.Graphics.FromImage(bmp);
             gfx.SmoothingMode = lowQuality ? SmoothingMode.HighSpeed : SmoothingMode.AntiAlias;
@@ -37,16 +37,16 @@ namespace Plot.Core
             return gfx;
         }
 
-        public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality, bool clip = false)
+        internal static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality, bool clip = false)
 
         {
-            Graphics gfx = Graphics(bmp, lowQuality, dims.ScaleFactor);
+            Graphics gfx = Graphics(bmp, lowQuality, dims.m_scaleFactor);
             if (clip)
             {
-                float left = (float)Math.Round(dims.DataOffsetX) + 1;
-                float top = (float)Math.Round(dims.DataOffsetY) + 1;
-                float width = (float)Math.Round(dims.DataWidth) - 1;
-                float height = (float)Math.Round(dims.DataHeight) - 1;
+                float left = (float)Math.Round(dims.m_dataOffsetX) + 1;
+                float top = (float)Math.Round(dims.m_dataOffsetY) + 1;
+                float width = (float)Math.Round(dims.m_dataWidth) - 1;
+                float height = (float)Math.Round(dims.m_dataHeight) - 1;
                 gfx.Clip = new Region(new RectangleF(left, top, width, height));
             }
 
@@ -54,9 +54,9 @@ namespace Plot.Core
         }
 
 
-        public static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
+        internal static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
 
 
-        public static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
+        internal static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
     }
 }

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Plot.Core.Series
 {
-    public class SampleDataSeries
+    public class SampleDataSeries : PlotSeries
     {
         public SampleDataSeries(int xIndex, int yIndex, Figure figure)
         {
@@ -54,27 +54,21 @@ namespace Plot.Core.Series
             return Data.Length;
         }
 
-        public AxisLimits GetAxisLimits()
+        internal override AxisLimits GetAxisLimits()
         {
-            //double xMin = XAxisValues.Min();
-            //double xMax = XAxisValues.Max();
+            double xMin = XAxisValues.Min();
+            double xMax = XAxisValues.Max();
             double yMin = DataMin;
             double yMax = DataMax;
 
-            // TODO: 限制溢出Plot范围
-            // DONE: clip the outer range
-            return new AxisLimits((int)(NextIndex / SampleRate) - 1, (int)(NextIndex / SampleRate), -1, 1);
+            return new AxisLimits(xMin, xMax, yMin, yMax);
         }
 
-        public void AxisAuto()
-        {
-            // Axis scaling
-            Figure.SetAxisLimits(GetAxisLimits(), XIndex, YIndex);
-        }
-
-        public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuailty)
+        internal override void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuailty)
         {
             if (Data.Length == 0 || XAxisValues.Length == 0) return;
+
+            Figure.SetAxisLimits(GetAxisLimits(), XIndex, YIndex);
 
             var xs = XAxisValues.Select(i => dims.GetPixelX((float)i)).ToArray();
             var ys = Data.Select(i => dims.GetPixelY((float)i)).ToArray();
@@ -82,12 +76,6 @@ namespace Plot.Core.Series
             List<PointF> points = new List<PointF>();
             for (int i = 0; i < xs.Length; i++)
             {
-                //if (ys[i] < dims.DataOffsetY || ys[i] > (dims.PlotOffsetY + dims.PlotHeight))
-                //    continue;
-
-                //if (xs[i] < dims.DataOffsetX || xs[i] > (dims.PlotOffsetX + dims.PlotWidth))
-                //    continue;
-
                 points.Add(new PointF(xs[i], ys[i]));
             }
 
@@ -97,5 +85,7 @@ namespace Plot.Core.Series
                 gfx.DrawLines(pen, points.ToArray());
             }
         }
+
+        internal override void ValidateData() { }
     }
 }

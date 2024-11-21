@@ -9,7 +9,7 @@ namespace Plot.Core
     {
         private Edge m_edge;
 
-        public Axis(Edge edge, int axisIndex)
+        internal Axis(Edge edge, int axisIndex)
         {
             Edge = edge;
             AxisIndex = axisIndex;
@@ -17,16 +17,16 @@ namespace Plot.Core
 
         public string AxisLabel { get; set; }
 
-        public int AxisIndex { get; }
+        internal int AxisIndex { get; }
 
-        public AxisDimensions Dims { get; } = new AxisDimensions();
-        public TickGenerator Generator { get; } = new TickGenerator();
+        internal AxisDimensions Dims { get; } = new AxisDimensions();
+        internal TickGenerator Generator { get; } = new TickGenerator();
 
-        public bool IsHorizontal => Edge.IsHorizontal();
+        internal bool IsHorizontal => Edge.IsHorizontal();
 
-        public bool IsVertical => Edge.IsVertical();
+        internal bool IsVertical => Edge.IsVertical();
 
-        public Edge Edge
+        internal Edge Edge
         {
             get => m_edge;
             private set
@@ -70,7 +70,7 @@ namespace Plot.Core
         public Color MinorTickColor { get; set; } = Color.Black;
 
 
-        public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
+        internal void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             // Draw axis line
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
@@ -122,11 +122,11 @@ namespace Plot.Core
         {
             using (var pen = GDI.Pen(color, lineWidth, 1))
             {
-                float left = dims.PlotOffsetX - pixelOffset;
-                float right = left + dims.DataWidth + pixelOffset;
-                float top = dims.PlotOffsetY - pixelOffset;
-                float bottom = dims.PlotOffsetY + dims.DataHeight + pixelOffset;
-                float bottom1 = dims.PlotOffsetY + dims.PlotHeight + pixelOffset;
+                float left = dims.m_plotOffsetX - pixelOffset;
+                float right = left + dims.m_dataWidth + pixelOffset;
+                float top = dims.m_plotOffsetY - pixelOffset;
+                float bottom = dims.m_plotOffsetY + dims.m_dataHeight + pixelOffset;
+                float bottom1 = dims.m_plotOffsetY + dims.m_plotHeight + pixelOffset;
 
                 switch (edge)
                 {
@@ -227,7 +227,7 @@ namespace Plot.Core
             if (edge.IsHorizontal())
             {
                 float y = (edge == Edge.Top) ?
-                    dims.PlotOffsetY - pixelOffset : dims.PlotOffsetY + dims.DataHeight + pixelOffset;
+                    dims.m_plotOffsetY - pixelOffset : dims.m_plotOffsetY + dims.m_dataHeight + pixelOffset;
                 float tickDelta = (edge == Edge.Top) ? -tickLength : tickLength;
 
                 var xs = ticks.Select(t => dims.GetPixelX(t));
@@ -242,7 +242,7 @@ namespace Plot.Core
             else if (edge.IsVertical())
             {
                 float x = (edge == Edge.Left) ?
-                     dims.PlotOffsetX - pixelOffset : dims.PlotOffsetX + dims.DataWidth + pixelOffset;
+                     dims.m_plotOffsetX - pixelOffset : dims.m_plotOffsetX + dims.m_dataWidth + pixelOffset;
                 float tickDelta = (edge == Edge.Left) ? -tickLength : tickLength;
 
                 var ys = ticks.Select(t => dims.GetPixelY(t));
@@ -271,7 +271,7 @@ namespace Plot.Core
                     case Edge.Left:
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
-                            float x = dims.PlotOffsetX - pixelOffset - majorTickLength;
+                            float x = dims.m_plotOffsetX - pixelOffset - majorTickLength;
                             float y = dims.GetPixelY(majorTicks[i].PosPixel);
 
                             sf.Alignment = StringAlignment.Far;
@@ -296,7 +296,7 @@ namespace Plot.Core
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
                             float x = dims.GetPixelX(majorTicks[i].PosPixel);
-                            float y = dims.PlotOffsetY + dims.DataHeight + majorTickLength + pixelOffset;
+                            float y = dims.m_plotOffsetY + dims.m_dataHeight + majorTickLength + pixelOffset;
 
                             sf.Alignment = rotation == 0 ? StringAlignment.Center : StringAlignment.Far;
                             if (rulerMode) sf.Alignment = StringAlignment.Near;
@@ -320,16 +320,16 @@ namespace Plot.Core
             switch (edge)
             {
                 case Edge.Left:
-                    x = dims.PlotOffsetX - pixelOffset - tickLength - labelHeight;
+                    x = dims.m_plotOffsetX - pixelOffset - tickLength - labelHeight;
                     break;
                 case Edge.Right:
-                    x = dims.PlotOffsetX + dims.DataWidth + pixelOffset + tickLength + labelHeight;
+                    x = dims.m_plotOffsetX + dims.m_dataWidth + pixelOffset + tickLength + labelHeight;
                     break;
                 case Edge.Top:
-                    x = dims.PlotOffsetX + dims.PlotWidth / 2;
+                    x = dims.m_plotOffsetX + dims.m_plotWidth / 2;
                     break;
                 case Edge.Bottom:
-                    x = dims.PlotOffsetX + dims.PlotWidth / 2;
+                    x = dims.m_plotOffsetX + dims.m_plotWidth / 2;
                     break;
                 default:
                     throw new NotImplementedException($"unsupported edge type {edge}");
@@ -338,16 +338,16 @@ namespace Plot.Core
             switch (edge)
             {
                 case Edge.Left:
-                    y = dims.PlotOffsetY + dims.PlotHeight / 2;
+                    y = dims.m_plotOffsetY + dims.m_plotHeight / 2;
                     break;
                 case Edge.Right:
-                    y = dims.PlotOffsetY + dims.PlotHeight / 2;
+                    y = dims.m_plotOffsetY + dims.m_plotHeight / 2;
                     break;
                 case Edge.Top:
-                    y = dims.PlotOffsetY - pixelOffset - tickLength - labelHeight;
+                    y = dims.m_plotOffsetY - pixelOffset - tickLength - labelHeight;
                     break;
                 case Edge.Bottom:
-                    y = dims.PlotOffsetY + dims.DataHeight + pixelOffset + tickLength + labelHeight;
+                    y = dims.m_plotOffsetY + dims.m_dataHeight + pixelOffset + tickLength + labelHeight;
                     break;
                 default:
                     throw new NotImplementedException($"unsupported edge type {edge}");
@@ -357,34 +357,35 @@ namespace Plot.Core
         }
     }
 
-    public class TickGenerator
+    internal class TickGenerator
     {
-        public Tick[] TicksMajor { get; private set; }
-        public Tick[] TicksMinor { get; private set; }
+        internal Tick[] TicksMajor { get; private set; }
+        internal Tick[] TicksMinor { get; private set; }
 
-        public bool IsVertical { get; set; } = true;
+        internal bool IsVertical { get; set; } = true;
 
+        [Obsolete]
         private readonly float m_pixelsPerTick = 70;
 
-        public float TickSpacingPx { get; set; } = 100;
+        internal float TickSpacingPx { get; set; } = 100;
 
 
-        public void GetTicks(PlotDimensions dims)
+        internal void GetTicks(PlotDimensions dims)
         {
             float span, pxSize, min, max;
             if (IsVertical)
             {
-                span = dims.YSpan;
-                pxSize = dims.PlotHeight;
-                min = dims.YMin;
-                max = dims.YMax;
+                span = dims.m_ySpan;
+                pxSize = dims.m_plotHeight;
+                min = dims.m_yMin;
+                max = dims.m_yMax;
             }
             else
             {
-                span = dims.XSpan;
-                pxSize = dims.PlotWidth;
-                min = dims.XMin;
-                max = dims.XMax;
+                span = dims.m_xSpan;
+                pxSize = dims.m_plotWidth;
+                min = dims.m_xMin;
+                max = dims.m_xMax;
             }
 
             TicksMajor = Calculate(pxSize, span, min, max, true);
@@ -409,7 +410,7 @@ namespace Plot.Core
             // becoming an integer scale
             float tickOffsetFromMin = min % tickSpacing;
 
-            for (int i = 0; i < tickCount ; i++)
+            for (int i = 0; i < tickCount; i++)
             {
                 float tickDelta = i * tickSpacing - tickOffsetFromMin;
                 float posUnit = min + tickDelta;
@@ -452,11 +453,11 @@ namespace Plot.Core
             float tick_density = 0;
             if (IsVertical)
             {
-                tick_density = dims.PlotHeight / m_pixelsPerTick;
+                tick_density = dims.m_plotHeight / m_pixelsPerTick;
             }
             else
             {
-                tick_density = dims.PlotWidth / m_pixelsPerTick;
+                tick_density = dims.m_plotWidth / m_pixelsPerTick;
             }
             TicksMinor = AutoCalculate(dims, (int)(tick_density * 5));
             TicksMajor = AutoCalculate(dims, (int)(tick_density * 1));
@@ -468,19 +469,19 @@ namespace Plot.Core
             float span, pxSize, unitsPerPx, min, max;
             if (IsVertical)
             {
-                span = dims.YSpan;
-                pxSize = dims.PlotHeight;
-                unitsPerPx = dims.UnitsPerPxY;
-                min = dims.YMin;
-                max = dims.YMax;
+                span = dims.m_ySpan;
+                pxSize = dims.m_plotHeight;
+                unitsPerPx = dims.m_unitsPerPxY;
+                min = dims.m_yMin;
+                max = dims.m_yMax;
             }
             else
             {
-                span = dims.XSpan;
-                pxSize = dims.PlotWidth;
-                unitsPerPx = dims.UnitsPerPxX;
-                min = dims.XMin;
-                max = dims.XMax;
+                span = dims.m_xSpan;
+                pxSize = dims.m_plotWidth;
+                unitsPerPx = dims.m_unitsPerPxX;
+                min = dims.m_xMin;
+                max = dims.m_xMax;
             }
 
             return GenerateTicks(span, pxSize, unitsPerPx, min, max, targetTickCount);
@@ -536,32 +537,32 @@ namespace Plot.Core
         }
     }
 
-    public enum Edge
+    internal enum Edge
     {
         Left, Right, Top, Bottom
     }
 
-    public static class EdgeExtensions
+    internal static class EdgeExtensions
     {
-        public static bool IsHorizontal(this Edge edge)
+        internal static bool IsHorizontal(this Edge edge)
         {
             return edge == Edge.Top || edge == Edge.Bottom;
         }
 
-        public static bool IsVertical(this Edge edge)
+        internal static bool IsVertical(this Edge edge)
         {
             return edge == Edge.Left || edge == Edge.Right;
         }
     }
 
 
-    public class Tick
+    internal class Tick
     {
-        public float PosUnit { get; set; }
-        public float PosPixel { get; set; }
-        public float SpanUnit { get; set; }
+        internal float PosUnit { get; set; }
+        internal float PosPixel { get; set; }
+        internal float SpanUnit { get; set; }
 
-        public Tick(float posUnit, float posPixel, float spanUnit)
+        internal Tick(float posUnit, float posPixel, float spanUnit)
         {
             PosUnit = posUnit;
             PosPixel = posPixel;
@@ -569,7 +570,7 @@ namespace Plot.Core
         }
 
 
-        public string Label
+        internal string Label
         {
             get
             {
