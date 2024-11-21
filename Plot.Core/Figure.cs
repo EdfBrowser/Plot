@@ -1,6 +1,8 @@
+using Plot.Core.EventProcess;
 using Plot.Core.Series;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 
@@ -11,6 +13,8 @@ namespace Plot.Core
         private Bitmap m_bmp;
         private readonly Bitmap[] m_oldBitmaps = new Bitmap[3]; // 固定大小为3的数组
         private int m_currentIndex = 0; // 当前索引
+
+        private readonly EventFactory m_eventFactory;
 
         private readonly System.Diagnostics.Stopwatch m_stopwatch;
 
@@ -31,6 +35,8 @@ namespace Plot.Core
         public Figure()
         {
             m_stopwatch = new System.Diagnostics.Stopwatch();
+
+            m_eventFactory = new EventFactory(this);
         }
 
         // TODO: Draw Title
@@ -128,13 +134,7 @@ namespace Plot.Core
                 Layout(m_bmp.Width / scale, m_bmp.Height / scale);
                 var primaryDims = GetDimensions(0, 0, scale);
 
-                // Axis Auto
-                foreach (var series in SeriesList)
-                {
-                    series.AxisAuto();
-                }
-
-
+                AutoScale();
                 CalculateTicks(primaryDims);
 
                 RenderClear(m_bmp, lowQuality, primaryDims);
@@ -146,10 +146,60 @@ namespace Plot.Core
             }
         }
 
-        public void SetAxisLimits(AxisLimits axisLimits, int xIndex, int yIndex)
+        public void AutoScale()
         {
-            GetXAxis(xIndex).Dims.SetLimits(axisLimits.XMin, axisLimits.XMax);
-            GetYAxis(yIndex).Dims.SetLimits(axisLimits.YMin, axisLimits.YMax);
+            Axis[] xAxes = XAxes.Where(x => !x.Dims.HasBeenSet).ToArray();
+            Axis[] yAxes = YAxes.Where(x => !x.Dims.HasBeenSet).ToArray();
+            foreach (var axis in xAxes)
+            {
+                AxisAutoX(axis);
+            }
+            foreach (var axis in yAxes)
+            {
+                AxisAutoY(axis);
+            }
+        }
+
+        public void AxisAutoX(Axis axis)
+        {
+            double xMin = double.MaxValue, xMax = double.MinValue;
+            var limits = SeriesList
+                .Where(x => x.YIndex == axis.AxisIndex)
+                .Select(x => x.GetAxisLimits());
+            foreach (var limit in limits)
+            {
+                xMin = double.MaxValue == limit.m_xMin ? limit.m_xMin : Math.Min(xMin, limit.m_xMin);
+                xMax = double.MinValue == limit.m_xMax ? limit.m_xMax : Math.Max(xMax, limit.m_xMax);
+            }
+
+            if (double.MaxValue == xMin || double.MinValue == xMax)
+                return;
+
+            axis.Dims.SetLimits(xMin, xMax);
+        }
+
+        public void AxisAutoY(Axis axis)
+        {
+            double yMin = double.MaxValue, yMax = double.MinValue;
+            var limits = SeriesList
+                .Where(x => x.YIndex == axis.AxisIndex)
+                .Select(x => x.GetAxisLimits());
+            foreach (var limit in limits)
+            {
+                yMin = double.MaxValue == limit.m_yMin ? limit.m_yMin : Math.Min(yMin, limit.m_yMin);
+                yMax = double.MinValue == limit.m_yMax ? limit.m_yMax : Math.Max(yMax, limit.m_yMax);
+            }
+
+            if (double.MaxValue == yMin || double.MinValue == yMax)
+                return;
+
+            axis.Dims.SetLimits(yMin, yMax);
+        }
+
+        internal void SetAxisLimits(AxisLimits axisLimits, int xIndex, int yIndex)
+        {
+            GetXAxis(xIndex).Dims.SetLimits(axisLimits.m_xMin, axisLimits.m_xMax);
+            GetYAxis(yIndex).Dims.SetLimits(axisLimits.m_yMin, axisLimits.m_yMax);
         }
 
         private void Layout(float width, float height)
@@ -230,8 +280,8 @@ namespace Plot.Core
         {
             foreach (var axis in Axes)
             {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.ScaleFactor) :
-                    GetDimensions(0, axis.AxisIndex, dims.ScaleFactor);
+                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.m_scaleFactor) :
+                    GetDimensions(0, axis.AxisIndex, dims.m_scaleFactor);
                 axis.Generator.GetTicks(dims2);
             }
         }
@@ -255,19 +305,27 @@ namespace Plot.Core
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
                 var dataRect = new RectangleF(
-                      x: dims.PlotOffsetX,
-                      y: dims.PlotOffsetY,
-                      width: dims.DataWidth,
-                      height: dims.DataHeight);
+                      x: dims.m_plotOffsetX,
+                      y: dims.m_plotOffsetY,
+                      width: dims.m_dataWidth,
+                      height: dims.m_dataHeight);
 
                 gfx.FillRectangle(brush, dataRect);
             }
 
             foreach (var axis in Axes)
             {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.ScaleFactor) :
-                   GetDimensions(0, axis.AxisIndex, dims.ScaleFactor);
-                axis.Render(bmp, dims2, lowQuality);
+                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.m_scaleFactor) :
+                   GetDimensions(0, axis.AxisIndex, dims.m_scaleFactor);
+
+                try
+                {
+                    axis.Render(bmp, dims2, lowQuality);
+                }
+                catch (OverflowException ex)
+                {
+                    Debug.WriteLine($"OverflowException plotting: {axis}");
+                }
             }
         }
 
@@ -276,8 +334,18 @@ namespace Plot.Core
         {
             foreach (var series in SeriesList)
             {
-                PlotDimensions dims2 = GetDimensions(series.XIndex, series.YIndex, dims.ScaleFactor);
-                series.Render(bmp, dims2, lowQuality);
+                series.ValidateData();
+
+                PlotDimensions dims2 = GetDimensions(series.XIndex, series.YIndex, dims.m_scaleFactor);
+
+                try
+                {
+                    series.Plot(bmp, dims2, lowQuality);
+                }
+                catch (OverflowException ex)
+                {
+                    Debug.WriteLine($"OverflowException plotting: {series}");
+                }
             }
         }
 
@@ -312,6 +380,130 @@ namespace Plot.Core
         public void ClearSeries()
         {
             SeriesList.Clear();
+        }
+
+
+
+
+
+
+
+
+
+        public float X { get; private set; }
+        public float Y { get; private set; }
+
+        private bool m_leftPressed = false;
+        private bool m_rightPressed = false;
+        private bool m_ctrlPressed = false;
+        private bool m_shiftPressed = false;
+        private bool m_altPressed = false;
+
+
+        /////////////////////PlotEvent//////////////////////
+        public void MouseDown(InputState inputState)
+        {
+            X = inputState.m_x;
+            Y = inputState.m_y;
+            m_leftPressed = inputState.m_leftPressed;
+            m_rightPressed = inputState.m_rightPressed;
+            m_ctrlPressed = inputState.m_controlPressed;
+            m_shiftPressed = inputState.m_shiftPressed;
+            m_altPressed = inputState.m_altPressed;
+
+            foreach (var axis in Axes)
+            {
+                axis.Dims.Remember();
+            }
+        }
+
+        public void MouseUp(InputState inputState)
+        {
+            m_leftPressed = false;
+            m_rightPressed = false;
+            m_ctrlPressed = false;
+            m_shiftPressed = false;
+            m_altPressed = false;
+        }
+
+        public void MouseMove(InputState inputState)
+        {
+            PlotEvent plotEvent = null;
+            if (m_leftPressed)
+                plotEvent = m_eventFactory.CreateMousePanEvent(inputState);
+            else if (m_rightPressed)
+                plotEvent = m_eventFactory.CreateMouseZoomEvent(inputState);
+
+
+            if (plotEvent != null)
+                ProcessEvent(plotEvent);
+        }
+
+        private void ProcessEvent(PlotEvent plotEvent)
+        {
+            plotEvent.Process();
+
+            Render();
+        }
+
+        internal void PanAll(float x, float y)
+        {
+            foreach (var axis in Axes)
+            {
+                axis.Dims.Recall();
+
+                // do something
+                if (axis.IsHorizontal)
+                    axis.Dims.PanPx(x - X);
+                else
+                    axis.Dims.PanPx(y - Y);
+            }
+        }
+
+        internal void ZoomCenter(float xfrac, float yfrac, float x, float y)
+        {
+            foreach (var axis in Axes)
+            {
+                axis.Dims.Recall();
+
+                float frac = axis.IsHorizontal ? xfrac : yfrac;
+                float centerPx = axis.IsHorizontal ? x : y;
+                float center = axis.Dims.GetUnit(centerPx);
+                if (float.IsNaN(frac) || frac == 1.0f || float.IsNaN(center))
+                    return;
+
+                axis.Dims.Zoom(frac, center);
+            }
+        }
+
+        internal void ZoomCenter(float x, float y)
+        {
+            foreach (var axis in Axes)
+            {
+                axis.Dims.Recall();
+
+                // do something
+                // TODO: 
+                float deltaPx = axis.IsHorizontal ? x - X : Y - y;
+                float delta = deltaPx * axis.Dims.UnitsPerPx;
+
+                float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
+
+                float frac = (float)Math.Pow(10, deltaFrac);
+                if (float.IsNaN(frac) || frac == 1.0f)
+                    return;
+
+                axis.Dims.Zoom(frac);
+            }
+        }
+
+        public void MouseDoubleClick(InputState inputState)
+        {
+        }
+
+        public void MouseWheel(InputState inputState)
+        {
+            PlotEvent plotEvent = m_eventFactory.CreateMouseScrollEvent(inputState);
         }
     }
 }
