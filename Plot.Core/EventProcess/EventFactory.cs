@@ -1,5 +1,3 @@
-using System;
-
 namespace Plot.Core.EventProcess
 {
     internal class EventFactory
