@@ -1,4 +1,4 @@
-namespace Plot.Core
+namespace Plot.Core.EventProcess
 {
     public struct InputState
     {

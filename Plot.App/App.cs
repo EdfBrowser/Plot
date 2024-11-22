@@ -21,13 +21,22 @@ namespace Plot.App
             addNewDataTimer.Tick += AddNewData;
             updatePlotTimer.Tick += updatePlot;
 
-            dataStreamer1 = formPlot1.Figure.AddDataStreamer(0, 0);
-            dataStreamer1.SampleRate = 1000; // 1000 Hz
-            dataStreamer1.AddSamples(DataGen.SineAnimated(1000));
+            var xAxis = formPlot1.Figure.BottomAxes[0];
+            xAxis.Title = "Time";
+            var yAxis = formPlot1.Figure.LeftAxes[0];
+            yAxis.Title = "Stream1";
+            dataStreamer1 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis);
+            dataStreamer1.SampleRate = 100; // 1000 Hz
+            dataStreamer1.AddSamples(DataGen.SineAnimated(100));
 
-            //dataStreamer2 = formPlot1.Figure.AddDataStreamer(0, 1);
-            //dataStreamer2.SampleRate = 1000; // 1000 Hz
-            //dataStreamer2.AddSamples(DataGen.SineAnimated(1000));
+
+            var yAxis1 = formPlot1.Figure.AddAxes(Core.Enum.Edge.Left);
+            yAxis1.Title = "Stream2";
+            dataStreamer2 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis1);
+            dataStreamer2.SampleRate = 1000; // 1000 Hz
+            dataStreamer2.AddSamples(DataGen.SineAnimated(1000));
+
+            formPlot1.Refresh(false, 1.0f);
         }
 
         private void updatePlot(object sender, EventArgs e)

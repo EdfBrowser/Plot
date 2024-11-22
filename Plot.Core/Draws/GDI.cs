@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 
-namespace Plot.Core
+namespace Plot.Core.Draws
 {
     internal class GDI
     {
@@ -54,9 +54,9 @@ namespace Plot.Core
         }
 
 
-        internal static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
+        internal static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb(alpha * 255, color));
 
 
-        internal static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
+        internal static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb(alpha * 255, color), width);
     }
 }

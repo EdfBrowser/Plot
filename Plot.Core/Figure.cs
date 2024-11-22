@@ -1,4 +1,7 @@
+using Plot.Core.Draws;
+using Plot.Core.Enum;
 using Plot.Core.EventProcess;
+using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
 using System;
 using System.Collections.Generic;
@@ -8,6 +11,21 @@ using System.Linq;
 
 namespace Plot.Core
 {
+    public static class AxisFactory
+    {
+        public static Axis CreateAxis(Edge edge)
+        {
+            switch (edge)
+            {
+                case Edge.Left: return new LeftAxis();
+                case Edge.Right: return new RightAxis();
+                case Edge.Top: return new TopAxis();
+                case Edge.Bottom: return new BottomAxis();
+                default: throw new NotImplementedException($"Unsupported edge type: {edge}");
+            }
+        }
+    }
+
     public class Figure
     {
         private Bitmap m_bmp;
@@ -20,12 +38,16 @@ namespace Plot.Core
 
         private List<Axis> Axes { get; } = new List<Axis>()
         {
-            new Axis(Edge.Bottom, 0),
-            new Axis(Edge.Left, 0)
+           new TopAxis() { Title = "Top",},
+           new BottomAxis(){ Title = "Bottom",},
+           new LeftAxis(){ Title = "Left",},
+           new RightAxis(){ Title = "Right",},
         };
 
-        public List<Axis> XAxes => Axes.Where(x => x.IsHorizontal).ToList();
-        public List<Axis> YAxes => Axes.Where(x => x.IsVertical).ToList();
+        public List<Axis> TopAxes => Axes.Where(x => x.Edge == Edge.Top).ToList();
+        public List<Axis> BottomAxes => Axes.Where(x => x.Edge == Edge.Bottom).ToList();
+        public List<Axis> LeftAxes => Axes.Where(x => x.Edge == Edge.Left).ToList();
+        public List<Axis> RightAxes => Axes.Where(x => x.Edge == Edge.Right).ToList();
 
         private List<SampleDataSeries> SeriesList { get; set; } = new List<SampleDataSeries>();
 
@@ -46,51 +68,17 @@ namespace Plot.Core
         public float PadRight { get; set; } = 50;
         public float PadTop { get; set; } = 47;
         public float PadBottom { get; set; } = 47;
-        public float AxisSpace { get; set; } = 10;
+        public float AxisSpace { get; set; } = 5;
 
         public event EventHandler OnBitmapChanged;
         public event EventHandler OnBitmapUpdated;
 
-
-        public bool ExistXAxis(int index) => XAxes.Exists(x => x.AxisIndex == index);
-        public bool ExistYAxis(int index) => YAxes.Exists(x => x.AxisIndex == index);
-
-        public Axis GetXAxis(int index)
+        public Axis AddAxes(Edge edge)
         {
-            Axis[] axes = XAxes.Where(x => x.AxisIndex == index).ToArray();
-
-            if (axes.Length == 0)
-                throw new InvalidOperationException($"There no X axes with an axis index of {index}");
-            return axes[0];
-        }
-
-        public Axis GetYAxis(int index)
-        {
-            Axis[] axes = YAxes.Where(x => x.AxisIndex == index).ToArray();
-
-            if (axes.Length == 0)
-                throw new InvalidOperationException($"There no X axes with an axis index of {index}");
-            return axes[0];
-        }
-
-        public Axis AddYAxis(int? index = null)
-        {
-            index = index ?? (YAxes.Max(i => i.AxisIndex) + 1);
-            Axis axis = new Axis(Edge.Left, index.Value);
-
+            Axis axis = AxisFactory.CreateAxis(edge);
             Axes.Add(axis);
             return axis;
         }
-
-        public Axis AddXAxis(int? index = null)
-        {
-            index = index ?? (XAxes.Max(i => i.AxisIndex) + 1);
-            Axis axis = new Axis(Edge.Bottom, index.Value);
-
-            Axes.Add(axis);
-            return axis;
-        }
-
 
         public Bitmap GetLatestBitmap() => m_bmp;
 
@@ -108,8 +96,9 @@ namespace Plot.Core
         public void Resize(float width, float height)
         {
             // TODO: 自动计算PadLeft, PadRight, PadTop, PadBottom
-            if (width - PadLeft - PadRight < 1) width = PadLeft + PadRight + AxisSpace * (XAxes.Count - 1) + 100;
-            if (height - PadTop - PadBottom < 1) height = PadTop + PadBottom + AxisSpace * (YAxes.Count - 1) + 100;
+            //if (width - PadLeft - PadRight < 1) width = PadLeft + PadRight + AxisSpace * (XAxes.Count - 1) + 100;
+            //if (height - PadTop - PadBottom < 1) height = PadTop + PadBottom + AxisSpace * (YAxes.Count - 1) + 100;
+            if (width < 10 || height < 10) return;
 
             if (m_bmp != null)
             {
@@ -132,9 +121,9 @@ namespace Plot.Core
                 if (m_bmp == null) return;
 
                 Layout(m_bmp.Width / scale, m_bmp.Height / scale);
-                var primaryDims = GetDimensions(0, 0, scale);
+                var primaryDims = GetDimensions(BottomAxes[0], LeftAxes[0], scale);
 
-                AutoScale();
+                AutoScaleByPlot();
                 CalculateTicks(primaryDims);
 
                 RenderClear(m_bmp, lowQuality, primaryDims);
@@ -146,149 +135,54 @@ namespace Plot.Core
             }
         }
 
-        public void AutoScale()
-        {
-            Axis[] xAxes = XAxes.Where(x => !x.Dims.HasBeenSet).ToArray();
-            Axis[] yAxes = YAxes.Where(x => !x.Dims.HasBeenSet).ToArray();
-            foreach (var axis in xAxes)
-            {
-                AxisAutoX(axis);
-            }
-            foreach (var axis in yAxes)
-            {
-                AxisAutoY(axis);
-            }
-        }
-
-        public void AxisAutoX(Axis axis)
-        {
-            double xMin = double.MaxValue, xMax = double.MinValue;
-            var limits = SeriesList
-                .Where(x => x.YIndex == axis.AxisIndex)
-                .Select(x => x.GetAxisLimits());
-            foreach (var limit in limits)
-            {
-                xMin = double.MaxValue == limit.m_xMin ? limit.m_xMin : Math.Min(xMin, limit.m_xMin);
-                xMax = double.MinValue == limit.m_xMax ? limit.m_xMax : Math.Max(xMax, limit.m_xMax);
-            }
-
-            if (double.MaxValue == xMin || double.MinValue == xMax)
-                return;
-
-            axis.Dims.SetLimits(xMin, xMax);
-        }
-
-        public void AxisAutoY(Axis axis)
-        {
-            double yMin = double.MaxValue, yMax = double.MinValue;
-            var limits = SeriesList
-                .Where(x => x.YIndex == axis.AxisIndex)
-                .Select(x => x.GetAxisLimits());
-            foreach (var limit in limits)
-            {
-                yMin = double.MaxValue == limit.m_yMin ? limit.m_yMin : Math.Min(yMin, limit.m_yMin);
-                yMax = double.MinValue == limit.m_yMax ? limit.m_yMax : Math.Max(yMax, limit.m_yMax);
-            }
-
-            if (double.MaxValue == yMin || double.MinValue == yMax)
-                return;
-
-            axis.Dims.SetLimits(yMin, yMax);
-        }
-
-        internal void SetAxisLimits(AxisLimits axisLimits, int xIndex, int yIndex)
-        {
-            GetXAxis(xIndex).Dims.SetLimits(axisLimits.m_xMin, axisLimits.m_xMax);
-            GetYAxis(yIndex).Dims.SetLimits(axisLimits.m_yMin, axisLimits.m_yMax);
-        }
-
         private void Layout(float width, float height)
         {
             // TODO: 自动计算PadLeft, PadRight, PadTop, PadBottom
-            LayoutX(width);
-            LayoutY(height);
+            ArrangeAxes(width, TopAxes, PadLeft, PadRight);
+            ArrangeAxes(width, BottomAxes, PadLeft, PadRight);
+            ArrangeAxes(height, LeftAxes, PadTop, PadBottom);
+            ArrangeAxes(height, RightAxes, PadTop, PadBottom);
         }
 
-        private void LayoutY(float height)
+        private void AutoScaleByPlot()
         {
-            int axisCount = YAxes.Count;
-            if (axisCount == 0) return;
+            double xmin = double.MaxValue, xmax = double.MinValue;
+            double ymin = double.MaxValue, ymax = double.MinValue;
+            var limits = SeriesList
+                .Where(x => !x.XAxis.HasBeenSet() || !x.YAxis.HasBeenSet())
+                .Select(X => X.GetAxisLimits());
 
-            float totalSpacing = AxisSpace * (axisCount - 1);
-            float dataSize = height - PadTop - PadBottom;
-            float availableSize = dataSize - totalSpacing;
-
-            float plotSize = availableSize / axisCount;
-
-            float plotOffset = 0;
-            plotOffset += PadTop;
-            foreach (var axis in YAxes)
+            foreach (var limit in limits)
             {
-                axis.Dims.Resize(height, plotSize, dataSize, PadTop, plotOffset);
-                plotOffset += plotSize + AxisSpace;
+                xmin = xmin == double.MaxValue ? limit.m_xMin : Math.Min(xmin, limit.m_xMin);
+                xmax = xmax == double.MinValue ? limit.m_xMax : Math.Max(xmax, limit.m_xMax);
+                ymin = ymin == double.MaxValue ? limit.m_yMin : Math.Min(ymin, limit.m_yMin);
+                ymax = ymax == double.MinValue ? limit.m_yMax : Math.Max(ymax, limit.m_yMax);
             }
-        }
 
-        private void LayoutX(float width)
-        {
-            int axisCount = XAxes.Count;
-            if (axisCount == 0) return;
+            if (xmin == double.MaxValue || xmin == double.MinValue || ymin == double.MaxValue || ymin == double.MinValue)
+                return;
 
-            float totalSpacing = AxisSpace * (axisCount - 1);
-            float dataSize = width - PadLeft - PadRight;
-            float availableSize = dataSize - totalSpacing;
-
-            float plotSize = availableSize / axisCount;
-
-            float plotOffset = 0;
-            plotOffset += PadLeft;
-            foreach (var axis in XAxes)
+            foreach (var series in SeriesList)
             {
-                axis.Dims.Resize(width, plotSize, dataSize, PadLeft, plotOffset);
-                plotOffset += plotSize + AxisSpace;
+                series.XAxis.SetLimit((float)xmin, (float)xmax);
+                series.YAxis.SetLimit((float)ymin, (float)ymax);
             }
-        }
-
-        // TODO: 多个x轴和y轴应该有一个对应关系
-        private PlotDimensions GetDimensions(int xIndex, int yIndex, float scale)
-        {
-            var xAxis = GetXAxis(xIndex);
-            var yAxis = GetYAxis(yIndex);
-
-            SizeF figureSize = new SizeF(xAxis.Dims.FigureSizePx, yAxis.Dims.FigureSizePx);
-            SizeF plotSize = new SizeF(xAxis.Dims.DataSizePx, yAxis.Dims.DataSizePx);
-            SizeF dataSize = new SizeF(xAxis.Dims.PlotSizePx, yAxis.Dims.PlotSizePx);
-            PointF plotOffset = new PointF(xAxis.Dims.PlotOffsetPx, yAxis.Dims.PlotOffsetPx);
-            PointF dataOffset = new PointF(xAxis.Dims.DataOffsetPx, yAxis.Dims.DataOffsetPx);
-
-            (float xMin, float xMax) = xAxis.Dims.RationalLimits();
-            (float yMin, float yMax) = yAxis.Dims.RationalLimits();
-
-
-            return new PlotDimensions(figureSize,
-                dataSize,
-                plotSize,
-                plotOffset,
-                dataOffset,
-                ((xMin, xMax), (yMin, yMax)),
-                scale,
-                xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
-
         }
 
         private void CalculateTicks(PlotDimensions dims)
         {
             foreach (var axis in Axes)
             {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.m_scaleFactor) :
-                    GetDimensions(0, axis.AxisIndex, dims.m_scaleFactor);
-                axis.Generator.GetTicks(dims2);
+                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis, LeftAxes[0], dims.m_scaleFactor) :
+                    GetDimensions(BottomAxes[0], axis, dims.m_scaleFactor);
+                axis.GetTicks(dims2);
             }
         }
 
         private void RenderClear(Bitmap bmp, bool lowQuality, PlotDimensions dims)
         {
-            Color figureColor = Color.LightGray;
+            Color figureColor = Color.White;
             // clear and set the background of figure
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
@@ -301,7 +195,7 @@ namespace Plot.Core
         {
             Color dataAreaColor = Color.White;
             // set the background of data area
-            using (var brush = GDI.Brush(dataAreaColor, 1))
+            using (var brush = GDI.Brush(dataAreaColor))
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
                 var dataRect = new RectangleF(
@@ -315,8 +209,8 @@ namespace Plot.Core
 
             foreach (var axis in Axes)
             {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis.AxisIndex, 0, dims.m_scaleFactor) :
-                   GetDimensions(0, axis.AxisIndex, dims.m_scaleFactor);
+                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis, LeftAxes[0], dims.m_scaleFactor) :
+                   GetDimensions(BottomAxes[0], axis, dims.m_scaleFactor);
 
                 try
                 {
@@ -336,7 +230,7 @@ namespace Plot.Core
             {
                 series.ValidateData();
 
-                PlotDimensions dims2 = GetDimensions(series.XIndex, series.YIndex, dims.m_scaleFactor);
+                PlotDimensions dims2 = GetDimensions(series.XAxis, series.YAxis, dims.m_scaleFactor);
 
                 try
                 {
@@ -355,24 +249,65 @@ namespace Plot.Core
         }
 
 
-
-
-
-
-
-
-
-
-
-
-        public SampleDataSeries AddDataStreamer(int xIndex, int yIndex)
+        private void ArrangeAxes(float px, List<Axis> axes, float p1, float p2)
         {
-            if (!ExistXAxis(xIndex))
-                AddXAxis(xIndex);
-            if (!ExistYAxis(yIndex))
-                AddYAxis(yIndex);
+            int axisCount = axes.Count;
+            if (axisCount == 0) return;
 
-            SampleDataSeries dataStreamSeries = new SampleDataSeries(xIndex, yIndex, this);
+            float totalSpacing = AxisSpace * (axisCount - 1);
+            float dataSize = px - p1 - p2;
+            float availableSize = dataSize - totalSpacing;
+
+            float plotSize = availableSize / axisCount;
+
+            float plotOffset = 0;
+            plotOffset += p1;
+            foreach (var axis in axes)
+            {
+                axis.Resize(px, plotSize, dataSize, p1, plotOffset);
+                plotOffset += plotSize + AxisSpace;
+            }
+        }
+
+        // TODO: 多个x轴和y轴应该有一个对应关系
+        private static PlotDimensions GetDimensions(Axis xAxis, Axis yAxis, float scale)
+        {
+            SizeF figureSize = new SizeF(xAxis.FigureSizePx, yAxis.FigureSizePx);
+            SizeF plotSize = new SizeF(xAxis.DataSizePx, yAxis.DataSizePx);
+            SizeF dataSize = new SizeF(xAxis.PlotSizePx, yAxis.PlotSizePx);
+            PointF plotOffset = new PointF(xAxis.PlotOffsetPx, yAxis.PlotOffsetPx);
+            PointF dataOffset = new PointF(xAxis.DataOffsetPx, yAxis.DataOffsetPx);
+
+            (float xMin, float xMax) = xAxis.GetLimit();
+            (float yMin, float yMax) = yAxis.GetLimit();
+
+
+            return new PlotDimensions(figureSize,
+                dataSize,
+                plotSize,
+                plotOffset,
+                dataOffset,
+                ((xMin, xMax), (yMin, yMax)),
+                scale,
+                xAxis.IsInverted, yAxis.IsInverted);
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis)
+        {
+            SampleDataSeries dataStreamSeries = new SampleDataSeries(xAxis, yAxis, this);
             SeriesList.Add(dataStreamSeries);
             return dataStreamSeries;
         }
@@ -413,7 +348,7 @@ namespace Plot.Core
 
             foreach (var axis in Axes)
             {
-                axis.Dims.Remember();
+                axis.MouseDown(inputState.m_x, inputState.m_y);
             }
         }
 
@@ -446,17 +381,26 @@ namespace Plot.Core
             Render();
         }
 
+        public void MouseDoubleClick(InputState inputState)
+        {
+        }
+
+        public void MouseWheel(InputState inputState)
+        {
+            foreach (var axis in Axes)
+            {
+                axis.MouseDown(inputState.m_x, inputState.m_y);
+            }
+
+            PlotEvent plotEvent = m_eventFactory.CreateMouseScrollEvent(inputState);
+            ProcessEvent(plotEvent);
+        }
+
         internal void PanAll(float x, float y)
         {
             foreach (var axis in Axes)
             {
-                axis.Dims.Recall();
-
-                // do something
-                if (axis.IsHorizontal)
-                    axis.Dims.PanPx(x - X);
-                else
-                    axis.Dims.PanPx(y - Y);
+                axis.PanAll(x, y);
             }
         }
 
@@ -464,15 +408,7 @@ namespace Plot.Core
         {
             foreach (var axis in Axes)
             {
-                axis.Dims.Recall();
-
-                float frac = axis.IsHorizontal ? xfrac : yfrac;
-                float centerPx = axis.IsHorizontal ? x : y;
-                float center = axis.Dims.GetUnit(centerPx);
-                if (float.IsNaN(frac) || frac == 1.0f || float.IsNaN(center))
-                    return;
-
-                axis.Dims.Zoom(frac, center);
+                axis.ZoomByPosition(xfrac, yfrac, x, y);
             }
         }
 
@@ -480,30 +416,10 @@ namespace Plot.Core
         {
             foreach (var axis in Axes)
             {
-                axis.Dims.Recall();
-
-                // do something
-                // TODO: 
-                float deltaPx = axis.IsHorizontal ? x - X : Y - y;
-                float delta = deltaPx * axis.Dims.UnitsPerPx;
-
-                float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
-
-                float frac = (float)Math.Pow(10, deltaFrac);
-                if (float.IsNaN(frac) || frac == 1.0f)
-                    return;
-
-                axis.Dims.Zoom(frac);
+                axis.ZoomByCenter(x, y);
             }
         }
 
-        public void MouseDoubleClick(InputState inputState)
-        {
-        }
 
-        public void MouseWheel(InputState inputState)
-        {
-            PlotEvent plotEvent = m_eventFactory.CreateMouseScrollEvent(inputState);
-        }
     }
 }

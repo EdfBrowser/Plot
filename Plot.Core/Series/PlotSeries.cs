@@ -1,3 +1,4 @@
+using Plot.Core.Renderables.Axes;
 using System.Drawing;
 
 namespace Plot.Core.Series

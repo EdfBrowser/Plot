@@ -1,4 +1,5 @@
 using Plot.Core;
+using Plot.Core.EventProcess;
 using System;
 using System.Windows.Forms;
 
@@ -29,7 +30,7 @@ namespace Plot.WinForm
         }
 
 
-        private InputState GetInputState(MouseEventArgs e)
+        private static InputState GetInputState(MouseEventArgs e)
         => new InputState(
             (e.X, e.Y),
             (e.Button == MouseButtons.Left, e.Button == MouseButtons.Right, e.Button == MouseButtons.Middle),
@@ -63,8 +64,8 @@ namespace Plot.WinForm
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e) => Figure.MouseDown(GetInputState(e));
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e) => Figure.MouseUp(GetInputState(e));
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e) => Figure.MouseMove(GetInputState(e));
-        private void pictureBox1_MouseDoubleClick(object sender, MouseEventArgs e)  => Figure.MouseDoubleClick(GetInputState(e));
+        private void pictureBox1_MouseDoubleClick(object sender, MouseEventArgs e) => Figure.MouseDoubleClick(GetInputState(e));
         private void pictureBox1_MouseClick(object sender, MouseEventArgs e) { }
-        
+
     }
 }

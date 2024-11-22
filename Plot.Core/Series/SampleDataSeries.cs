@@ -1,3 +1,5 @@
+using Plot.Core.Draws;
+using Plot.Core.Renderables.Axes;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,15 +9,15 @@ namespace Plot.Core.Series
 {
     public class SampleDataSeries : PlotSeries
     {
-        public SampleDataSeries(int xIndex, int yIndex, Figure figure)
+        public SampleDataSeries(Axis xAxis, Axis yAxis, Figure figure)
         {
-            XIndex = xIndex;
-            YIndex = yIndex;
+            XAxis = xAxis;
+            YAxis = yAxis;
             Figure = figure;
         }
 
-        public int XIndex { get; }
-        public int YIndex { get; }
+        public Axis XAxis { get; }
+        public Axis YAxis { get; }
         public Figure Figure { get; }
 
         public Color Color { get; set; } = Color.Red;
@@ -54,6 +56,7 @@ namespace Plot.Core.Series
             return Data.Length;
         }
 
+        // TODO: 采用不同的增长策略
         internal override AxisLimits GetAxisLimits()
         {
             double xMin = XAxisValues.Min();
@@ -68,7 +71,7 @@ namespace Plot.Core.Series
         {
             if (Data.Length == 0 || XAxisValues.Length == 0) return;
 
-            Figure.SetAxisLimits(GetAxisLimits(), XIndex, YIndex);
+            //Figure.SetAxisLimits(GetAxisLimits(), XIndex, YIndex);
 
             var xs = XAxisValues.Select(i => dims.GetPixelX((float)i)).ToArray();
             var ys = Data.Select(i => dims.GetPixelY((float)i)).ToArray();
