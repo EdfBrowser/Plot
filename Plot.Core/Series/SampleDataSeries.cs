@@ -1,5 +1,6 @@
 using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
+using Plot.Core.Series.AxesMangers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,13 +8,20 @@ using System.Linq;
 
 namespace Plot.Core.Series
 {
-    public class SampleDataSeries : PlotSeries
+    public class SampleDataSeries : IPlotSeries
     {
-        public SampleDataSeries(Axis xAxis, Axis yAxis, Figure figure)
+        public SampleDataSeries(Axis xAxis, Axis yAxis, Figure figure, int sampleRate)
         {
             XAxis = xAxis;
             YAxis = yAxis;
             Figure = figure;
+            SampleRate = sampleRate;
+
+            Data = new double[SampleRate];
+            for (int i = 0; i < Data.Length; i++)
+            {
+                Add(0);
+            }
         }
 
         public Axis XAxis { get; }
@@ -24,71 +32,88 @@ namespace Plot.Core.Series
         public float LineWidth { get; set; } = 1f;
         public string Label { get; set; } = null;
 
-        public long NextIndex { get; private set; } = 0;
-        public double[] Data { get; private set; }
-        public double[] XAxisValues { get; private set; }
+        public IAxisManager AxisManager { get; private set; } = new Full();
+        public bool ManageAxisLimits { get; set; } = true;
 
+        public int SampleRate { get; }
+        public float SampleInterval => 1.0f / SampleRate;
+
+        public int NextIndex { get; private set; } = 0;
         public double DataMin { get; private set; } = double.MaxValue;
         public double DataMax { get; private set; } = double.MinValue;
 
-        public float SampleRate { get; set; } = 1f;
-        public float SampleInterval => 1f / SampleRate;
+        public double[] Data { get; }
 
+        public long Count { get; private set; }
 
-        public int AddSamples(double[] samples)
+        public void Add(double value)
         {
-            List<double> data = new List<double>(samples.Length);
-            List<double> xValues = new List<double>(samples.Length); // 临时存储 X 轴值
-            foreach (var sample in samples)
-            {
-                // TODO: Apply filters, Validators, etc.
-                data.Add(sample);
-                xValues.Add(NextIndex * SampleInterval); // 计算相应的 X 轴值
-                NextIndex++; // 增加样本索引
+            Count++;
+            Data[NextIndex++] = value;
+            if (NextIndex >= SampleRate) NextIndex = 0;
 
-                DataMin = Math.Min(DataMin, sample);
-                DataMax = Math.Max(DataMax, sample);
-            }
-
-            Data = data.ToArray();
-            XAxisValues = xValues.ToArray(); // 更新 X 轴值数组
-
-            return Data.Length;
+            DataMin = Math.Min(DataMin, value);
+            DataMax = Math.Max(DataMax, value);
         }
 
-        // TODO: 采用不同的增长策略
-        internal override AxisLimits GetAxisLimits()
-        {
-            double xMin = XAxisValues.Min();
-            double xMax = XAxisValues.Max();
-            double yMin = DataMin;
-            double yMax = DataMax;
 
-            return new AxisLimits(xMin, xMax, yMin, yMax);
+        public void ValidateData() { }
+
+        public AxisLimits GetAxisLimits()
+        {
+            double xMin = 0;
+            double xMax = Data.Length * SampleInterval;
+
+            return new AxisLimits(xMin, xMax, DataMin, DataMax);
         }
 
-        internal override void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuailty)
+        public void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuailty)
         {
-            if (Data.Length == 0 || XAxisValues.Length == 0) return;
+            if (Data.Length == 0) return;
 
-            //Figure.SetAxisLimits(GetAxisLimits(), XIndex, YIndex);
-
-            var xs = XAxisValues.Select(i => dims.GetPixelX((float)i)).ToArray();
-            var ys = Data.Select(i => dims.GetPixelY((float)i)).ToArray();
-
-            List<PointF> points = new List<PointF>();
-            for (int i = 0; i < xs.Length; i++)
+            if (ManageAxisLimits)
             {
-                points.Add(new PointF(xs[i], ys[i]));
+                AxisLimits viewLimit = Figure.GetAxisLimits(XAxis, YAxis);
+                AxisLimits dataLimit = GetAxisLimits();
+
+                AxisLimits limits = AxisManager.GetAxisLimits(viewLimit, dataLimit);
+
+                Figure.SetAxisLimits(limits, XAxis, YAxis);
             }
 
-            using (var pen = GDI.Pen(Color, LineWidth))
+            // Swipe Right
+
+            int newestCount = NextIndex;
+            int oldestCount = Data.Length - newestCount;
+
+            PointF[] newestPoint = new PointF[newestCount];
+            PointF[] oldestPoint = new PointF[oldestCount];
+
+            for (int i = 0; i < newestPoint.Length; i++)
+            {
+                float dx = i * SampleInterval;
+                float x = dims.GetPixelX(dx);
+                float y = dims.GetPixelY((float)Data[i]);
+                newestPoint[i] = new PointF(x, y);
+            }
+
+            for (int i = 0; i < oldestPoint.Length; i++)
+            {
+                float dx = (i + NextIndex) * SampleInterval;
+                float x = dims.GetPixelX(dx);
+                float y = dims.GetPixelY((float)Data[i + NextIndex]);
+                oldestPoint[i] = new PointF(x, y);
+            }
+
             using (var gfx = GDI.Graphics(bmp, dims, lowQuailty, true))
+            using (var pen = GDI.Pen(Color, LineWidth))
             {
-                gfx.DrawLines(pen, points.ToArray());
+                if (newestPoint.Length > 1)
+                    gfx.DrawLines(pen, newestPoint);
+                if (oldestPoint.Length > 1)
+                    gfx.DrawLines(pen, oldestPoint);
+
             }
         }
-
-        internal override void ValidateData() { }
     }
 }

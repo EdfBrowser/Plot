@@ -299,15 +299,9 @@ namespace Plot.Core
 
 
 
-
-
-
-
-
-
-        public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis)
+        public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis, int sampleRate)
         {
-            SampleDataSeries dataStreamSeries = new SampleDataSeries(xAxis, yAxis, this);
+            SampleDataSeries dataStreamSeries = new SampleDataSeries(xAxis, yAxis, this, sampleRate);
             SeriesList.Add(dataStreamSeries);
             return dataStreamSeries;
         }
