@@ -5,9 +5,9 @@ using System.Drawing.Text;
 
 namespace Plot.Core.Draws
 {
-    internal class GDI
+    public static class GDI
     {
-        internal static Font Font(string fontName = null, float fontSize = 12, bool bold = false, FontFamily fontFamily = null)
+        public static Font Font(string fontName = null, float fontSize = 12, bool bold = false, FontFamily fontFamily = null)
         {
             if (fontName != null)
             {
@@ -18,7 +18,7 @@ namespace Plot.Core.Draws
             return new Font(fontFamily, fontSize, fontStyle, GraphicsUnit.Pixel);
         }
 
-        internal static SizeF MeasureString(Graphics gfx, string text, Font font)
+        public static SizeF MeasureString(Graphics gfx, string text, Font font)
         {
             SizeF size = gfx.MeasureString(text, font);
 
@@ -28,7 +28,7 @@ namespace Plot.Core.Draws
             return size;
         }
 
-        internal static Graphics Graphics(Bitmap bmp, bool lowQuality, float scale)
+        public static Graphics Graphics(Bitmap bmp, bool lowQuality, float scale)
         {
             Graphics gfx = System.Drawing.Graphics.FromImage(bmp);
             gfx.SmoothingMode = lowQuality ? SmoothingMode.HighSpeed : SmoothingMode.AntiAlias;
@@ -37,7 +37,7 @@ namespace Plot.Core.Draws
             return gfx;
         }
 
-        internal static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality, bool clip = false)
+        public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality, bool clip = false)
 
         {
             Graphics gfx = Graphics(bmp, lowQuality, dims.m_scaleFactor);
@@ -54,9 +54,9 @@ namespace Plot.Core.Draws
         }
 
 
-        internal static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb(alpha * 255, color));
+        public static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb(alpha * 255, color));
 
 
-        internal static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb(alpha * 255, color), width);
+        public static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb(alpha * 255, color), width);
     }
 }

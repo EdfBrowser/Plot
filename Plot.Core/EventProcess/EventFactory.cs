@@ -1,21 +1,21 @@
 namespace Plot.Core.EventProcess
 {
-    internal class EventFactory
+    public class EventFactory
     {
         private readonly Figure m_figure;
 
-        internal EventFactory(Figure figure)
+        public EventFactory(Figure figure)
         {
             m_figure = figure;
         }
 
-        internal PlotEvent CreateMousePanEvent(InputState inputState)
+        public IPlotEvent CreateMousePanEvent(InputState inputState)
             => new MousePanEvent(m_figure, inputState);
 
-        internal PlotEvent CreateMouseScrollEvent(InputState inputState)
+        public IPlotEvent CreateMouseScrollEvent(InputState inputState)
             => new MouseScrollEvent(m_figure, inputState);
 
-        internal PlotEvent CreateMouseZoomEvent(InputState inputState)
+        public IPlotEvent CreateMouseZoomEvent(InputState inputState)
             => new MouseZoomEvent(m_figure, inputState);
 
     }

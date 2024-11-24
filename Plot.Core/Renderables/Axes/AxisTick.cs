@@ -8,52 +8,49 @@ using System.Linq;
 
 namespace Plot.Core.Renderables.Axes
 {
-    internal class AxisTick : IRenderable, IAxisComponent
+    public class AxisTick : IRenderable, IAxisComponent
     {
         private Edge m_edge;
-        internal TickGenerator TickGenerator { get; } = new TickGenerator();
+        public TickGenerator TickGenerator { get; } = new TickGenerator();
 
-        public bool RulerMode { get; set; }
         public Edge Edge
         {
             get => m_edge; set
             {
                 m_edge = value;
                 TickGenerator.IsVertical = value.IsVertical();
-
             }
         }
-        public float PixelOffset { get; set; }
 
         public bool Visible { get; set; } = true;
 
         // Direction
-        internal bool TicksExtendOutward { get; } = true;
+        public bool TicksExtendOutward { get; } = true;
 
         // Tick AxisLabel
-        internal bool TickLabelVisible { get; set; } = true;
-        internal int TickLabelRotation { get; set; } = 0;
-        internal Color TickLabelColor { get; set; } = Color.Black;
+        public bool TickLabelVisible { get; set; } = true;
+        public int TickLabelRotation { get; set; } = 0;
+        public Color TickLabelColor { get; set; } = Color.Black;
 
         // Major Tick
-        internal bool MajorTickVisible { get; set; } = true;
-        internal float MajorTickWidth { get; set; } = 1;
-        internal float MajorTickLength { get; set; } = 5;
-        internal Color MajorTickColor { get; set; } = Color.Black;
+        public bool MajorTickVisible { get; set; } = true;
+        public float MajorTickWidth { get; set; } = 1;
+        public float MajorTickLength { get; set; } = 5;
+        public Color MajorTickColor { get; set; } = Color.Black;
 
         // Minor Tick
-        internal bool MinorTickVisible { get; set; } = true;
-        internal float MinorTickLength { get; set; } = 2;
-        internal float MinorTickWidth { get; set; } = 1;
-        internal Color MinorTickColor { get; set; } = Color.Black;
+        public bool MinorTickVisible { get; set; } = true;
+        public float MinorTickLength { get; set; } = 2;
+        public float MinorTickWidth { get; set; } = 1;
+        public Color MinorTickColor { get; set; } = Color.Black;
 
-        internal bool GridVisible { get; set; } = true;
-        internal DashStyle MajorGridStyle { get; set; } = DashStyle.Solid;
-        internal Color MajorGridColor { get; set; } = Color.LightGray;
-        internal float MajorGridWidth { get; set; } = 1;
-        internal float minorGridWidth { get; set; } = 1;
-        internal Color minorGridColor { get; set; } = Color.LightGray;
-        internal DashStyle minorGridStyle { get; set; } = DashStyle.Solid;
+        public bool GridVisible { get; set; } = true;
+        public DashStyle MajorGridStyle { get; set; } = DashStyle.Solid;
+        public Color MajorGridColor { get; set; } = Color.LightGray;
+        public float MajorGridWidth { get; set; } = 1;
+        public float MinorGridWidth { get; set; } = 1;
+        public Color MinorGridColor { get; set; } = Color.LightGray;
+        public DashStyle MinorGridStyle { get; set; } = DashStyle.Solid;
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
@@ -66,18 +63,18 @@ namespace Plot.Core.Renderables.Axes
                     float[] majorTicks = TickGenerator.TicksMajor.Select(t => t.m_posPixel).ToArray();
                     float[] minorTicks = TickGenerator.TicksMinor.Select(t => t.m_posPixel).ToArray();
                     DrawGridLines(dims, gfx, majorTicks, MajorGridStyle, MajorGridColor, MajorGridWidth, Edge);
-                    DrawGridLines(dims, gfx, minorTicks, minorGridStyle, minorGridColor, minorGridWidth, Edge);
+                    DrawGridLines(dims, gfx, minorTicks, MinorGridStyle, MinorGridColor, MinorGridWidth, Edge);
                 }
 
                 // Major ticks
                 if (MajorTickVisible)
                 {
                     float tickLength = MajorTickLength;
-                    if (RulerMode)
-                        tickLength *= 4;
+                    //if (RulerMode)
+                    //    tickLength *= 4;
                     tickLength = TicksExtendOutward ? tickLength : -tickLength;
                     float[] ticks = TickGenerator.TicksMajor.Select(t => t.m_posPixel).ToArray();
-                    DrawTicks(dims, gfx, ticks, tickLength, MajorTickColor, Edge, PixelOffset, MajorTickWidth);
+                    DrawTicks(dims, gfx, ticks, tickLength, MajorTickColor, Edge, 0, MajorTickWidth);
                 }
 
 
@@ -86,12 +83,12 @@ namespace Plot.Core.Renderables.Axes
                 {
                     float[] ticks = TickGenerator.TicksMinor.Select(t => t.m_posPixel).ToArray();
                     float tickLength = TicksExtendOutward ? MinorTickLength : -MinorTickLength;
-                    DrawTicks(dims, gfx, ticks, tickLength, MinorTickColor, Edge, PixelOffset, MinorTickWidth);
+                    DrawTicks(dims, gfx, ticks, tickLength, MinorTickColor, Edge, 0, MinorTickWidth);
                 }
 
                 if (TickLabelVisible)
                 {
-                    DrawTicksLabel(dims, gfx, TickGenerator.TicksMajor, null, Edge, TickLabelRotation, RulerMode, PixelOffset, MajorTickLength);
+                    DrawTicksLabel(dims, gfx, TickGenerator.TicksMajor, null, Edge, TickLabelRotation, false, 0, MajorTickLength);
                 }
             }
         }
@@ -100,6 +97,11 @@ namespace Plot.Core.Renderables.Axes
             Color color, float tickWidth, Edge edge)
         {
             if (ticks == null || ticks.Length == 0) return;
+            // don't draw grid lines on the last pixel to prevent drawing over the data frame
+            float xEdgeLeft = dims.m_dataOffsetX + 1;
+            float xEdgeRight = dims.m_dataOffsetX + dims.m_dataWidth - 1;
+            float yEdgeTop = dims.m_dataOffsetY  + 1;
+            float yEdgeBottom = dims.m_dataOffsetY + dims.m_dataHeight - 1;
 
             if (edge.IsHorizontal())
             {
@@ -107,7 +109,7 @@ namespace Plot.Core.Renderables.Axes
                     dims.m_plotOffsetY : dims.m_plotOffsetY + dims.m_dataHeight;
                 float y2 = (edge == Edge.Top) ? dims.m_plotOffsetY + dims.m_dataHeight : dims.m_plotOffsetY;
 
-                var xs = ticks.Select(t => dims.GetPixelX(t));
+                var xs = ticks.Select(t => dims.GetPixelX(t)).Where(x => xEdgeLeft < x && x < xEdgeRight);
                 using (var pen = GDI.Pen(color, tickWidth))
                 {
                     pen.DashStyle = style;
@@ -123,7 +125,7 @@ namespace Plot.Core.Renderables.Axes
                      dims.m_plotOffsetX : dims.m_plotOffsetX + dims.m_dataWidth;
                 float x2 = edge == Edge.Left ? dims.m_plotOffsetX + dims.m_dataWidth : dims.m_plotOffsetX;
 
-                var ys = ticks.Select(t => dims.GetPixelY(t));
+                var ys = ticks.Select(t => dims.GetPixelY(t)).Where(y => yEdgeTop < y && y < yEdgeBottom);
                 using (var pen = GDI.Pen(color, tickWidth))
                 {
                     pen.DashStyle = style;
