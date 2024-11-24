@@ -1,185 +1,300 @@
+using Plot.Core.Draws;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Globalization;
+using System.Linq;
 
 namespace Plot.Core.Ticks
 {
+    public enum TickLabelFormat { Numeric, DateTime };
     public class TickGenerator
     {
-        public Tick[] TicksMajor { get; private set; }
-        public Tick[] TicksMinor { get; private set; }
+
+        private TickCollection m_tickCollection = TickCollection.Empty;
 
         public bool IsVertical { get; set; } = true;
 
-        [Obsolete]
-        private readonly float m_pixelsPerTick = 70;
+        public float TickDensity { get; set; } = 1f;
+        public int Radix { get; set; } = 10;
+        public bool IntegerPositionsOnly { get; set; } = false;
+        public CultureInfo Culture { get; set; } = CultureInfo.DefaultThreadCurrentCulture;
+        public SizeF LargestLabelSize { get; private set; }
+        public float LargestLabelWidth => LargestLabelSize.Width;
+        public float LargestLabelHeight => LargestLabelSize.Height;
 
-        public float TickSpacingPx { get; set; } = 100;
+        public TickLabelFormat LabelFormat { get; set; } = TickLabelFormat.Numeric;
 
-
-        public void GetTicks(PlotDimensions dims)
+        public void ReCalculate(PlotDimensions dims, Font tickFont)
         {
-            float span, pxSize, min, max;
+            int initialTickCount = (int)(10 * TickDensity);
+
+            // 先给定label的大小
+            {
+                float labelWidth = 15;
+                float labelHeight = 12;
+                SizeF labelSize = new SizeF(labelWidth, labelHeight);
+
+                ReCalculatePositionsNumeric(dims, labelSize, initialTickCount);
+            }
+
+            // use the results of the first pass to estimate the size of the largest tick label
+            LargestLabelSize = GetMaxLabelSize(tickFont);
+
+            // re-calculate position by largest label size
+
+            ReCalculatePositionsNumeric(dims, LargestLabelSize, null);
+        }
+
+        private SizeF GetMaxLabelSize(Font tickFont)
+        {
+            if (m_tickCollection.Labels is null || m_tickCollection.Labels.Length == 0)
+                return new SizeF(0, 0);
+
+            string largestString = "00";
+            foreach (string s in m_tickCollection.Labels.Where(x => string.IsNullOrEmpty(x) == false))
+                if (s.Length > largestString.Length)
+                    largestString = s;
+
+            return GDI.MeasureStringUsingTemporaryGraphics(largestString, tickFont);
+        }
+
+        private void ReCalculatePositionsNumeric(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
+        {
+            float low, high, tickSpacing;
+            int maxTickCount;
+
             if (IsVertical)
             {
-                span = dims.m_ySpan;
-                pxSize = dims.m_plotHeight;
-                min = dims.m_yMin;
-                max = dims.m_yMax;
+                low = dims.m_yMin - dims.m_pxPerUnitY; // add a extra pixel to capture the edge tick
+                high = dims.m_yMax + dims.m_pxPerUnitY;
+                maxTickCount = initialTickCount.HasValue ? initialTickCount.Value : (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
+                tickSpacing = (float)GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
             else
             {
-                span = dims.m_xSpan;
-                pxSize = dims.m_plotWidth;
-                min = dims.m_xMin;
-                max = dims.m_xMax;
+                low = dims.m_xMin - dims.m_pxPerUnitX; // add a extra pixel to capture the edge tick
+                high = dims.m_xMax + dims.m_pxPerUnitX;
+                maxTickCount = initialTickCount.HasValue ? initialTickCount.Value : (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
+                tickSpacing = (float)GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
 
-            TicksMajor = Calculate(pxSize, span, min, max, true);
-            TicksMinor = Calculate(pxSize, span, min, max, false);
+
+            // now  that tick-spacing is known, start to generate list of ticks
+            float firstTickOffset = low % tickSpacing;
+            int tickCount = (int)((high - low) / tickSpacing) + 2;
+            tickCount = tickCount > 1000 ? 1000 : tickCount;
+            tickCount = tickCount < 1 ? 1 : tickCount;
+
+            float[] tickPositionsMajor = Enumerable.Range(0, tickCount)
+                .Select(x => low + x * tickSpacing - firstTickOffset)
+                .Where(x => x >= low && x <= high)
+                .ToArray();
+
+            if (tickPositionsMajor.Length < 2)
+            {
+                float tickBelow = low - firstTickOffset;
+                float firstTick = tickPositionsMajor.Length > 0 ? tickPositionsMajor[0] : tickBelow;
+                float nextTick = tickBelow + tickSpacing;
+                tickPositionsMajor = new float[] { firstTick, nextTick };
+            }
+
+            if (IntegerPositionsOnly)
+            {
+                int firstTick = (int)tickPositionsMajor[0];
+                tickPositionsMajor = tickPositionsMajor.Where(x => x == (int)x).Distinct().ToArray();
+
+                if (tickPositionsMajor.Length < 2)
+                    tickPositionsMajor = new float[] { firstTick - 1, firstTick, firstTick + 1 };
+            }
+
+            string[] labels = GetTicksLabel(tickPositionsMajor);
+
+            float[] tickPositionsMinor = GetMinorPositions(tickPositionsMajor, low, high);
+
+            m_tickCollection = new TickCollection(tickPositionsMajor, tickPositionsMinor, labels);
         }
 
-        private Tick[] Calculate(float pxSize, float span, float min, float max, bool major = true)
+        public float[] GetMinorPositions(float[] majorTicks, float min, float max)
         {
-            List<Tick> ticks = new List<Tick>();
+            int divisions = 5;
 
-            //if (pxSize < TickSpacingPx / 2) return Array.Empty<Tick>();
+            if (majorTicks is null || majorTicks.Length < 2)
+                return Array.Empty<float>();
 
-            float minimumTickCount = pxSize / TickSpacingPx;
-            if (major == false) minimumTickCount *= 5;
+            float majorTickSpacing = majorTicks[1] - majorTicks[0];
+            float minorTickSpacing = majorTickSpacing / divisions;
 
-            float tickSpacing = (float)GetIdealTickSpacing(span, (int)minimumTickCount);
-            int tickCount = (int)(span / tickSpacing) + 1;
+            List<float> majorTicksWithPadding = new List<float>();
+            majorTicksWithPadding.Add(majorTicks[0] - majorTickSpacing);
+            majorTicksWithPadding.AddRange(majorTicks);
 
-            // To get an integer scale
-            // For example, spacing = 1, min = 5.7
-            // min % spacing = 0.7 , Therefore, the first scale will move from 5.7 to 0.7,
-            // becoming an integer scale
-            float tickOffsetFromMin = min % tickSpacing;
-
-            for (int i = 0; i < tickCount; i++)
+            List<float> minorTicks = new List<float>();
+            foreach (var majorTickPosition in majorTicksWithPadding)
             {
-                float tickDelta = i * tickSpacing - tickOffsetFromMin;
-                float posUnit = min + tickDelta;
-
-                if (posUnit >= min && posUnit <= max)
+                for (int i = 1; i < divisions; i++)
                 {
-                    ticks.Add(new Tick(posUnit, posUnit, tickSpacing));
+                    float minorTickPosition = majorTickPosition + minorTickSpacing * i;
+                    if ((minorTickPosition > min) && (minorTickPosition < max))
+                        minorTicks.Add(minorTickPosition);
                 }
             }
 
-            return ticks.ToArray();
+            return minorTicks.ToArray();
         }
 
-        private double GetIdealTickSpacing(float span, int tickCountTarget)
+        private string[] GetTicksLabel(float[] positions)
         {
-            double tickSpacing = 0;
-            for (int powerOfTen = 10; powerOfTen > -10; powerOfTen--)
+            if (positions.Length == 0)
+                return Array.Empty<string>();
+
+            string[] labels = new string[positions.Length];
+
+            for (int i = 0; i < positions.Length; i++)
             {
-                tickSpacing = Math.Pow(10, powerOfTen);
+                labels[i] = GetNumericLabel(positions[i]);
 
-                if (tickSpacing > span) continue;
-
-                double tickCount = span / tickSpacing;
-                if (tickCount >= tickCountTarget)
-                {
-                    // a good tick density
-                    if (tickCount >= tickCountTarget * 5) return tickSpacing * 5;
-                    if (tickCount >= tickCountTarget * 2) return tickSpacing * 2;
-                    return tickSpacing;
-                }
+                //if (labels[i] == "-0")
+                //    labels[i] = "0";
             }
 
-            return 0;
+
+            return labels;
         }
 
-
-        [Obsolete("use GetTicks instead")]
-        public void RecalculateTicks(PlotDimensions dims)
+        private string GetNumericLabel(float value)
         {
-            float tick_density = 0;
-            if (IsVertical)
+            // if the number is round or large, use the numeric format
+            bool isRounded = (int)value == value;
+            bool isLargeted = Math.Abs(value) > 1000;
+            if (isRounded || isLargeted)
+                return value.ToString("N0", Culture);
+
+            // otherwise the number is probably small or very precise to use the general format (with slight rounding)
+            return Math.Round(value, 10).ToString("G", Culture);
+        }
+
+        private float GetIdealTickSpacing(float low, float high, int maxTickCount, int radix)
+        {
+            float range = high - low;
+            int exponent = (int)Math.Log(range, radix);
+            // 初始化三个值
+            List<float> tickSpacings = new List<float>() { (float)Math.Pow(radix, exponent) };
+            tickSpacings.Add(tickSpacings.Last());
+            tickSpacings.Add(tickSpacings.Last());
+
+
+            float[] divBy;
+            if (radix == 10)
             {
-                tick_density = dims.m_plotHeight / m_pixelsPerTick;
+                divBy = new float[] { 2, 2, 2.5f }; // 10,5,2.5,1
             }
             else
             {
-                tick_density = dims.m_plotWidth / m_pixelsPerTick;
-            }
-            TicksMinor = AutoCalculate(dims, (int)(tick_density * 5));
-            TicksMajor = AutoCalculate(dims, (int)(tick_density * 1));
-        }
-
-        [Obsolete]
-        private Tick[] AutoCalculate(PlotDimensions dims, int targetTickCount)
-        {
-            float span, pxSize, unitsPerPx, min, max;
-            if (IsVertical)
-            {
-                span = dims.m_ySpan;
-                pxSize = dims.m_plotHeight;
-                unitsPerPx = dims.m_unitsPerPxY;
-                min = dims.m_yMin;
-                max = dims.m_yMax;
-            }
-            else
-            {
-                span = dims.m_xSpan;
-                pxSize = dims.m_plotWidth;
-                unitsPerPx = dims.m_unitsPerPxX;
-                min = dims.m_xMin;
-                max = dims.m_xMax;
+                throw new NotImplementedException($"Unsupport the radix: {radix}");
             }
 
-            return GenerateTicks(span, pxSize, unitsPerPx, min, max, targetTickCount);
+            int divisions = 0;
+            int tickCount = 0;
+            while ((tickCount < maxTickCount) && (tickSpacings.Count < 1000))
+            {
+                tickSpacings.Add(tickSpacings.Last() / divBy[divisions]);
+                tickCount = (int)(range / tickSpacings.Last());
+            }
+
+            int startIndex = 3;
+            // 
+            float maxSpacing = range / 2.0f;
+            float idealSpacing = tickSpacings[tickSpacings.Count - startIndex];
+
+            while (idealSpacing > maxSpacing && startIndex >= 1)
+            {
+                idealSpacing = tickSpacings[tickSpacings.Count - startIndex];
+                startIndex--;
+            }
+
+            return idealSpacing;
         }
-        [Obsolete]
-        private Tick[] GenerateTicks(float span, float pxSize, float unitsPerPx,
-            float min, float max, float targetTickCount)
+
+        private Tick[] GetMajorTicks(float min, float max)
         {
-            if (targetTickCount <= 0)
+            if (m_tickCollection.Major is null || m_tickCollection.Major.Length == 0)
                 return Array.Empty<Tick>();
 
             List<Tick> ticks = new List<Tick>();
 
-            // Size value of every tick
-            double tickSize = RoundNumberNear(span / targetTickCount * 1.5);
-            int lastTick = 123456789;
-            // 
-            for (int i = 0; i < pxSize; i++)
+            for (int i = 0; i < m_tickCollection.Major.Length; i++)
             {
-                float thisPos = i * unitsPerPx + min;
-                // 
-                int thisTick = (int)(thisPos / tickSize);
+                Tick tick = new Tick(
+                    position: m_tickCollection.Major[i],
+                    label: m_tickCollection.Labels[i],
+                    isMajor: true,
+                    isDateTime: LabelFormat == TickLabelFormat.DateTime);
 
-                if (lastTick != thisTick)
-                {
-                    lastTick = thisTick;
-
-                    float thisPosRounded = (float)(thisTick * tickSize);
-                    if (thisPosRounded > min && thisPosRounded < max)
-                    {
-                        ticks.Add(new Tick(thisPosRounded, thisPosRounded, span));
-                    }
-                }
+                ticks.Add(tick);
             }
 
-            return ticks.ToArray();
+            return ticks.Where(x => x.m_position >= min && x.m_position <= max).OrderBy(x => x.m_position).ToArray();
         }
 
-        [Obsolete]
-        private double RoundNumberNear(double target)
+        private Tick[] GetMinorTicks()
         {
-            target = Math.Abs(target);
-            int lastDivision = 2;
-            double round = 1000000000000;
-            while (round > 0.00000000001)
+            if (m_tickCollection.Minor is null || m_tickCollection.Minor.Length == 0)
+                return Array.Empty<Tick>();
+
+            Tick[] ticks = new Tick[m_tickCollection.Minor.Length];
+            for (int i = 0; i < ticks.Length; i++)
             {
-                if (round <= target) return round;
-                round /= lastDivision;
-                if (lastDivision == 2) lastDivision = 5;
-                else lastDivision = 2;
+                ticks[i] = new Tick(
+                    position: m_tickCollection.Minor[i],
+                    label: null,
+                    isMajor: false,
+                    isDateTime: LabelFormat == TickLabelFormat.DateTime);
             }
-            return 0;
+
+            return ticks;
+        }
+
+        public Tick[] GetTicks(float min, float max)
+        {
+            return GetMajorTicks(min, max).Concat(GetMinorTicks()).ToArray();
+        }
+
+        public Tick[] GetVisibleMajorTicks(PlotDimensions dims)
+        {
+            float high, low;
+
+            if (IsVertical)
+            {
+                low = dims.m_yMin - dims.m_unitsPerPxY; // add an extra pixel to capture the edge tick
+                high = dims.m_yMax + dims.m_unitsPerPxY; // add an extra pixel to capture the edge tick
+            }
+            else
+            {
+                low = dims.m_xMin - dims.m_pxPerUnitX; // add an extra pixel to capture the edge tick
+                high = dims.m_xMax + dims.m_pxPerUnitX; // add an extra pixel to capture the edge tick
+            }
+
+            return GetMajorTicks(low, high);
+        }
+
+        public Tick[] GetVisibleMinorTicks(PlotDimensions dims)
+        {
+            double high, low;
+            if (IsVertical)
+            {
+                low = dims.m_yMin - dims.m_unitsPerPxY; // add an extra pixel to capture the edge tick
+                high = dims.m_yMax + dims.m_unitsPerPxY; // add an extra pixel to capture the edge tick
+            }
+            else
+            {
+                low = dims.m_xMin - dims.m_pxPerUnitX; // add an extra pixel to capture the edge tick
+                high = dims.m_xMax + dims.m_pxPerUnitX; // add an extra pixel to capture the edge tick
+            }
+
+            return GetMinorTicks()
+                .Where(t => t.m_position >= low && t.m_position <= high)
+                .ToArray();
         }
     }
 }

@@ -64,10 +64,6 @@ namespace Plot.Core
         // TODO: Draw Title
         public string LabelTitle { get; set; }
 
-        public float PadLeft { get; set; } = 50;
-        public float PadRight { get; set; } = 50;
-        public float PadTop { get; set; } = 47;
-        public float PadBottom { get; set; } = 47;
         public float AxisSpace { get; set; } = 20;
 
         public event EventHandler OnBitmapChanged;
@@ -135,11 +131,11 @@ namespace Plot.Core
             {
                 if (m_bmp == null) return;
 
-                Layout(m_bmp.Width / scale, m_bmp.Height / scale);
-                var primaryDims = GetDimensions(BottomAxes[0], LeftAxes[0], scale);
-
                 AutoScaleByPlot();
-                CalculateTicks(primaryDims);
+
+                Layout(m_bmp.Width / scale, m_bmp.Height / scale);
+
+                var primaryDims = GetDimensions(BottomAxes[0], LeftAxes[0], scale);
 
                 RenderClear(m_bmp, lowQuality, primaryDims);
                 RenderBeforePlot(m_bmp, lowQuality, primaryDims);
@@ -150,14 +146,98 @@ namespace Plot.Core
             }
         }
 
+
         private void Layout(float width, float height)
         {
-            // TODO: 自动计算PadLeft, PadRight, PadTop, PadBottom
+            // tick 的密度与axis size有关
+            // axis size 与 pad有关
+            // pad 大小与label有关
+            // label 大小与tick有关
+            // 先有鸡还是先有蛋
+            // 假设pad为0，没得label，先计算出 tick label的大小
+
+            SizeF figureSizPx = new SizeF(width, height);
+
+            {
+                foreach (Axis axis in Axes)
+                {
+                    Axis xAxis, yAxis;
+
+                    if (axis.IsHorizontal)
+                    {
+                        xAxis = axis;
+                        yAxis = LeftAxes[0];
+                    }
+                    else if (axis.IsVertical)
+                    {
+                        xAxis = BottomAxes[0];
+                        yAxis = axis;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"unsupported edge type {axis.Edge}");
+                    }
+
+                    PlotDimensions dimsFull = new PlotDimensions(figureSizPx, figureSizPx, figureSizPx,
+                                                new PointF(0, 0), new PointF(0, 0),
+                                                (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
+                                                1f, xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
+                    CalculatePadding(dimsFull, xAxis, yAxis);
+                }
+
+                RecalculateDataPadding(width, height);
+            }
+
+            {
+                foreach (Axis axis in Axes)
+                {
+                    Axis xAxis, yAxis;
+
+                    if (axis.IsHorizontal)
+                    {
+                        xAxis = axis;
+                        yAxis = LeftAxes[0];
+                    }
+                    else if (axis.IsVertical)
+                    {
+                        xAxis = BottomAxes[0];
+                        yAxis = axis;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"unsupported edge type {axis.Edge}");
+                    }
+
+                    PlotDimensions dims = GetDimensions(xAxis, yAxis, 1f);
+                    CalculatePadding(dims, axis, yAxis);
+                }
+
+                RecalculateDataPadding(width, height);
+            }
+        }
+
+        private void CalculatePadding(PlotDimensions dims, Axis xAxis, Axis yAxis)
+        {
+            xAxis.RecalculateTickPositions(dims);
+            yAxis.RecalculateTickPositions(dims);
+
+            xAxis.ReCalculateAxisSize();
+            yAxis.ReCalculateAxisSize();
+        }
+
+        private void RecalculateDataPadding(float width, float height)
+        {
+            float PadLeft = LeftAxes[0].GetSize();
+            float PadRight = RightAxes[0].GetSize();
+            float PadTop = TopAxes[0].GetSize();
+            float PadBottom = BottomAxes[0].GetSize();
+
             ArrangeAxes(width, TopAxes, PadLeft, PadRight);
             ArrangeAxes(width, BottomAxes, PadLeft, PadRight);
             ArrangeAxes(height, LeftAxes, PadTop, PadBottom);
             ArrangeAxes(height, RightAxes, PadTop, PadBottom);
         }
+
 
         private void AutoScaleByPlot()
         {
@@ -182,16 +262,6 @@ namespace Plot.Core
             {
                 series.XAxis.Dims.SetLimits((float)xmin, (float)xmax);
                 series.YAxis.Dims.SetLimits((float)ymin, (float)ymax);
-            }
-        }
-
-        private void CalculateTicks(PlotDimensions dims)
-        {
-            foreach (var axis in Axes)
-            {
-                PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis, LeftAxes[0], dims.m_scaleFactor) :
-                    GetDimensions(BottomAxes[0], axis, dims.m_scaleFactor);
-                axis.AxisTick.TickGenerator.GetTicks(dims2);
             }
         }
 

@@ -18,6 +18,16 @@ namespace Plot.Core.Draws
             return new Font(fontFamily, fontSize, fontStyle, GraphicsUnit.Pixel);
         }
 
+
+        public static SizeF MeasureStringUsingTemporaryGraphics(string text, Font font)
+        {
+            using (Bitmap bmp = new Bitmap(1, 1))
+            using (Graphics gfx = Graphics(bmp, true, 1f))
+            {
+                return MeasureString(gfx, text, font);
+            }
+        }
+
         public static SizeF MeasureString(Graphics gfx, string text, Font font)
         {
             SizeF size = gfx.MeasureString(text, font);
@@ -36,6 +46,7 @@ namespace Plot.Core.Draws
             gfx.ScaleTransform(scale, scale);
             return gfx;
         }
+
 
         public static Graphics Graphics(Bitmap bmp, PlotDimensions dims, bool lowQuality, bool clip = false)
 
@@ -58,5 +69,7 @@ namespace Plot.Core.Draws
 
 
         public static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb(alpha * 255, color), width);
+
+
     }
 }
