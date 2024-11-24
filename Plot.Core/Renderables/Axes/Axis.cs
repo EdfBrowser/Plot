@@ -1,4 +1,5 @@
 using Plot.Core.Enum;
+using System;
 using System.Drawing;
 
 namespace Plot.Core.Renderables.Axes
@@ -147,6 +148,8 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
+        public float PaddingSizePx { get; private set; }
+
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
@@ -155,5 +158,39 @@ namespace Plot.Core.Renderables.Axes
             AxisLabel.Render(bmp, dims, lowQuality);
             AxisLine.Render(bmp, dims, lowQuality);
         }
+
+        public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.ReCalculate(dimsFull, AxisTick.TickFont);
+
+        public void ReCalculateAxisSize()
+        {
+            PaddingSizePx = 0f;
+
+            if (AxisLabel.Visible)
+                PaddingSizePx += AxisLabel.Measure().Height;
+
+            if (AxisTick.TickLabelVisible)
+            {
+                // determine how many pixels the largest tick label occupies
+                float maxHeight = AxisTick.TickGenerator.LargestLabelHeight;
+                float maxWidth = AxisTick.TickGenerator.LargestLabelWidth * 1.2f;
+
+                // calculate the width and height of the rotated label
+                float largerEdgeLength = Math.Max(maxWidth, maxHeight);
+                float shorterEdgeLength = Math.Min(maxWidth, maxHeight);
+                float differenceInEdgeLengths = largerEdgeLength - shorterEdgeLength;
+                double radians = AxisTick.TickLabelRotation * Math.PI / 180;
+                double fraction = IsHorizontal ? Math.Sin(radians) : Math.Cos(radians);
+                double rotatedSize = shorterEdgeLength + differenceInEdgeLengths * fraction;
+
+                // add the rotated label size to the size of this axis
+                PaddingSizePx += (float)rotatedSize;
+            }
+
+            // 刻度线
+            if (AxisTick.MajorTickVisible)
+                PaddingSizePx += AxisTick.MajorTickLength;
+        }
+
+        public float GetSize()   => Visible ? PaddingSizePx : 0;
     }
 }

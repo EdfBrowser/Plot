@@ -1,28 +1,29 @@
+using System;
+
 namespace Plot.Core.Ticks
 {
     public struct Tick
     {
-        public float m_posUnit;
-        public float m_posPixel;
-        public float m_spanUnit;
+        public float m_position;
+        public string m_label;
+        public bool m_isMajor;
+        public bool m_isDateTime;
+        public DateTime DateTime => DateTime.FromOADate(m_position);
 
-        public Tick(float posUnit, float posPixel, float spanUnit)
+        public Tick(float position, string label, bool isMajor, bool isDateTime)
         {
-            m_posUnit = posUnit;
-            m_posPixel = posPixel;
-            m_spanUnit = spanUnit;
+            m_position = position;
+            m_label = label;
+            m_isMajor = isMajor;
+            m_isDateTime = isDateTime;
         }
 
-        public string Label
+        public override string ToString()
         {
-            get
-            {
-                if (m_spanUnit < .001) return string.Format("{0:0.0000}", m_posUnit);
-                if (m_spanUnit < .01) return string.Format("{0:0.000}", m_posUnit);
-                if (m_spanUnit < .1) return string.Format("{0:0.00}", m_posUnit);
-                if (m_spanUnit < 1) return string.Format("{0:0.0}", m_posUnit);
-                return string.Format("{0:0}", m_posUnit);
-            }
+            string tickType = m_isMajor ? "Major Tick" : "Minor Tick";
+            string tickLabel = string.IsNullOrEmpty(m_label) ? "(unlabeled)" : $"labeled '{m_label}'";
+            string tickPosition = m_isDateTime ? DateTime.ToString() : m_position.ToString();
+            return $"{tickType} at {tickPosition} {tickLabel}";
         }
     }
 }

@@ -17,6 +17,8 @@ namespace Plot.Core.Renderables.Axes
         public Color AxisLabelColor { get; set; } = Color.Black;
         public float AxisLabelWidth { get; set; } = 1;
 
+        public Font LabelFont { get; } = GDI.Font();
+
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
@@ -35,6 +37,8 @@ namespace Plot.Core.Renderables.Axes
                 }
             }
         }
+
+
 
         private void DrawLabels(PlotDimensions dims, Graphics gfx, string label, string tickFont,
          Color color, float lineWidth, Edge edge, float pixelOffset, float tickLength, float labelHeight)
@@ -64,7 +68,6 @@ namespace Plot.Core.Renderables.Axes
                     throw new NotImplementedException($"unsupported edge type {edge}");
             }
 
-            using (var font = GDI.Font(tickFont))
             using (var brush = GDI.Brush(color))
             using (var sf = new StringFormat())
             {
@@ -90,7 +93,7 @@ namespace Plot.Core.Renderables.Axes
                         throw new NotImplementedException($"unsupported edge type {edge}");
                 }
 
-                SizeF size = GDI.MeasureString(gfx, label, font);
+                SizeF size = GDI.MeasureString(gfx, label, LabelFont);
                 if (edge == Edge.Bottom)
                 {
                     y += size.Height;
@@ -101,7 +104,7 @@ namespace Plot.Core.Renderables.Axes
                 }
                 gfx.TranslateTransform(x, y);
                 gfx.RotateTransform(rotation);
-                gfx.DrawString(label, font, brush, 0, 0, sf);
+                gfx.DrawString(label, LabelFont, brush, 0, 0, sf);
                 gfx.ResetTransform();
             }
         }
@@ -148,5 +151,8 @@ namespace Plot.Core.Renderables.Axes
 
             return (x, y);
         }
+
+        public SizeF Measure() => GDI.MeasureStringUsingTemporaryGraphics(Label, LabelFont);
+
     }
 }
