@@ -6,47 +6,47 @@ namespace Plot.Core
     public struct PlotDimensions
     {
         // figure dimensions (pixel)
-        internal float m_figureWidth;
-        internal float m_figureHeight;
+        public float m_figureWidth;
+        public float m_figureHeight;
 
         // TODO: 修改成更好的方式来管理布局
         // Draw area dimensions (pixel)
         // DataSize = multiple of PlotSize
-        internal float m_plotWidth;
-        internal float m_plotHeight;
-        internal float m_plotOffsetX;
-        internal float m_plotOffsetY;
+        public float m_plotWidth;
+        public float m_plotHeight;
+        public float m_plotOffsetX;
+        public float m_plotOffsetY;
 
         // Figure size - DataOffset = DataSize
-        internal float m_dataWidth;
-        internal float m_dataHeight;
-        internal float m_dataOffsetX;
-        internal float m_dataOffsetY;
+        public float m_dataWidth;
+        public float m_dataHeight;
+        public float m_dataOffsetX;
+        public float m_dataOffsetY;
 
         // data limits (units)
-        internal float m_xMin;
-        internal float m_xMax;
-        internal float m_yMin;
-        internal float m_yMax;
-        internal float m_xSpan;
-        internal float m_ySpan;
-        internal float m_xCenter;
-        internal float m_yCenter;
+        public float m_xMin;
+        public float m_xMax;
+        public float m_yMin;
+        public float m_yMax;
+        public float m_xSpan;
+        public float m_ySpan;
+        public float m_xCenter;
+        public float m_yCenter;
 
-        internal float m_pxPerUnitX;
-        internal float m_pxPerUnitY;
-        internal float m_unitsPerPxX;
-        internal float m_unitsPerPxY;
+        public float m_pxPerUnitX;
+        public float m_pxPerUnitY;
+        public float m_unitsPerPxX;
+        public float m_unitsPerPxY;
 
         // Reverse axis direction
-        internal bool m_isReverseX;
-        internal bool m_isReverseY;
+        public bool m_isReverseX;
+        public bool m_isReverseY;
 
         // rendering options
-        internal float m_scaleFactor;
+        public float m_scaleFactor;
 
 
-        internal PlotDimensions(SizeF figureSize, SizeF dataSize, SizeF plotSize, PointF plotOffset, PointF dataOffset,
+        public PlotDimensions(SizeF figureSize, SizeF dataSize, SizeF plotSize, PointF plotOffset, PointF dataOffset,
             ((float xMin, float xMax), (float yMin, float yMax)) limits,
             float scaleFactor, bool is_reverse_x = false, bool is_reverse_y = false)
         {
@@ -69,19 +69,19 @@ namespace Plot.Core
             m_isReverseY = is_reverse_y;
         }
 
-        internal (float xPx, float yPx) GetPixel((float xUnit, float yUnit) unit)
+        public (float xPx, float yPx) GetPixel((float xUnit, float yUnit) unit)
         {
             return (GetPixelX(unit.xUnit), GetPixelY(unit.yUnit));
         }
 
-        internal float GetPixelX(float position)
+        public float GetPixelX(float position)
         {
             return m_isReverseX
                 ? (float)(m_plotOffsetX + ((m_xMax - position) * m_pxPerUnitX))
                 : (float)(m_plotOffsetX + ((position - m_xMin) * m_pxPerUnitX));
         }
 
-        internal float GetPixelY(float position)
+        public float GetPixelY(float position)
         {
             return m_isReverseY
                 ? (float)(m_plotOffsetY + ((m_yMax - position) * m_pxPerUnitY))

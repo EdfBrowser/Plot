@@ -34,14 +34,14 @@ namespace Plot.Core
 
         private readonly EventFactory m_eventFactory;
 
-        private readonly System.Diagnostics.Stopwatch m_stopwatch;
+        private readonly Stopwatch m_stopwatch;
 
         private List<Axis> Axes { get; } = new List<Axis>()
         {
-           new TopAxis() { Title = "Top",},
-           new BottomAxis(){ Title = "Bottom",},
-           new LeftAxis(){ Title = "Left",},
-           new RightAxis(){ Title = "Right",},
+           new TopAxis() ,
+           new BottomAxis(),
+           new LeftAxis(),
+           new RightAxis(),
         };
 
         public List<Axis> TopAxes => Axes.Where(x => x.Edge == Edge.Top).ToList();
@@ -56,7 +56,7 @@ namespace Plot.Core
 
         public Figure()
         {
-            m_stopwatch = new System.Diagnostics.Stopwatch();
+            m_stopwatch = new Stopwatch();
 
             m_eventFactory = new EventFactory(this);
         }
@@ -68,10 +68,25 @@ namespace Plot.Core
         public float PadRight { get; set; } = 50;
         public float PadTop { get; set; } = 47;
         public float PadBottom { get; set; } = 47;
-        public float AxisSpace { get; set; } = 5;
+        public float AxisSpace { get; set; } = 20;
 
         public event EventHandler OnBitmapChanged;
         public event EventHandler OnBitmapUpdated;
+
+
+        public void SetAxisLimits(AxisLimits axisLimits, Axis xAxis, Axis yAxis)
+        {
+            xAxis.Dims.SetLimits((float)axisLimits.m_xMin, (float)axisLimits.m_xMax);
+            yAxis.Dims.SetLimits((float)axisLimits.m_yMin, (float)axisLimits.m_yMax);
+        }
+
+        public AxisLimits GetAxisLimits(Axis xAxis, Axis yAxis)
+        {
+            (double xMin, double xMax) = xAxis.Dims.RationalLimits();
+            (double yMin, double yMax) = yAxis.Dims.RationalLimits();
+            return new AxisLimits(xMin, xMax, yMin, yMax);
+        }
+
 
         public Axis AddAxes(Edge edge)
         {
@@ -149,7 +164,7 @@ namespace Plot.Core
             double xmin = double.MaxValue, xmax = double.MinValue;
             double ymin = double.MaxValue, ymax = double.MinValue;
             var limits = SeriesList
-                .Where(x => !x.XAxis.HasBeenSet() || !x.YAxis.HasBeenSet())
+                .Where(x => !x.XAxis.Dims.HasBeenSet || !x.YAxis.Dims.HasBeenSet)
                 .Select(X => X.GetAxisLimits());
 
             foreach (var limit in limits)
@@ -165,8 +180,8 @@ namespace Plot.Core
 
             foreach (var series in SeriesList)
             {
-                series.XAxis.SetLimit((float)xmin, (float)xmax);
-                series.YAxis.SetLimit((float)ymin, (float)ymax);
+                series.XAxis.Dims.SetLimits((float)xmin, (float)xmax);
+                series.YAxis.Dims.SetLimits((float)ymin, (float)ymax);
             }
         }
 
@@ -176,7 +191,7 @@ namespace Plot.Core
             {
                 PlotDimensions dims2 = axis.IsHorizontal ? GetDimensions(axis, LeftAxes[0], dims.m_scaleFactor) :
                     GetDimensions(BottomAxes[0], axis, dims.m_scaleFactor);
-                axis.GetTicks(dims2);
+                axis.AxisTick.TickGenerator.GetTicks(dims2);
             }
         }
 
@@ -264,7 +279,7 @@ namespace Plot.Core
             plotOffset += p1;
             foreach (var axis in axes)
             {
-                axis.Resize(px, plotSize, dataSize, p1, plotOffset);
+                axis.Dims.Resize(px, plotSize, dataSize, p1, plotOffset);
                 plotOffset += plotSize + AxisSpace;
             }
         }
@@ -272,14 +287,14 @@ namespace Plot.Core
         // TODO: 多个x轴和y轴应该有一个对应关系
         private static PlotDimensions GetDimensions(Axis xAxis, Axis yAxis, float scale)
         {
-            SizeF figureSize = new SizeF(xAxis.FigureSizePx, yAxis.FigureSizePx);
-            SizeF plotSize = new SizeF(xAxis.DataSizePx, yAxis.DataSizePx);
-            SizeF dataSize = new SizeF(xAxis.PlotSizePx, yAxis.PlotSizePx);
-            PointF plotOffset = new PointF(xAxis.PlotOffsetPx, yAxis.PlotOffsetPx);
-            PointF dataOffset = new PointF(xAxis.DataOffsetPx, yAxis.DataOffsetPx);
+            SizeF figureSize = new SizeF(xAxis.Dims.FigureSizePx, yAxis.Dims.FigureSizePx);
+            SizeF plotSize = new SizeF(xAxis.Dims.DataSizePx, yAxis.Dims.DataSizePx);
+            SizeF dataSize = new SizeF(xAxis.Dims.PlotSizePx, yAxis.Dims.PlotSizePx);
+            PointF plotOffset = new PointF(xAxis.Dims.PlotOffsetPx, yAxis.Dims.PlotOffsetPx);
+            PointF dataOffset = new PointF(xAxis.Dims.DataOffsetPx, yAxis.Dims.DataOffsetPx);
 
-            (float xMin, float xMax) = xAxis.GetLimit();
-            (float yMin, float yMax) = yAxis.GetLimit();
+            (float xMin, float xMax) = xAxis.Dims.RationalLimits();
+            (float yMin, float yMax) = yAxis.Dims.RationalLimits();
 
 
             return new PlotDimensions(figureSize,
@@ -289,7 +304,7 @@ namespace Plot.Core
                 dataOffset,
                 ((xMin, xMax), (yMin, yMax)),
                 scale,
-                xAxis.IsInverted, yAxis.IsInverted);
+                xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
 
         }
 
@@ -299,15 +314,9 @@ namespace Plot.Core
 
 
 
-
-
-
-
-
-
-        public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis)
+        public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis, int sampleRate)
         {
-            SampleDataSeries dataStreamSeries = new SampleDataSeries(xAxis, yAxis, this);
+            SampleDataSeries dataStreamSeries = new SampleDataSeries(xAxis, yAxis, this, sampleRate);
             SeriesList.Add(dataStreamSeries);
             return dataStreamSeries;
         }
@@ -348,7 +357,7 @@ namespace Plot.Core
 
             foreach (var axis in Axes)
             {
-                axis.MouseDown(inputState.m_x, inputState.m_y);
+                axis.Dims.Remember();
             }
         }
 
@@ -363,7 +372,7 @@ namespace Plot.Core
 
         public void MouseMove(InputState inputState)
         {
-            PlotEvent plotEvent = null;
+            IPlotEvent plotEvent = null;
             if (m_leftPressed)
                 plotEvent = m_eventFactory.CreateMousePanEvent(inputState);
             else if (m_rightPressed)
@@ -374,7 +383,7 @@ namespace Plot.Core
                 ProcessEvent(plotEvent);
         }
 
-        private void ProcessEvent(PlotEvent plotEvent)
+        private void ProcessEvent(IPlotEvent plotEvent)
         {
             plotEvent.Process();
 
@@ -389,37 +398,60 @@ namespace Plot.Core
         {
             foreach (var axis in Axes)
             {
-                axis.MouseDown(inputState.m_x, inputState.m_y);
+                axis.Dims.Remember();
             }
 
-            PlotEvent plotEvent = m_eventFactory.CreateMouseScrollEvent(inputState);
+            IPlotEvent plotEvent = m_eventFactory.CreateMouseScrollEvent(inputState);
             ProcessEvent(plotEvent);
         }
 
-        internal void PanAll(float x, float y)
+        public void PanAll(float x, float y)
         {
             foreach (var axis in Axes)
             {
-                axis.PanAll(x, y);
+                axis.Dims.Recall();
+
+                if (axis.IsHorizontal)
+                    axis.Dims.PanPx(x - X);
+                else
+                    axis.Dims.PanPx(y - Y);
             }
         }
 
-        internal void ZoomCenter(float xfrac, float yfrac, float x, float y)
+        public void ZoomCenter(float xfrac, float yfrac, float x, float y)
         {
             foreach (var axis in Axes)
             {
-                axis.ZoomByPosition(xfrac, yfrac, x, y);
+                axis.Dims.Recall();
+
+                float frac = axis.IsHorizontal ? xfrac : yfrac;
+                float centerPx = axis.IsHorizontal ? x : y;
+                float center = axis.Dims.GetUnit(centerPx);
+                if (float.IsNaN(frac) || frac == 1.0f || float.IsNaN(center))
+                    return;
+
+                axis.Dims.Zoom(frac, center);
             }
         }
 
-        internal void ZoomCenter(float x, float y)
+        public void ZoomCenter(float x, float y)
         {
             foreach (var axis in Axes)
             {
-                axis.ZoomByCenter(x, y);
+                axis.Dims.Recall();
+
+                float deltaPx = axis.IsHorizontal ? x - X : Y - y;
+                float delta = deltaPx * axis.Dims.UnitsPerPx;
+
+                float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
+
+                float frac = (float)Math.Pow(10, deltaFrac);
+                if (float.IsNaN(frac) || frac == 1.0f)
+                    return;
+
+                axis.Dims.Zoom(frac);
             }
         }
-
 
     }
 }

@@ -5,19 +5,17 @@ using System.Drawing;
 
 namespace Plot.Core.Renderables.Axes
 {
-    internal class AxisLabel : IRenderable, IAxisComponent
+    public class AxisLabel : IRenderable, IAxisComponent
     {
         public Edge Edge { get; set; }
-        public float PixelOffset { get; set; }
         public bool Visible { get; set; } = true;
-        public bool RulerMode { get; set; }
 
-        internal string Label { get; set; }
+        public string Label { get; set; }
 
         // Axis AxisLabel
-        internal bool AxisLabelVisible { get; set; } = true;
-        internal Color AxisLabelColor { get; set; } = Color.Black;
-        internal float AxisLabelWidth { get; set; } = 1;
+        public bool AxisLabelVisible { get; set; } = true;
+        public Color AxisLabelColor { get; set; } = Color.Black;
+        public float AxisLabelWidth { get; set; } = 1;
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
@@ -33,7 +31,7 @@ namespace Plot.Core.Renderables.Axes
                     //    SizeF size = GDI.MeasureString(gfx, Generator.TicksMajor.FirstOrDefault()?.Title, font);
                     //    labelHeight = Edge.IsHorizontal() ? size.Height : size.Width;
                     //}
-                    DrawLabels(dims, gfx, Label, null, AxisLabelColor, AxisLabelWidth, Edge, PixelOffset, 5, labelHeight);
+                    DrawLabels(dims, gfx, Label, null, AxisLabelColor, AxisLabelWidth, Edge, 0, 5, labelHeight);
                 }
             }
         }

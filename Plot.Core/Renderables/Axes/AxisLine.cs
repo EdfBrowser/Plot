@@ -5,17 +5,15 @@ using System.Drawing;
 
 namespace Plot.Core.Renderables.Axes
 {
-    internal class AxisLine : IRenderable, IAxisComponent
+    public class AxisLine : IRenderable, IAxisComponent
     {
         public Edge Edge { get; set; }
-        public float PixelOffset { get; set; }
         public bool Visible { get; set; } = true;
-        public bool RulerMode { get; set; }
 
         // Axis Line
-        internal bool AxisLineVisible { get; set; } = true;
-        internal Color AxisLineColor { get; set; } = Color.Black;
-        internal float AxisLineWidth { get; set; } = 1;
+        public bool AxisLineVisible { get; set; } = true;
+        public Color AxisLineColor { get; set; } = Color.Black;
+        public float AxisLineWidth { get; set; } = 1;
 
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
@@ -25,7 +23,7 @@ namespace Plot.Core.Renderables.Axes
             {
                 if (AxisLineVisible)
                 {
-                    DrawLines(dims, gfx, AxisLineColor, AxisLineWidth, Edge, PixelOffset);
+                    DrawLines(dims, gfx, AxisLineColor, AxisLineWidth, Edge, 0);
                 }
             }
         }

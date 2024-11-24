@@ -5,18 +5,18 @@ namespace Plot.Core.Ticks
 {
     public class TickGenerator
     {
-        internal Tick[] TicksMajor { get; private set; }
-        internal Tick[] TicksMinor { get; private set; }
+        public Tick[] TicksMajor { get; private set; }
+        public Tick[] TicksMinor { get; private set; }
 
-        internal bool IsVertical { get; set; } = true;
+        public bool IsVertical { get; set; } = true;
 
         [Obsolete]
         private readonly float m_pixelsPerTick = 70;
 
-        internal float TickSpacingPx { get; set; } = 100;
+        public float TickSpacingPx { get; set; } = 100;
 
 
-        internal void GetTicks(PlotDimensions dims)
+        public void GetTicks(PlotDimensions dims)
         {
             float span, pxSize, min, max;
             if (IsVertical)

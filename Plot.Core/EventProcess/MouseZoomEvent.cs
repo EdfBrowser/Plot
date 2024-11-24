@@ -1,17 +1,17 @@
 namespace Plot.Core.EventProcess
 {
-    internal class MouseZoomEvent : PlotEvent
+    public class MouseZoomEvent : IPlotEvent
     {
         private readonly Figure m_figure;
         private InputState m_inputState;
 
-        internal MouseZoomEvent(Figure m_figure, InputState inputState)
+        public MouseZoomEvent(Figure m_figure, InputState inputState)
         {
             this.m_figure = m_figure;
             m_inputState = inputState;
         }
 
-        internal override void Process()
+        public void Process()
         {
 
             // 按住shift列缩放，按住control行缩放
