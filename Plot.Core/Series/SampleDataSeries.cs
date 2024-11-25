@@ -2,9 +2,7 @@ using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series.AxesMangers;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 
 namespace Plot.Core.Series
 {

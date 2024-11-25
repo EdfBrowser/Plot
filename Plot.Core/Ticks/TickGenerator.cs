@@ -10,14 +10,12 @@ namespace Plot.Core.Ticks
     public enum TickLabelFormat { Numeric, DateTime };
     public class TickGenerator
     {
-
         private TickCollection m_tickCollection = TickCollection.Empty;
 
         public bool IsVertical { get; set; } = true;
 
         public float TickDensity { get; set; } = 1f;
         public int Radix { get; set; } = 10;
-        public bool IntegerPositionsOnly { get; set; } = false;
         public CultureInfo Culture { get; set; } = CultureInfo.DefaultThreadCurrentCulture;
         public SizeF LargestLabelSize { get; private set; }
         public float LargestLabelWidth => LargestLabelSize.Width;
@@ -46,18 +44,6 @@ namespace Plot.Core.Ticks
             ReCalculatePositionsNumeric(dims, LargestLabelSize, null);
         }
 
-        private SizeF GetMaxLabelSize(Font tickFont)
-        {
-            if (m_tickCollection.Labels is null || m_tickCollection.Labels.Length == 0)
-                return new SizeF(0, 0);
-
-            string largestString = "00";
-            foreach (string s in m_tickCollection.Labels.Where(x => string.IsNullOrEmpty(x) == false))
-                if (s.Length > largestString.Length)
-                    largestString = s;
-
-            return GDI.MeasureStringUsingTemporaryGraphics(largestString, tickFont);
-        }
 
         private void ReCalculatePositionsNumeric(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
         {
@@ -66,16 +52,16 @@ namespace Plot.Core.Ticks
 
             if (IsVertical)
             {
-                low = dims.m_yMin - dims.m_pxPerUnitY; // add a extra pixel to capture the edge tick
-                high = dims.m_yMax + dims.m_pxPerUnitY;
-                maxTickCount = initialTickCount.HasValue ? initialTickCount.Value : (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
+                low = dims.m_yMin - dims.m_unitsPerPxY; // add a extra pixel to capture the edge tick
+                high = dims.m_yMax + dims.m_unitsPerPxY;
+                maxTickCount = initialTickCount ?? (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
                 tickSpacing = (float)GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
             else
             {
-                low = dims.m_xMin - dims.m_pxPerUnitX; // add a extra pixel to capture the edge tick
-                high = dims.m_xMax + dims.m_pxPerUnitX;
-                maxTickCount = initialTickCount.HasValue ? initialTickCount.Value : (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
+                low = dims.m_xMin - dims.m_unitsPerPxX; // add a extra pixel to capture the edge tick
+                high = dims.m_xMax + dims.m_unitsPerPxX;
+                maxTickCount = initialTickCount ?? (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
                 tickSpacing = (float)GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
 
@@ -87,9 +73,9 @@ namespace Plot.Core.Ticks
             tickCount = tickCount < 1 ? 1 : tickCount;
 
             float[] tickPositionsMajor = Enumerable.Range(0, tickCount)
-                .Select(x => low + x * tickSpacing - firstTickOffset)
-                .Where(x => x >= low && x <= high)
-                .ToArray();
+                                            .Select(x => low + x * tickSpacing - firstTickOffset)
+                                            .Where(x => x >= low && x <= high)
+                                            .ToArray();
 
             if (tickPositionsMajor.Length < 2)
             {
@@ -97,15 +83,6 @@ namespace Plot.Core.Ticks
                 float firstTick = tickPositionsMajor.Length > 0 ? tickPositionsMajor[0] : tickBelow;
                 float nextTick = tickBelow + tickSpacing;
                 tickPositionsMajor = new float[] { firstTick, nextTick };
-            }
-
-            if (IntegerPositionsOnly)
-            {
-                int firstTick = (int)tickPositionsMajor[0];
-                tickPositionsMajor = tickPositionsMajor.Where(x => x == (int)x).Distinct().ToArray();
-
-                if (tickPositionsMajor.Length < 2)
-                    tickPositionsMajor = new float[] { firstTick - 1, firstTick, firstTick + 1 };
             }
 
             string[] labels = GetTicksLabel(tickPositionsMajor);
@@ -171,10 +148,10 @@ namespace Plot.Core.Ticks
                 return value.ToString("N0", Culture);
 
             // otherwise the number is probably small or very precise to use the general format (with slight rounding)
-            return Math.Round(value, 10).ToString("G", Culture);
+            return Math.Round(value, 3).ToString("G", Culture);
         }
 
-        private float GetIdealTickSpacing(float low, float high, int maxTickCount, int radix)
+        private float GetIdealTickSpacing(float low, float high, int maxTickCount, int radix = 10)
         {
             float range = high - low;
             int exponent = (int)Math.Log(range, radix);
@@ -198,7 +175,7 @@ namespace Plot.Core.Ticks
             int tickCount = 0;
             while ((tickCount < maxTickCount) && (tickSpacings.Count < 1000))
             {
-                tickSpacings.Add(tickSpacings.Last() / divBy[divisions]);
+                tickSpacings.Add(tickSpacings.Last() / divBy[divisions++ % divBy.Length]);
                 tickCount = (int)(range / tickSpacings.Last());
             }
 
@@ -214,6 +191,20 @@ namespace Plot.Core.Ticks
             }
 
             return idealSpacing;
+        }
+
+
+        private SizeF GetMaxLabelSize(Font tickFont)
+        {
+            if (m_tickCollection.Labels is null || m_tickCollection.Labels.Length == 0)
+                return new SizeF(0, 0);
+
+            string largestString = "00";
+            foreach (string s in m_tickCollection.Labels.Where(x => string.IsNullOrEmpty(x) == false))
+                if (s.Length > largestString.Length)
+                    largestString = s;
+
+            return GDI.MeasureStringUsingTemporaryGraphics(largestString, tickFont);
         }
 
         private Tick[] GetMajorTicks(float min, float max)

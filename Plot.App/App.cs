@@ -1,4 +1,3 @@
-using Plot.Core;
 using Plot.Core.Series;
 using System;
 using System.Drawing;
@@ -14,7 +13,7 @@ namespace Plot.App
         private readonly SampleDataSeries dataStreamer1;
         private readonly SampleDataSeries dataStreamer2;
 
-        private Random m_rand = new Random();
+        private readonly Random m_rand = new Random();
 
         public App()
         {
@@ -36,7 +35,7 @@ namespace Plot.App
             dataStreamer2 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis1, 1000);
             dataStreamer2.Color = Color.Green;
 
-            //formPlot1.Refresh();
+            formPlot1.Refresh();
         }
 
         private void UpdatePlot(object sender, EventArgs e)

@@ -23,23 +23,23 @@ namespace Plot.Core.Renderables.Axes
             {
                 if (AxisLineVisible)
                 {
-                    DrawLines(dims, gfx, AxisLineColor, AxisLineWidth, Edge, 0);
+                    DrawLines(dims, gfx, AxisLineColor, AxisLineWidth, Edge);
                 }
             }
         }
 
-        private void DrawLines(PlotDimensions dims, Graphics gfx, Color color, float lineWidth, Edge edge, float pixelOffset)
+        private void DrawLines(PlotDimensions dims, Graphics gfx, Color color, float lineWidth, Edge edge)
         {
             if (!Visible)
                 return;
             using (var pen = GDI.Pen(color, lineWidth))
             {
-                float left = dims.m_plotOffsetX - pixelOffset;
-                float top = dims.m_plotOffsetY - pixelOffset;
-                float dataWidth = left + dims.m_dataWidth + pixelOffset;
-                float plotWidth = left + dims.m_plotWidth + pixelOffset;
-                float dataHeight = top + dims.m_dataHeight + pixelOffset;
-                float plotHeight = top + dims.m_plotHeight + pixelOffset;
+                float left = dims.m_plotOffsetX;
+                float top = dims.m_plotOffsetY;
+                float dataWidth = dims.m_dataOffsetX + dims.m_dataWidth;
+                float plotWidth = left + dims.m_plotWidth;
+                float dataHeight = dims.m_dataOffsetY + dims.m_dataHeight;
+                float plotHeight = top + dims.m_plotHeight;
 
                 switch (edge)
                 {

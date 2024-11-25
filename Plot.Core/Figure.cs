@@ -26,40 +26,75 @@ namespace Plot.Core
         }
     }
 
-    public class Figure
+    public partial class Figure
     {
-        private Bitmap m_bmp;
-        private readonly Bitmap[] m_oldBitmaps = new Bitmap[3]; // 固定大小为3的数组
-        private int m_currentIndex = 0; // 当前索引
-
-        private readonly EventFactory m_eventFactory;
-
-        private readonly Stopwatch m_stopwatch;
-
-        private List<Axis> Axes { get; } = new List<Axis>()
+        #region Bitmap Manager
+        private class BitmapManager
         {
-           new TopAxis() ,
-           new BottomAxis(),
-           new LeftAxis(),
-           new RightAxis(),
-        };
+            private Bitmap m_bmp;
+            private readonly Bitmap[] m_oldBitmaps = new Bitmap[3]; // 固定大小为3的数组
+            private int m_currentIndex = 0; // 当前索引
 
-        public List<Axis> TopAxes => Axes.Where(x => x.Edge == Edge.Top).ToList();
-        public List<Axis> BottomAxes => Axes.Where(x => x.Edge == Edge.Bottom).ToList();
-        public List<Axis> LeftAxes => Axes.Where(x => x.Edge == Edge.Left).ToList();
-        public List<Axis> RightAxes => Axes.Where(x => x.Edge == Edge.Right).ToList();
+            private void StoreBitmap()
+            {
+                if (m_oldBitmaps[m_currentIndex] != null)
+                {
+                    Bitmap bmp = m_oldBitmaps[m_currentIndex];
+                    bmp.Dispose();
+                    bmp = null;
+                }
+
+                m_oldBitmaps[m_currentIndex++ % m_oldBitmaps.Length] = m_bmp;
+            }
+
+            public Bitmap GetLatestBitmap => m_bmp;
+
+            public void CreateBitmap(int width, int height)
+            {
+                // 旧的bitmap
+                if (m_bmp != null)
+                {
+                    // if the size don`t changed, return immediately
+                    if (m_bmp.Width == width && m_bmp.Height == height) return;
+
+                    StoreBitmap();
+                }
+
+                m_bmp = new Bitmap(width, height);
+            }
+        }
+
+#endregion
+
+        private BitmapManager m_bitmapManager = new BitmapManager();
+        private EventManager m_eventManager;
+        private readonly Stopwatch m_stopwatch;
 
         private List<SampleDataSeries> SeriesList { get; set; } = new List<SampleDataSeries>();
 
         // TODO: 修改成c#的锁机制
         private readonly object m_lockObj = new object();
 
+      
+
         public Figure()
         {
             m_stopwatch = new Stopwatch();
+            m_eventManager = new EventManager(this);
+            m_eventManager.MouseEventCompleted += OnMouseEventCompleted;
 
-            m_eventFactory = new EventFactory(this);
+            Axes.Add(AxisFactory.CreateAxis(Edge.Top));
+            Axes.Add(AxisFactory.CreateAxis(Edge.Bottom));
+            Axes.Add(AxisFactory.CreateAxis(Edge.Left));
+            Axes.Add(AxisFactory.CreateAxis(Edge.Right));
         }
+
+        public List<Axis> Axes { get; } = new List<Axis>();
+       
+        public List<Axis> TopAxes => Axes.Where(x => x.Edge == Edge.Top).ToList();
+        public List<Axis> BottomAxes => Axes.Where(x => x.Edge == Edge.Bottom).ToList();
+        public List<Axis> LeftAxes => Axes.Where(x => x.Edge == Edge.Left).ToList();
+        public List<Axis> RightAxes => Axes.Where(x => x.Edge == Edge.Right).ToList();
 
         // TODO: Draw Title
         public string LabelTitle { get; set; }
@@ -69,6 +104,40 @@ namespace Plot.Core
         public event EventHandler OnBitmapChanged;
         public event EventHandler OnBitmapUpdated;
 
+
+        public void Resize(float width, float height)
+        {
+            if (width < 10 || height < 10) return;
+
+            m_bitmapManager.CreateBitmap((int)width, (int)height);
+            OnBitmapChanged?.Invoke(null, null);
+
+            Render();
+        }
+
+        public void Render(bool lowQuality = false, float scale = 1.0f)
+        {
+            lock (m_lockObj)
+            {
+                Bitmap bmp = m_bitmapManager.GetLatestBitmap;
+                if (bmp == null) return;
+
+                AutoScaleByPlot();
+
+                Layout(bmp.Width / scale, bmp.Height / scale);
+
+                var primaryDims = GetDimensions(BottomAxes[0], LeftAxes[0], scale);
+
+                RenderClear(bmp, lowQuality, primaryDims);
+                RenderBeforePlot(bmp, lowQuality, primaryDims);
+                RenderPlot(bmp, lowQuality, primaryDims);
+                RenderAfterPlot(bmp, lowQuality, primaryDims);
+
+                OnBitmapUpdated?.Invoke(null, null);
+            }
+        }
+
+        #region Axis
 
         public void SetAxisLimits(AxisLimits axisLimits, Axis xAxis, Axis yAxis)
         {
@@ -90,63 +159,13 @@ namespace Plot.Core
             Axes.Add(axis);
             return axis;
         }
+        #endregion
 
-        public Bitmap GetLatestBitmap() => m_bmp;
+        #region Bitmap
+        public Bitmap GetLatestBitmap() => m_bitmapManager.GetLatestBitmap;
+        #endregion
 
-        private void AddBitmap(Bitmap bitmap)
-        {
-            if (m_oldBitmaps[m_currentIndex] != null)
-            {
-                m_oldBitmaps[m_currentIndex].Dispose();
-            }
-
-            m_oldBitmaps[m_currentIndex] = bitmap;
-            m_currentIndex = (m_currentIndex + 1) % m_oldBitmaps.Length;
-        }
-
-        public void Resize(float width, float height)
-        {
-            // TODO: 自动计算PadLeft, PadRight, PadTop, PadBottom
-            //if (width - PadLeft - PadRight < 1) width = PadLeft + PadRight + AxisSpace * (XAxes.Count - 1) + 100;
-            //if (height - PadTop - PadBottom < 1) height = PadTop + PadBottom + AxisSpace * (YAxes.Count - 1) + 100;
-            if (width < 10 || height < 10) return;
-
-            if (m_bmp != null)
-            {
-                if (m_bmp.Width == width && m_bmp.Height == height) return;
-
-                AddBitmap(m_bmp);
-            }
-
-            m_bmp = new Bitmap((int)width, (int)height);
-
-            OnBitmapChanged?.Invoke(null, null);
-
-            Render();
-        }
-
-        public void Render(bool lowQuality = false, float scale = 1.0f)
-        {
-            lock (m_lockObj)
-            {
-                if (m_bmp == null) return;
-
-                AutoScaleByPlot();
-
-                Layout(m_bmp.Width / scale, m_bmp.Height / scale);
-
-                var primaryDims = GetDimensions(BottomAxes[0], LeftAxes[0], scale);
-
-                RenderClear(m_bmp, lowQuality, primaryDims);
-                RenderBeforePlot(m_bmp, lowQuality, primaryDims);
-                RenderPlot(m_bmp, lowQuality, primaryDims);
-                RenderAfterPlot(m_bmp, lowQuality, primaryDims);
-
-                OnBitmapUpdated?.Invoke(null, null);
-            }
-        }
-
-
+        #region Render
         private void Layout(float width, float height)
         {
             // tick 的密度与axis size有关
@@ -161,28 +180,13 @@ namespace Plot.Core
             {
                 foreach (Axis axis in Axes)
                 {
-                    Axis xAxis, yAxis;
-
-                    if (axis.IsHorizontal)
-                    {
-                        xAxis = axis;
-                        yAxis = LeftAxes[0];
-                    }
-                    else if (axis.IsVertical)
-                    {
-                        xAxis = BottomAxes[0];
-                        yAxis = axis;
-                    }
-                    else
-                    {
-                        throw new NotImplementedException($"unsupported edge type {axis.Edge}");
-                    }
+                    GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
                     PlotDimensions dimsFull = new PlotDimensions(figureSizPx, figureSizPx, figureSizPx,
                                                 new PointF(0, 0), new PointF(0, 0),
                                                 (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
                                                 1f, xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
-                    CalculatePadding(dimsFull, xAxis, yAxis);
+                    CalculatePadding(dimsFull, axis);
                 }
 
                 RecalculateDataPadding(width, height);
@@ -191,53 +195,15 @@ namespace Plot.Core
             {
                 foreach (Axis axis in Axes)
                 {
-                    Axis xAxis, yAxis;
-
-                    if (axis.IsHorizontal)
-                    {
-                        xAxis = axis;
-                        yAxis = LeftAxes[0];
-                    }
-                    else if (axis.IsVertical)
-                    {
-                        xAxis = BottomAxes[0];
-                        yAxis = axis;
-                    }
-                    else
-                    {
-                        throw new NotImplementedException($"unsupported edge type {axis.Edge}");
-                    }
+                    GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
                     PlotDimensions dims = GetDimensions(xAxis, yAxis, 1f);
-                    CalculatePadding(dims, axis, yAxis);
+                    CalculatePadding(dims, axis);
                 }
 
                 RecalculateDataPadding(width, height);
             }
         }
-
-        private void CalculatePadding(PlotDimensions dims, Axis xAxis, Axis yAxis)
-        {
-            xAxis.RecalculateTickPositions(dims);
-            yAxis.RecalculateTickPositions(dims);
-
-            xAxis.ReCalculateAxisSize();
-            yAxis.ReCalculateAxisSize();
-        }
-
-        private void RecalculateDataPadding(float width, float height)
-        {
-            float PadLeft = LeftAxes[0].GetSize();
-            float PadRight = RightAxes[0].GetSize();
-            float PadTop = TopAxes[0].GetSize();
-            float PadBottom = BottomAxes[0].GetSize();
-
-            ArrangeAxes(width, TopAxes, PadLeft, PadRight);
-            ArrangeAxes(width, BottomAxes, PadLeft, PadRight);
-            ArrangeAxes(height, LeftAxes, PadTop, PadBottom);
-            ArrangeAxes(height, RightAxes, PadTop, PadBottom);
-        }
-
 
         private void AutoScaleByPlot()
         {
@@ -333,27 +299,9 @@ namespace Plot.Core
         {
         }
 
+        #endregion
 
-        private void ArrangeAxes(float px, List<Axis> axes, float p1, float p2)
-        {
-            int axisCount = axes.Count;
-            if (axisCount == 0) return;
-
-            float totalSpacing = AxisSpace * (axisCount - 1);
-            float dataSize = px - p1 - p2;
-            float availableSize = dataSize - totalSpacing;
-
-            float plotSize = availableSize / axisCount;
-
-            float plotOffset = 0;
-            plotOffset += p1;
-            foreach (var axis in axes)
-            {
-                axis.Dims.Resize(px, plotSize, dataSize, p1, plotOffset);
-                plotOffset += plotSize + AxisSpace;
-            }
-        }
-
+        #region Helpers
         // TODO: 多个x轴和y轴应该有一个对应关系
         private static PlotDimensions GetDimensions(Axis xAxis, Axis yAxis, float scale)
         {
@@ -378,11 +326,65 @@ namespace Plot.Core
 
         }
 
+        private void ArrangeAxes(float px, List<Axis> axes, float p1, float p2)
+        {
+            int axisCount = axes.Count;
+            if (axisCount == 0) return;
 
+            float totalSpacing = AxisSpace * (axisCount - 1);
+            float dataSize = px - p1 - p2;
+            float availableSize = dataSize - totalSpacing;
 
+            float plotSize = availableSize / axisCount;
 
+            float plotOffset = 0;
+            plotOffset += p1;
+            foreach (var axis in axes)
+            {
+                axis.Dims.Resize(px, plotSize, dataSize, p1, plotOffset);
+                plotOffset += plotSize + AxisSpace;
+            }
+        }
 
+        private void GetPrimayAxis(Axis axis, out Axis xAxis, out Axis yAxis)
+        {
+            if (axis.IsHorizontal)
+            {
+                xAxis = axis;
+                yAxis = LeftAxes[0];
+            }
+            else if (axis.IsVertical)
+            {
+                xAxis = BottomAxes[0];
+                yAxis = axis;
+            }
+            else
+            {
+                throw new NotImplementedException($"unsupported edge type {axis.Edge}");
+            }
+        }
 
+        private void CalculatePadding(PlotDimensions dims, Axis axis)
+        {
+            axis.RecalculateTickPositions(dims);
+            axis.ReCalculateAxisSize();
+        }
+
+        private void RecalculateDataPadding(float width, float height)
+        {
+            float PadLeft = LeftAxes[0].GetSize();
+            float PadRight = RightAxes[0].GetSize();
+            float PadTop = TopAxes[0].GetSize();
+            float PadBottom = BottomAxes[0].GetSize();
+
+            ArrangeAxes(width, TopAxes, PadLeft, PadRight);
+            ArrangeAxes(width, BottomAxes, PadLeft, PadRight);
+            ArrangeAxes(height, LeftAxes, PadTop, PadBottom);
+            ArrangeAxes(height, RightAxes, PadTop, PadBottom);
+        }
+        #endregion
+
+        #region Series
 
         public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis, int sampleRate)
         {
@@ -396,132 +398,16 @@ namespace Plot.Core
             SeriesList.Clear();
         }
 
+        #endregion
 
+        #region Event
+        public void MouseDown(InputState inputState) => m_eventManager.MouseDown(inputState);
+        public void MouseUp(InputState inputState) => m_eventManager.MouseUp(inputState);
+        public void MouseMove(InputState inputState)  => m_eventManager.MouseMove(inputState);
+        public void MouseDoubleClick(InputState inputState) => m_eventManager.MouseDoubleClick(inputState);
+        public void MouseWheel(InputState inputState)   => m_eventManager.MouseScroll(inputState);
 
-
-
-
-
-
-
-        public float X { get; private set; }
-        public float Y { get; private set; }
-
-        private bool m_leftPressed = false;
-        private bool m_rightPressed = false;
-        private bool m_ctrlPressed = false;
-        private bool m_shiftPressed = false;
-        private bool m_altPressed = false;
-
-
-        /////////////////////PlotEvent//////////////////////
-        public void MouseDown(InputState inputState)
-        {
-            X = inputState.m_x;
-            Y = inputState.m_y;
-            m_leftPressed = inputState.m_leftPressed;
-            m_rightPressed = inputState.m_rightPressed;
-            m_ctrlPressed = inputState.m_controlPressed;
-            m_shiftPressed = inputState.m_shiftPressed;
-            m_altPressed = inputState.m_altPressed;
-
-            foreach (var axis in Axes)
-            {
-                axis.Dims.Remember();
-            }
-        }
-
-        public void MouseUp(InputState inputState)
-        {
-            m_leftPressed = false;
-            m_rightPressed = false;
-            m_ctrlPressed = false;
-            m_shiftPressed = false;
-            m_altPressed = false;
-        }
-
-        public void MouseMove(InputState inputState)
-        {
-            IPlotEvent plotEvent = null;
-            if (m_leftPressed)
-                plotEvent = m_eventFactory.CreateMousePanEvent(inputState);
-            else if (m_rightPressed)
-                plotEvent = m_eventFactory.CreateMouseZoomEvent(inputState);
-
-
-            if (plotEvent != null)
-                ProcessEvent(plotEvent);
-        }
-
-        private void ProcessEvent(IPlotEvent plotEvent)
-        {
-            plotEvent.Process();
-
-            Render();
-        }
-
-        public void MouseDoubleClick(InputState inputState)
-        {
-        }
-
-        public void MouseWheel(InputState inputState)
-        {
-            foreach (var axis in Axes)
-            {
-                axis.Dims.Remember();
-            }
-
-            IPlotEvent plotEvent = m_eventFactory.CreateMouseScrollEvent(inputState);
-            ProcessEvent(plotEvent);
-        }
-
-        public void PanAll(float x, float y)
-        {
-            foreach (var axis in Axes)
-            {
-                axis.Dims.Recall();
-
-                if (axis.IsHorizontal)
-                    axis.Dims.PanPx(x - X);
-                else
-                    axis.Dims.PanPx(y - Y);
-            }
-        }
-
-        public void ZoomCenter(float xfrac, float yfrac, float x, float y)
-        {
-            foreach (var axis in Axes)
-            {
-                axis.Dims.Recall();
-
-                float frac = axis.IsHorizontal ? xfrac : yfrac;
-                float centerPx = axis.IsHorizontal ? x : y;
-                float center = axis.Dims.GetUnit(centerPx);
-                if (float.IsNaN(frac) || frac == 1.0f || float.IsNaN(center))
-                    return;
-
-                axis.Dims.Zoom(frac, center);
-            }
-        }
-
-        public void ZoomCenter(float x, float y)
-        {
-            foreach (var axis in Axes)
-            {
-                axis.Dims.Recall();
-
-                float deltaPx = axis.IsHorizontal ? x - X : Y - y;
-                float delta = deltaPx * axis.Dims.UnitsPerPx;
-
-                float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
-
-                float frac = (float)Math.Pow(10, deltaFrac);
-                if (float.IsNaN(frac) || frac == 1.0f)
-                    return;
-
-                axis.Dims.Zoom(frac);
-            }
-        }
-
+        private void OnMouseEventCompleted(object sender, EventArgs e) => Render();
+        #endregion
     }
 }

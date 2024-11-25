@@ -18,7 +18,7 @@ namespace Plot.Core.Ticks
             Labels = labels ?? Array.Empty<string>();
         }
 
-        public static TickCollection Empty =>new TickCollection(
+        public static TickCollection Empty => new TickCollection(
             Array.Empty<float>(),
             Array.Empty<float>(),
             Array.Empty<string>());
