@@ -2,14 +2,14 @@ namespace Plot.Core.EventProcess
 {
     public class MouseScrollEvent : IPlotEvent
     {
-        private readonly Figure m_figure;
+        private readonly EventManager m_manager;
         private InputState m_inputState;
 
         private readonly float m_frac = 0.15f;
 
-        public MouseScrollEvent(Figure m_figure, InputState inputState)
+        public MouseScrollEvent(EventManager eventManager, InputState inputState)
         {
-            this.m_figure = m_figure;
+            m_manager = eventManager;
             m_inputState = inputState;
         }
 
@@ -22,7 +22,7 @@ namespace Plot.Core.EventProcess
             float xFrac = m_inputState.m_scrollUp ? increment : decrement;
             float yFrac = m_inputState.m_scrollUp ? increment : decrement;
 
-            m_figure.ZoomCenter(xFrac, yFrac, m_inputState.m_x, m_inputState.m_y);
+            m_manager.ZoomCenter(xFrac, yFrac, m_inputState.m_x, m_inputState.m_y);
         }
     }
 }

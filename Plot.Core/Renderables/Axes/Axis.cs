@@ -96,8 +96,8 @@ namespace Plot.Core.Renderables.Axes
             // For smooth Pan and zoom
             // For example, if you move 100px to the left and 200px to the right,
             // you will actually move 100px to the right (the second rendering will not cause a large jump effect).
-            public void Remember() => (MinRemembered, MaxRemembered) = RationalLimits();
-            public void Recall() => (Min, Max) = (MinRemembered, MaxRemembered);
+            public void SuspendLimits() => (MinRemembered, MaxRemembered) = RationalLimits();
+            public void ResumeLimits() => (Min, Max) = (MinRemembered, MaxRemembered);
         }
 
         private Edge m_edge;
