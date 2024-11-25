@@ -78,8 +78,7 @@ namespace Plot.Core.EventProcess
                 float centerPx = axis.IsHorizontal ? x : y;
                 float center = axis.Dims.GetUnit(centerPx);
 
-                if (!float.IsNaN(frac) && frac != 1.0f && !float.IsNaN(center))
-                    axis.Dims.Zoom(frac, center);
+                axis.Dims.Zoom(frac, center);
             }
         }
 
@@ -93,8 +92,6 @@ namespace Plot.Core.EventProcess
                 float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
 
                 float frac = (float)Math.Pow(10, deltaFrac);
-                if (float.IsNaN(frac) || frac == 1.0f)
-                    return;
 
                 axis.Dims.Zoom(frac);
             }

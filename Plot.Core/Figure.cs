@@ -186,7 +186,7 @@ namespace Plot.Core
                                                 new PointF(0, 0), new PointF(0, 0),
                                                 (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
                                                 1f, xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
-                    CalculatePadding(dimsFull, xAxis, yAxis);
+                    CalculatePadding(dimsFull, axis);
                 }
 
                 RecalculateDataPadding(width, height);
@@ -198,13 +198,12 @@ namespace Plot.Core
                     GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
                     PlotDimensions dims = GetDimensions(xAxis, yAxis, 1f);
-                    CalculatePadding(dims, axis, yAxis);
+                    CalculatePadding(dims, axis);
                 }
 
                 RecalculateDataPadding(width, height);
             }
         }
-
 
         private void AutoScaleByPlot()
         {
@@ -365,13 +364,10 @@ namespace Plot.Core
             }
         }
 
-        private void CalculatePadding(PlotDimensions dims, Axis xAxis, Axis yAxis)
+        private void CalculatePadding(PlotDimensions dims, Axis axis)
         {
-            xAxis.RecalculateTickPositions(dims);
-            yAxis.RecalculateTickPositions(dims);
-
-            xAxis.ReCalculateAxisSize();
-            yAxis.ReCalculateAxisSize();
+            axis.RecalculateTickPositions(dims);
+            axis.ReCalculateAxisSize();
         }
 
         private void RecalculateDataPadding(float width, float height)

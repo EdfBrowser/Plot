@@ -52,6 +52,7 @@ namespace Plot.Core.Renderables.Axes
         public Color MinorGridColor { get; set; } = Color.LightGray;
         public DashStyle MinorGridStyle { get; set; } = DashStyle.Solid;
         public Font TickFont { get; set; } = GDI.Font();
+        public float RotatedSize { get; set; }
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
@@ -73,8 +74,6 @@ namespace Plot.Core.Renderables.Axes
                     DrawGridLines(dims, gfx, minorTicks, MinorGridStyle, MinorGridColor, MinorGridWidth, Edge);
                 }
 
-             
-
                 // Major ticks
                 if (MajorTickVisible)
                 {
@@ -82,7 +81,7 @@ namespace Plot.Core.Renderables.Axes
                     //if (RulerMode)
                     //    tickLength *= 4;
                     tickLength = TicksExtendOutward ? tickLength : -tickLength;
-                    DrawTicks(dims, gfx, majorTicks, tickLength, MajorTickColor, Edge, 0, MajorTickWidth);
+                    DrawTicks(dims, gfx, majorTicks, tickLength, MajorTickColor, Edge, MajorTickWidth);
                 }
 
 
@@ -90,12 +89,12 @@ namespace Plot.Core.Renderables.Axes
                 if (MinorTickVisible)
                 {
                     float tickLength = TicksExtendOutward ? MinorTickLength : -MinorTickLength;
-                    DrawTicks(dims, gfx, minorTicks, tickLength, MinorTickColor, Edge, 0, MinorTickWidth);
+                    DrawTicks(dims, gfx, minorTicks, tickLength, MinorTickColor, Edge, MinorTickWidth);
                 }
 
                 if (TickLabelVisible)
                 {
-                    DrawTicksLabel(dims, gfx, TickGenerator.GetVisibleMajorTicks(dims), null, Edge, TickLabelRotation, false, 0, MajorTickLength);
+                    DrawTicksLabel(dims, gfx, TickGenerator.GetVisibleMajorTicks(dims), Edge, TickLabelRotation, MajorTickLength);
                 }
             }
         }
@@ -107,7 +106,7 @@ namespace Plot.Core.Renderables.Axes
             // don't draw grid lines on the last pixel to prevent drawing over the data frame
             float xEdgeLeft = dims.m_dataOffsetX + 1;
             float xEdgeRight = dims.m_dataOffsetX + dims.m_dataWidth - 1;
-            float yEdgeTop = dims.m_dataOffsetY  + 1;
+            float yEdgeTop = dims.m_dataOffsetY + 1;
             float yEdgeBottom = dims.m_dataOffsetY + dims.m_dataHeight - 1;
 
             if (edge.IsHorizontal())
@@ -145,14 +144,14 @@ namespace Plot.Core.Renderables.Axes
         }
 
         private static void DrawTicks(PlotDimensions dims, Graphics gfx, float[] ticks, float tickLength,
-        Color color, Edge edge, float pixelOffset, float tickWidth)
+        Color color, Edge edge, float tickWidth)
         {
             if (ticks == null || ticks.Length == 0) return;
 
             if (edge.IsHorizontal())
             {
                 float y = edge == Edge.Top ?
-                    dims.m_plotOffsetY - pixelOffset : dims.m_plotOffsetY + dims.m_dataHeight + pixelOffset;
+                    dims.m_plotOffsetY : dims.m_plotOffsetY + dims.m_dataHeight;
                 float tickDelta = edge == Edge.Top ? -tickLength : tickLength;
 
                 var xs = ticks.Select(t => dims.GetPixelX(t));
@@ -167,7 +166,7 @@ namespace Plot.Core.Renderables.Axes
             else if (edge.IsVertical())
             {
                 float x = edge == Edge.Left ?
-                     dims.m_plotOffsetX - pixelOffset : dims.m_plotOffsetX + dims.m_dataWidth + pixelOffset;
+                     dims.m_plotOffsetX : dims.m_plotOffsetX + dims.m_dataWidth;
                 float tickDelta = edge == Edge.Left ? -tickLength : tickLength;
 
                 var ys = ticks.Select(t => dims.GetPixelY(t));
@@ -182,12 +181,10 @@ namespace Plot.Core.Renderables.Axes
         }
 
 
-        private void DrawTicksLabel(PlotDimensions dims, Graphics gfx, Tick[] majorTicks, string tickFont, Edge edge,
-            float rotation, bool rulerMode, float pixelOffset, float majorTickLength)
+        private void DrawTicksLabel(PlotDimensions dims, Graphics gfx, Tick[] majorTicks, Edge edge, float rotation, float majorTickLength)
         {
             if (majorTicks == null || majorTicks.Length == 0) return;
 
-            using (var font = GDI.Font(tickFont))
             using (var brush = GDI.Brush(TickLabelColor))
             using (var sf = new StringFormat())
             {
@@ -196,20 +193,16 @@ namespace Plot.Core.Renderables.Axes
                     case Edge.Left:
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
-                            float x = dims.m_plotOffsetX - pixelOffset - majorTickLength;
+                            float x = dims.m_plotOffsetX - majorTickLength -
+                                GDI.MeasureStringUsingTemporaryGraphics(majorTicks[i].m_label, TickFont).Width;
                             float y = dims.GetPixelY(majorTicks[i].m_position);
 
-                            sf.Alignment = StringAlignment.Far;
-                            sf.LineAlignment = rulerMode ? StringAlignment.Far : StringAlignment.Center;
-                            if (rotation == 90)
-                            {
-                                sf.Alignment = StringAlignment.Center;
-                                sf.LineAlignment = StringAlignment.Far;
-                            }
+                            sf.Alignment = StringAlignment.Near;
+                            sf.LineAlignment = StringAlignment.Center;
 
                             gfx.TranslateTransform(x, y);
                             gfx.RotateTransform(-rotation);
-                            gfx.DrawString(majorTicks[i].m_label, font, brush, 0, 0, sf);
+                            gfx.DrawString(majorTicks[i].m_label, TickFont, brush, 0, 0, sf);
                             gfx.ResetTransform();
                         }
                         break;
@@ -221,15 +214,14 @@ namespace Plot.Core.Renderables.Axes
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
                             float x = dims.GetPixelX(majorTicks[i].m_position);
-                            float y = dims.m_plotOffsetY + dims.m_dataHeight + majorTickLength + pixelOffset;
+                            float y = dims.m_plotOffsetY + dims.m_dataHeight + majorTickLength;
 
-                            sf.Alignment = rotation == 0 ? StringAlignment.Center : StringAlignment.Far;
-                            if (rulerMode) sf.Alignment = StringAlignment.Near;
-                            sf.LineAlignment = rotation == 0 ? StringAlignment.Near : StringAlignment.Center;
+                            sf.Alignment = StringAlignment.Center;
+                            sf.LineAlignment = StringAlignment.Near;
 
                             gfx.TranslateTransform(x, y);
                             gfx.RotateTransform(-rotation);
-                            gfx.DrawString(majorTicks[i].m_label, font, brush, 0, 0, sf);
+                            gfx.DrawString(majorTicks[i].m_label, TickFont, brush, 0, 0, sf);
                             gfx.ResetTransform();
                         }
                         break;

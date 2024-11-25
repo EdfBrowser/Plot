@@ -1,5 +1,6 @@
 using Plot.Core.Enum;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 
 namespace Plot.Core.Renderables.Axes
@@ -58,11 +59,11 @@ namespace Plot.Core.Renderables.Axes
                 Max = (float)max;
             }
 
-            public float GetUnit(float centerPx)
+            public float GetUnit(float px)
             {
                 return IsInverted
-                   ? Min + (PlotOffsetPx + PlotSizePx - centerPx) * UnitsPerPx
-                   : Min + (centerPx - PlotOffsetPx) * UnitsPerPx;
+                   ? Min + (PlotOffsetPx + PlotSizePx - px) * UnitsPerPx
+                   : Min + (px - PlotOffsetPx) * UnitsPerPx;
             }
 
             public void PanPx(float px)
@@ -149,11 +150,16 @@ namespace Plot.Core.Renderables.Axes
         }
 
         public float PaddingSizePx { get; private set; }
+        public float MinimalPadding { get; set; } = 10f;
+        public float RotatedSize { get; private set; }
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
                 return;
+
+            AxisTick.RotatedSize = RotatedSize;
+            AxisLabel.PaddingSizePx = PaddingSizePx;
             AxisTick.Render(bmp, dims, lowQuality);
             AxisLabel.Render(bmp, dims, lowQuality);
             AxisLine.Render(bmp, dims, lowQuality);
@@ -168,7 +174,7 @@ namespace Plot.Core.Renderables.Axes
             if (AxisLabel.Visible)
                 PaddingSizePx += AxisLabel.Measure().Height;
 
-            if (AxisTick.TickLabelVisible)
+            if (AxisTick.Visible && AxisTick.TickLabelVisible)
             {
                 // determine how many pixels the largest tick label occupies
                 float maxHeight = AxisTick.TickGenerator.LargestLabelHeight;
@@ -184,13 +190,14 @@ namespace Plot.Core.Renderables.Axes
 
                 // add the rotated label size to the size of this axis
                 PaddingSizePx += (float)rotatedSize;
+                RotatedSize = (float)rotatedSize;
             }
 
             // 刻度线
-            if (AxisTick.MajorTickVisible)
+            if (AxisTick.Visible && AxisTick.MajorTickVisible)
                 PaddingSizePx += AxisTick.MajorTickLength;
         }
 
-        public float GetSize()   => Visible ? PaddingSizePx : 0;
+        public float GetSize() => Visible ? PaddingSizePx + MinimalPadding : 0;
     }
 }
