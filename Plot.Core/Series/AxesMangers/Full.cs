@@ -2,7 +2,7 @@ using Plot.Core.Renderables.Axes;
 
 namespace Plot.Core.Series.AxesMangers
 {
-    public class Full : IAxisManager
+    public class Full : IAxisLimitsManager
     {
         public double ExpansionRatio { get; set; } = 1.25;
 

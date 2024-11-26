@@ -16,6 +16,7 @@ namespace Plot.Core.Series
             SampleRate = sampleRate;
 
             Data = new double[SampleRate];
+            // for update min/max value of Data 
             for (int i = 0; i < Data.Length; i++)
             {
                 Add(0);
@@ -30,7 +31,7 @@ namespace Plot.Core.Series
         public float LineWidth { get; set; } = 1f;
         public string Label { get; set; } = null;
 
-        public IAxisManager AxisManager { get; private set; } = new Full();
+        public IAxisLimitsManager AxisLimitsManager { get; private set; } = new Full();
         public bool ManageAxisLimits { get; set; } = true;
 
         public int SampleRate { get; }
@@ -74,7 +75,7 @@ namespace Plot.Core.Series
                 AxisLimits viewLimit = Figure.GetAxisLimits(XAxis, YAxis);
                 AxisLimits dataLimit = GetAxisLimits();
 
-                AxisLimits limits = AxisManager.GetAxisLimits(viewLimit, dataLimit);
+                AxisLimits limits = AxisLimitsManager.GetAxisLimits(viewLimit, dataLimit);
 
                 Figure.SetAxisLimits(limits, XAxis, YAxis);
             }
