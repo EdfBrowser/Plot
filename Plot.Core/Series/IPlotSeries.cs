@@ -17,6 +17,6 @@ namespace Plot.Core.Series
 
         void ValidateData();
 
-        void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuailty);
+        void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuality);
     }
 }

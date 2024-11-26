@@ -66,7 +66,7 @@ namespace Plot.Core.Series
             return new AxisLimits(xMin, xMax, DataMin, DataMax);
         }
 
-        public void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuailty)
+        public void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (Data.Length == 0) return;
 
