@@ -44,7 +44,8 @@ namespace Plot.Core
                     bmp = null;
                 }
 
-                m_oldBitmaps[m_currentIndex++ % m_oldBitmaps.Length] = m_bmp;
+                m_oldBitmaps[m_currentIndex] = m_bmp;
+                m_currentIndex = (m_currentIndex + 1) % m_oldBitmaps.Length;
             }
 
             public Bitmap GetLatestBitmap => m_bmp;
