@@ -65,18 +65,18 @@ namespace Plot.Core
             }
         }
 
-#endregion
+        #endregion
 
         private BitmapManager m_bitmapManager = new BitmapManager();
         private EventManager m_eventManager;
         private readonly Stopwatch m_stopwatch;
 
-        private List<SampleDataSeries> SeriesList { get; set; } = new List<SampleDataSeries>();
+        private List<IPlotSeries> SeriesList { get; set; } = new List<IPlotSeries>();
 
         // TODO: 修改成c#的锁机制
         private readonly object m_lockObj = new object();
 
-      
+
 
         public Figure()
         {
@@ -91,7 +91,7 @@ namespace Plot.Core
         }
 
         public List<Axis> Axes { get; } = new List<Axis>();
-       
+
         public List<Axis> TopAxes => Axes.Where(x => x.Edge == Edge.Top).ToList();
         public List<Axis> BottomAxes => Axes.Where(x => x.Edge == Edge.Bottom).ToList();
         public List<Axis> LeftAxes => Axes.Where(x => x.Edge == Edge.Left).ToList();
@@ -282,11 +282,9 @@ namespace Plot.Core
             {
                 series.ValidateData();
 
-                PlotDimensions dims2 = GetDimensions(series.XAxis, series.YAxis, dims.m_scaleFactor);
-
                 try
                 {
-                    series.Plot(bmp, dims2, lowQuality);
+                    series.Plot(bmp, lowQuality, dims.m_scaleFactor);
                 }
                 catch (OverflowException ex)
                 {
@@ -304,7 +302,7 @@ namespace Plot.Core
 
         #region Helpers
         // TODO: 多个x轴和y轴应该有一个对应关系
-        private static PlotDimensions GetDimensions(Axis xAxis, Axis yAxis, float scale)
+        public static PlotDimensions GetDimensions(Axis xAxis, Axis yAxis, float scale)
         {
             SizeF figureSize = new SizeF(xAxis.Dims.FigureSizePx, yAxis.Dims.FigureSizePx);
             SizeF plotSize = new SizeF(xAxis.Dims.DataSizePx, yAxis.Dims.DataSizePx);
@@ -387,11 +385,18 @@ namespace Plot.Core
 
         #region Series
 
-        public SampleDataSeries AddDataStreamer(Axis xAxis, Axis yAxis, int sampleRate)
+        public StreamerPlotSeries AddStreamerPlotSeries(Axis xAxis, Axis yAxis, int sampleRate)
         {
-            SampleDataSeries dataStreamSeries = new SampleDataSeries(xAxis, yAxis, this, sampleRate);
-            SeriesList.Add(dataStreamSeries);
-            return dataStreamSeries;
+            StreamerPlotSeries series = new StreamerPlotSeries(xAxis, yAxis, this, sampleRate);
+            SeriesList.Add(series);
+            return series;
+        }
+
+        public SignalPlotSeries AddSignalPlotSeries(Axis xAxis, Axis yAxis)
+        {
+            SignalPlotSeries series = new SignalPlotSeries(xAxis, yAxis, this);
+            SeriesList.Add(series);
+            return series;
         }
 
         public void ClearSeries()
@@ -404,9 +409,9 @@ namespace Plot.Core
         #region Event
         public void MouseDown(InputState inputState) => m_eventManager.MouseDown(inputState);
         public void MouseUp(InputState inputState) => m_eventManager.MouseUp(inputState);
-        public void MouseMove(InputState inputState)  => m_eventManager.MouseMove(inputState);
+        public void MouseMove(InputState inputState) => m_eventManager.MouseMove(inputState);
         public void MouseDoubleClick(InputState inputState) => m_eventManager.MouseDoubleClick(inputState);
-        public void MouseWheel(InputState inputState)   => m_eventManager.MouseScroll(inputState);
+        public void MouseWheel(InputState inputState) => m_eventManager.MouseScroll(inputState);
 
         private void OnMouseEventCompleted(object sender, EventArgs e) => Render();
         #endregion

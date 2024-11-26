@@ -13,10 +13,14 @@ namespace Plot.Core.Series
         float LineWidth { get; set; }
         string Label { get; set; }
 
+        float Scale { get; set; }
+
         AxisLimits GetAxisLimits();
 
         void ValidateData();
 
-        void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuality);
+        void Plot(Bitmap bmp, bool lowQuality, float scale);
+
+        PlotDimensions Dims { get; }
     }
 }

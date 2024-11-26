@@ -1,3 +1,4 @@
+using Plot.Core;
 using Plot.Core.Series;
 using System;
 using System.Drawing;
@@ -10,10 +11,14 @@ namespace Plot.App
     {
         private readonly Timer addNewDataTimer = new Timer() { Interval = 10, Enabled = false };
         private readonly Timer updatePlotTimer = new Timer() { Interval = 50, Enabled = false };
-        private readonly SampleDataSeries dataStreamer1;
-        private readonly SampleDataSeries dataStreamer2;
+        private readonly SignalPlotSeries signalPlotSeries1;
 
         private readonly Random m_rand = new Random();
+
+        private double[] Data = new double[1000];
+        private double[] Sine = DataGen.SineAnimated(1000);
+
+        int currentIndex;
 
         public App()
         {
@@ -27,13 +32,9 @@ namespace Plot.App
             xAxis.AxisLabel.Label = "Time";
             var yAxis = formPlot1.Figure.LeftAxes[0];
             yAxis.AxisLabel.Label = "Stream1";
-            dataStreamer1 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis, 1000);
-            dataStreamer1.Color = Color.Blue;
-
-            var yAxis1 = formPlot1.Figure.AddAxes(Core.Enum.Edge.Left);
-            yAxis1.AxisLabel.Label = "Stream2";
-            dataStreamer2 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis1, 1000);
-            dataStreamer2.Color = Color.Green;
+            signalPlotSeries1 = formPlot1.Figure.AddSignalPlotSeries(xAxis, yAxis);
+            signalPlotSeries1.Data = Data;
+            signalPlotSeries1.SampleRate = 1;
 
             formPlot1.Refresh();
         }
@@ -45,12 +46,8 @@ namespace Plot.App
 
         private void AddNewData(object sender, EventArgs e)
         {
-            int count = m_rand.Next(10);
-            for (int i = 0; i < count; i++)
-            {
-                dataStreamer1.Add(m_rand.NextDouble() + .5);
-                dataStreamer2.Add(m_rand.NextDouble() - .5);
-            }
+            Data[currentIndex] = Sine[currentIndex];
+            currentIndex = (currentIndex + 1) % 1000;
         }
 
         private void button1_Click(object sender, EventArgs e)

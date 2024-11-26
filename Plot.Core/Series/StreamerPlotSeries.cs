@@ -3,12 +3,13 @@ using Plot.Core.Renderables.Axes;
 using Plot.Core.Series.AxesMangers;
 using System;
 using System.Drawing;
+using System.Linq;
 
 namespace Plot.Core.Series
 {
-    public class SampleDataSeries : IPlotSeries
+    public class StreamerPlotSeries : IPlotSeries
     {
-        public SampleDataSeries(Axis xAxis, Axis yAxis, Figure figure, int sampleRate)
+        public StreamerPlotSeries(Axis xAxis, Axis yAxis, Figure figure, int sampleRate)
         {
             XAxis = xAxis;
             YAxis = yAxis;
@@ -16,11 +17,6 @@ namespace Plot.Core.Series
             SampleRate = sampleRate;
 
             Data = new double[SampleRate];
-            // for update min/max value of Data 
-            for (int i = 0; i < Data.Length; i++)
-            {
-                Add(0);
-            }
         }
 
         public Axis XAxis { get; }
@@ -31,7 +27,7 @@ namespace Plot.Core.Series
         public float LineWidth { get; set; } = 1f;
         public string Label { get; set; } = null;
 
-        public IAxisLimitsManager AxisLimitsManager { get; private set; } = new Full();
+        public IAxisLimitsManager AxisLimitsManager { get; private set; } = new Sweep();
         public bool ManageAxisLimits { get; set; } = true;
 
         public int SampleRate { get; }
@@ -45,14 +41,15 @@ namespace Plot.Core.Series
 
         public long Count { get; private set; }
 
+        public float Scale { get; set; } = 1f;
+        public PlotDimensions Dims => Figure.GetDimensions(XAxis, YAxis, Scale);
+
         public void Add(double value)
         {
             Count++;
-            Data[NextIndex++] = value;
-            if (NextIndex >= SampleRate) NextIndex = 0;
 
-            DataMin = Math.Min(DataMin, value);
-            DataMax = Math.Max(DataMax, value);
+            Data[NextIndex] = value;
+            NextIndex = (NextIndex + 1) % SampleRate;
         }
 
 
@@ -60,14 +57,19 @@ namespace Plot.Core.Series
 
         public AxisLimits GetAxisLimits()
         {
-            double xMin = 0;
-            double xMax = Data.Length * SampleInterval;
+            DataMin = Data.Min();
+            DataMax = Data.Max();
+
+            double xMin = Count > SampleRate ? (Count - SampleRate) * SampleInterval : 0;
+            double xMax = Count < SampleRate ? Data.Length * SampleInterval : Count * SampleInterval;
 
             return new AxisLimits(xMin, xMax, DataMin, DataMax);
         }
 
-        public void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuality)
+        public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
+            Scale = scale;
+
             if (Data.Length == 0) return;
 
             if (ManageAxisLimits)
@@ -81,37 +83,23 @@ namespace Plot.Core.Series
             }
 
             // Swipe Right
+            PointF[] points = new PointF[Data.Length];
+            double xMin = GetAxisLimits().m_xMin;
 
-            int newestCount = NextIndex;
-            int oldestCount = Data.Length - newestCount;
-
-            PointF[] newestPoint = new PointF[newestCount];
-            PointF[] oldestPoint = new PointF[oldestCount];
-
-            for (int i = 0; i < newestPoint.Length; i++)
+            for (int i = 0; i < Data.Length; i++)
             {
-                float dx = i * SampleInterval;
-                float x = dims.GetPixelX(dx);
-                float y = dims.GetPixelY((float)Data[i]);
-                newestPoint[i] = new PointF(x, y);
-            }
+                int index = (NextIndex + i) % Data.Length; // 循环索引
+                float dx = (float)(index * SampleInterval + xMin);
+                float x = Dims.GetPixelX(dx);
+                float y = Dims.GetPixelY((float)Data[index]);
 
-            for (int i = 0; i < oldestPoint.Length; i++)
-            {
-                float dx = (i + NextIndex) * SampleInterval;
-                float x = dims.GetPixelX(dx);
-                float y = dims.GetPixelY((float)Data[i + NextIndex]);
-                oldestPoint[i] = new PointF(x, y);
+                points[index] = new PointF(x, y);
             }
-
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuailty, true))
+            using (var gfx = GDI.Graphics(bmp, Dims, lowQuality, true))
             using (var pen = GDI.Pen(Color, LineWidth))
             {
-                if (newestPoint.Length > 1)
-                    gfx.DrawLines(pen, newestPoint);
-                if (oldestPoint.Length > 1)
-                    gfx.DrawLines(pen, oldestPoint);
-
+                if (points.Length > 1)
+                    gfx.DrawLines(pen, points);
             }
         }
     }
