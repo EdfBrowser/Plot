@@ -325,26 +325,6 @@ namespace Plot.Core
 
         }
 
-        private void ArrangeAxes(float px, List<Axis> axes, float p1, float p2)
-        {
-            int axisCount = axes.Count;
-            if (axisCount == 0) return;
-
-            float totalSpacing = AxisSpace * (axisCount - 1);
-            float dataSize = px - p1 - p2;
-            float availableSize = dataSize - totalSpacing;
-
-            float plotSize = availableSize / axisCount;
-
-            float plotOffset = 0;
-            plotOffset += p1;
-            foreach (var axis in axes)
-            {
-                axis.Dims.Resize(px, plotSize, dataSize, p1, plotOffset);
-                plotOffset += plotSize + AxisSpace;
-            }
-        }
-
         private void GetPrimayAxis(Axis axis, out Axis xAxis, out Axis yAxis)
         {
             if (axis.IsHorizontal)
@@ -371,15 +351,35 @@ namespace Plot.Core
 
         private void RecalculateDataPadding(float width, float height)
         {
-            float PadLeft = LeftAxes[0].GetSize();
-            float PadRight = RightAxes[0].GetSize();
-            float PadTop = TopAxes[0].GetSize();
-            float PadBottom = BottomAxes[0].GetSize();
+            float PadLeft = LeftAxes.Select(t => t.GetSize()).Max();
+            float PadRight = RightAxes.Select(t => t.GetSize()).Max();
+            float PadTop = TopAxes.Select(t => t.GetSize()).Max();
+            float PadBottom = BottomAxes.Select(t => t.GetSize()).Max();
 
             ArrangeAxes(width, TopAxes, PadLeft, PadRight);
             ArrangeAxes(width, BottomAxes, PadLeft, PadRight);
             ArrangeAxes(height, LeftAxes, PadTop, PadBottom);
             ArrangeAxes(height, RightAxes, PadTop, PadBottom);
+        }
+
+        private void ArrangeAxes(float px, List<Axis> axes, float p1, float p2)
+        {
+            int axisCount = axes.Count;
+            if (axisCount == 0) return;
+
+            float totalSpacing = AxisSpace * (axisCount - 1);
+            float dataSize = px - p1 - p2;
+            float availableSize = dataSize - totalSpacing;
+
+            float plotSize = availableSize / axisCount;
+
+            float plotOffset = 0;
+            plotOffset += p1;
+            foreach (var axis in axes)
+            {
+                axis.Dims.Resize(px, plotSize, dataSize, p1, plotOffset);
+                plotOffset += plotSize + AxisSpace;
+            }
         }
         #endregion
 
