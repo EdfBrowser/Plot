@@ -34,8 +34,10 @@ namespace Plot.Core.Series
         public float SampleInterval => 1.0f / SampleRate;
 
         public int NextIndex { get; private set; } = 0;
-        public double DataMin { get; private set; } = double.MaxValue;
-        public double DataMax { get; private set; } = double.MinValue;
+        public double DataMinX { get; private set; } = double.MaxValue;
+        public double DataMaxX { get; private set; } = double.MinValue;
+        public double DataMinY { get; private set; } = double.MaxValue;
+        public double DataMaxY { get; private set; } = double.MinValue;
 
         public double[] Data { get; }
 
@@ -57,13 +59,13 @@ namespace Plot.Core.Series
 
         public AxisLimits GetAxisLimits()
         {
-            DataMin = Data.Min();
-            DataMax = Data.Max();
+            DataMinY = Data.Min();
+            DataMaxY = Data.Max();
 
-            double xMin = Count > SampleRate ? (Count - SampleRate) * SampleInterval : 0;
-            double xMax = Count < SampleRate ? Data.Length * SampleInterval : Count * SampleInterval;
+            DataMinX = Count > SampleRate ? (Count - SampleRate) * SampleInterval : 0;
+            DataMaxX = Count > SampleRate ? Count * SampleInterval : Data.Length * SampleInterval;
 
-            return new AxisLimits(xMin, xMax, DataMin, DataMax);
+            return new AxisLimits(DataMinX, DataMaxX, DataMinY, DataMaxY);
         }
 
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
@@ -84,12 +86,12 @@ namespace Plot.Core.Series
 
             // Swipe Right
             PointF[] points = new PointF[Data.Length];
-            double xMin = GetAxisLimits().m_xMin;
 
+            float offsetMinX = (float)DataMinX;
             for (int i = 0; i < Data.Length; i++)
             {
                 int index = (NextIndex + i) % Data.Length; // 循环索引
-                float dx = (float)(index * SampleInterval + xMin);
+                float dx = index * SampleInterval + offsetMinX;
                 float x = Dims.GetPixelX(dx);
                 float y = Dims.GetPixelY((float)Data[index]);
 

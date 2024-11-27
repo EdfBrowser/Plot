@@ -1,10 +1,11 @@
 using Plot.Core.Renderables.Axes;
+using System.Diagnostics;
 
 namespace Plot.Core.Series.AxesMangers
 {
     public class Sweep : IAxisLimitsManager
     {
-        public double ExpansionRatio { get; set; } = 0.5;
+        public double ExpansionRatio { get; set; } = 5;
 
         public AxisLimits GetAxisLimits(AxisLimits viewLimits, AxisLimits dataLimits)
         {
