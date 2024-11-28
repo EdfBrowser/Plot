@@ -9,24 +9,18 @@ namespace Plot.Core.Series
 {
     public class SignalPlotSeries : IPlotSeries
     {
-        public SignalPlotSeries(Axis xAxis, Axis yAxis, Figure figure)
+        public SignalPlotSeries(Axis xAxis, Axis yAxis)
         {
             XAxis = xAxis;
             YAxis = yAxis;
-            Figure = figure;
         }
 
         public Axis XAxis { get; }
         public Axis YAxis { get; }
-        public Figure Figure { get; }
 
         public Color Color { get; set; } = Color.Red;
         public float LineWidth { get; set; } = 1f;
         public string Label { get; set; } = null;
-
-        public float Scale { get; set; } = 1f;
-        public PlotDimensions Dims => Figure.GetDimensions(XAxis, YAxis, Scale);
-
 
         public int SampleRate { get; set; }
         public float SampleInterval => 1.0f / SampleRate;
@@ -46,7 +40,7 @@ namespace Plot.Core.Series
 
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
-            Scale = scale;
+            PlotDimensions Dims = XAxis.CreatePlotDimensions(YAxis, scale);
 
             if (Data == null || Data.Length == 0) return;
             List<PointF> points = new List<PointF>();

@@ -1,7 +1,6 @@
 using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
-using Plot.Core.Series.AxesMangers;
-using System;
+using Plot.Core.Series.AxisLimitsManger;
 using System.Drawing;
 using System.Linq;
 
@@ -9,11 +8,10 @@ namespace Plot.Core.Series
 {
     public class StreamerPlotSeries : IPlotSeries
     {
-        public StreamerPlotSeries(Axis xAxis, Axis yAxis, Figure figure, int sampleRate)
+        public StreamerPlotSeries(Axis xAxis, Axis yAxis, int sampleRate)
         {
             XAxis = xAxis;
             YAxis = yAxis;
-            Figure = figure;
             SampleRate = sampleRate;
 
             Data = new double[SampleRate];
@@ -21,7 +19,6 @@ namespace Plot.Core.Series
 
         public Axis XAxis { get; }
         public Axis YAxis { get; }
-        public Figure Figure { get; }
 
         public Color Color { get; set; } = Color.Red;
         public float LineWidth { get; set; } = 1f;
@@ -42,9 +39,6 @@ namespace Plot.Core.Series
         public double[] Data { get; }
 
         public long Count { get; private set; }
-
-        public float Scale { get; set; } = 1f;
-        public PlotDimensions Dims => Figure.GetDimensions(XAxis, YAxis, Scale);
 
         public void Add(double value)
         {
@@ -70,19 +64,20 @@ namespace Plot.Core.Series
 
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
-            Scale = scale;
 
             if (Data.Length == 0) return;
 
             if (ManageAxisLimits)
             {
-                AxisLimits viewLimit = Figure.GetAxisLimits(XAxis, YAxis);
+                AxisLimits viewLimit = XAxis.GetAxisLimits(YAxis);
                 AxisLimits dataLimit = GetAxisLimits();
 
                 AxisLimits limits = AxisLimitsManager.GetAxisLimits(viewLimit, dataLimit);
 
-                Figure.SetAxisLimits(limits, XAxis, YAxis);
+                XAxis.SetAxisLimits(YAxis, limits);
             }
+
+            PlotDimensions Dims = XAxis.CreatePlotDimensions(YAxis, scale);
 
             // Swipe Right
             PointF[] points = new PointF[Data.Length];

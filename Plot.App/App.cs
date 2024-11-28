@@ -2,7 +2,6 @@ using Plot.Core;
 using Plot.Core.Enum;
 using Plot.Core.Series;
 using System;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -18,10 +17,10 @@ namespace Plot.App
 
         private readonly Random m_rand = new Random();
 
-        private double[] Data = new double[1000];
-        private double[] Sine = DataGen.SineAnimated(100000);
+        private readonly double[] Data = new double[1000];
+        private readonly double[] Sine = DataGen.SineAnimated(100000);
 
-        int currentIndex;
+        readonly int currentIndex;
         int index;
 
         public App()
@@ -32,9 +31,9 @@ namespace Plot.App
             addNewDataTimer.Tick += AddNewData;
             updatePlotTimer.Tick += UpdatePlot;
 
-            var xAxis = formPlot1.Figure.BottomAxes[0];
+            var xAxis = formPlot1.Figure.DefaultXAxis;
             xAxis.AxisLabel.Label = "Time";
-            var yAxis1 = formPlot1.Figure.LeftAxes[0];
+            var yAxis1 = formPlot1.Figure.DefaultYAxis;
             var yAxis2 = formPlot1.Figure.AddAxes(Edge.Left);
             yAxis1.AxisLabel.Label = "Stream1";
             yAxis2.AxisLabel.Label = "Stream2";
