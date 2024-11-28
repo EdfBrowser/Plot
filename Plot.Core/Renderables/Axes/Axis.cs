@@ -1,6 +1,5 @@
 using Plot.Core.Enum;
 using System;
-using System.Diagnostics;
 using System.Drawing;
 
 namespace Plot.Core.Renderables.Axes

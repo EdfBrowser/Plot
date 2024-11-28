@@ -1,6 +1,6 @@
 using Plot.Core.Renderables.Axes;
 
-namespace Plot.Core.Series.AxesMangers
+namespace Plot.Core.Series.AxisLimitsManger
 {
     public class Full : IAxisLimitsManager
     {

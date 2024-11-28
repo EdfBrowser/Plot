@@ -1,7 +1,6 @@
 using Plot.Core.Renderables.Axes;
-using System.Diagnostics;
 
-namespace Plot.Core.Series.AxesMangers
+namespace Plot.Core.Series.AxisLimitsManger
 {
     public class Sweep : IAxisLimitsManager
     {
