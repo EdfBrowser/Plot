@@ -2,7 +2,8 @@ using System;
 
 namespace Plot.Core.Ticks
 {
-    public struct Tick
+    // TODO: 是否改成struct
+    public class Tick
     {
         public float m_position;
         public string m_label;

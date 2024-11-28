@@ -1,6 +1,7 @@
 namespace Plot.Core.EventProcess
 {
-    public struct InputState
+    // TODO: 是否改成struct
+    public class InputState
     {
         public float m_x;
         public float m_y;
@@ -22,6 +23,5 @@ namespace Plot.Core.EventProcess
         }
 
         public bool MousePressed => m_leftPressed || m_rightPressed || m_middlePressed;
-        public static InputState Default => new InputState();
     }
 }
