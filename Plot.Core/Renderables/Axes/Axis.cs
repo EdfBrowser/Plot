@@ -1,6 +1,5 @@
 using Plot.Core.Enum;
 using System;
-using System.Diagnostics;
 using System.Drawing;
 
 namespace Plot.Core.Renderables.Axes
@@ -40,7 +39,7 @@ namespace Plot.Core.Renderables.Axes
             {
                 float min = Min == float.MaxValue ? -10 : Min;
                 float max = Max == float.MinValue ? 10 : Max;
-                return min == max ? (min - 1, max + 1) : (min, max);
+                return min == max ? (min - .5f, max + .5f) : (min, max);
             }
 
             public void Resize(float figureSizePx, float plotSizePx, float dataSizePx, float dataOffsetPx, float plotOffsetPx)
@@ -83,6 +82,7 @@ namespace Plot.Core.Renderables.Axes
 
             public void Zoom(float frac = 1, float? zoomTo = null)
             {
+                //Console.WriteLine($"Min/Max: {Min}/{Max}");
                 zoomTo = zoomTo ?? Center;
                 float spanLeft = zoomTo.Value - Min;
                 float spanRight = Max - zoomTo.Value;

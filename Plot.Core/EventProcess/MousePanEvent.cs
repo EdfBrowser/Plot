@@ -1,9 +1,11 @@
+using Plot.Core.Renderables.Axes;
+
 namespace Plot.Core.EventProcess
 {
     public class MousePanEvent : IPlotEvent
     {
-        private EventManager m_manager;
-        private InputState m_inputState;
+        private readonly EventManager m_manager;
+        private readonly InputState m_inputState;
 
         public MousePanEvent(EventManager manager, InputState inputState)
         {
@@ -11,12 +13,12 @@ namespace Plot.Core.EventProcess
             m_inputState = inputState;
         }
 
-        public void Process()
+        public void Process(AxisManager axisManager)
         {
-            float x = m_inputState.m_shiftPressed ? m_manager.X : m_inputState.m_x;
-            float y = m_inputState.m_controlPressed ? m_manager.Y : m_inputState.m_y;
+            float x = m_inputState.m_shiftPressed ? m_manager.OldestX : m_inputState.m_x;
+            float y = m_inputState.m_controlPressed ? m_manager.OldestY : m_inputState.m_y;
 
-            m_manager.PanAll(x, y);
+            axisManager.PanAll(x, y);
         }
     }
 }

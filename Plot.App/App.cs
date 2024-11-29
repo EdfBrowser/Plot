@@ -1,6 +1,7 @@
+using Plot.Core;
+using Plot.Core.Enum;
 using Plot.Core.Series;
 using System;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -10,10 +11,17 @@ namespace Plot.App
     {
         private readonly Timer addNewDataTimer = new Timer() { Interval = 10, Enabled = false };
         private readonly Timer updatePlotTimer = new Timer() { Interval = 50, Enabled = false };
-        private readonly SampleDataSeries dataStreamer1;
-        private readonly SampleDataSeries dataStreamer2;
+        private readonly StreamerPlotSeries streamerPlotSeries1;
+        private readonly StreamerPlotSeries streamerPlotSeries2;
+        private readonly SignalPlotSeries signalPlotSeries1;
 
         private readonly Random m_rand = new Random();
+
+        private readonly double[] Data = new double[1000];
+        private readonly double[] Sine = DataGen.SineAnimated(100000);
+
+        readonly int currentIndex;
+        int index;
 
         public App()
         {
@@ -23,19 +31,14 @@ namespace Plot.App
             addNewDataTimer.Tick += AddNewData;
             updatePlotTimer.Tick += UpdatePlot;
 
-            var xAxis = formPlot1.Figure.BottomAxes[0];
+            var xAxis = formPlot1.Figure.DefaultXAxis;
             xAxis.AxisLabel.Label = "Time";
-            var yAxis = formPlot1.Figure.LeftAxes[0];
-            yAxis.AxisLabel.Label = "Stream1";
-            dataStreamer1 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis, 1000);
-            dataStreamer1.Color = Color.Blue;
-
-            var yAxis1 = formPlot1.Figure.AddAxes(Core.Enum.Edge.Left);
-            yAxis1.AxisLabel.Label = "Stream2";
-            dataStreamer2 = formPlot1.Figure.AddDataStreamer(xAxis, yAxis1, 1000);
-            dataStreamer2.Color = Color.Green;
-
-            formPlot1.Refresh();
+            var yAxis1 = formPlot1.Figure.DefaultYAxis;
+            var yAxis2 = formPlot1.Figure.AddAxes(Edge.Left);
+            yAxis1.AxisLabel.Label = "Stream1";
+            yAxis2.AxisLabel.Label = "Stream2";
+            streamerPlotSeries1 = formPlot1.Figure.AddStreamerPlotSeries(xAxis, yAxis1, 500);
+            streamerPlotSeries2 = formPlot1.Figure.AddStreamerPlotSeries(xAxis, yAxis2, 1000);
         }
 
         private void UpdatePlot(object sender, EventArgs e)
@@ -45,12 +48,11 @@ namespace Plot.App
 
         private void AddNewData(object sender, EventArgs e)
         {
-            int count = m_rand.Next(10);
-            for (int i = 0; i < count; i++)
-            {
-                dataStreamer1.Add(m_rand.NextDouble() + .5);
-                dataStreamer2.Add(m_rand.NextDouble() - .5);
-            }
+            streamerPlotSeries1.Add(Sine[index] + m_rand.NextDouble());
+            streamerPlotSeries2.Add(Sine[index] + m_rand.NextDouble());
+            index++;
+            //Data[currentIndex] = Sine[index++];
+            //currentIndex = (currentIndex + 1) % 1000;
         }
 
         private void button1_Click(object sender, EventArgs e)

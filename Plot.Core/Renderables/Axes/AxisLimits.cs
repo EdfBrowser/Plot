@@ -1,6 +1,7 @@
 namespace Plot.Core.Renderables.Axes
 {
-    public struct AxisLimits
+    // TODO: 是否改成struct
+    public class AxisLimits
     {
         public double m_xMin;
         public double m_xMax;

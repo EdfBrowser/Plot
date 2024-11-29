@@ -7,7 +7,6 @@ namespace Plot.Core.Series
     {
         Axis XAxis { get; }
         Axis YAxis { get; }
-        Figure Figure { get; }
 
         Color Color { get; set; }
         float LineWidth { get; set; }
@@ -17,6 +16,6 @@ namespace Plot.Core.Series
 
         void ValidateData();
 
-        void Plot(Bitmap bmp, PlotDimensions dims, bool lowQuailty);
+        void Plot(Bitmap bmp, bool lowQuality, float scale);
     }
 }

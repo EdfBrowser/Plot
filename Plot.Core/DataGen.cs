@@ -23,7 +23,7 @@ namespace Plot.Core
         }
 
         /// <summary>
-        /// ascending sequence of randomly-spaced X data
+        /// ascending sequence of randomly-spaced OldestX data
         /// </summary>
         public static double[] SequenceUneven(int count, double spacing = 1, double offset = 0)
         {
@@ -51,7 +51,7 @@ namespace Plot.Core
         }
 
         /// <summary>
-        /// Return the Sine(X) given an array of Xs
+        /// Return the Sine(OldestX) given an array of Xs
         /// </summary>
         public static double[] Sine(double[] Xs)
         {

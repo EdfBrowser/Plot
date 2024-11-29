@@ -1,10 +1,11 @@
+using Plot.Core.Renderables.Axes;
 using System;
 
 namespace Plot.Core.EventProcess
 {
     public class EventManager
     {
-        private readonly Figure m_figure;
+        private readonly AxisManager m_axisManager;
 
         private bool m_leftPressed = false;
         private bool m_rightPressed = false;
@@ -12,14 +13,14 @@ namespace Plot.Core.EventProcess
         private bool m_shiftPressed = false;
         private bool m_altPressed = false;
 
-
-        public EventManager(Figure figure)
+        public EventManager(AxisManager axisManager)
         {
-            m_figure = figure;
+            m_axisManager = axisManager;
         }
 
-        public float X { get; private set; }
-        public float Y { get; private set; }
+        public float OldestX { get; private set; }
+        public float OldestY { get; private set; }
+
 
         public event EventHandler MouseEventCompleted;
 
@@ -42,78 +43,29 @@ namespace Plot.Core.EventProcess
 
         private void ProcessEvent(IPlotEvent plotEvent)
         {
-            ResumeLimits();
-            plotEvent.Process();
+            m_axisManager.ResumeLimits();
+
+            plotEvent.Process(m_axisManager);
             OnMouseEventCompleted();
-        }
-
-        private void SuspendLimits()
-        {
-            foreach (var axis in m_figure.Axes)
-                axis.Dims.SuspendLimits();
-        }
-
-        private void ResumeLimits()
-        {
-            foreach (var axis in m_figure.Axes)
-                axis.Dims.ResumeLimits();
-        }
-
-        public void PanAll(float x, float y)
-        {
-            foreach (var axis in m_figure.Axes)
-            {
-                if (axis.IsHorizontal)
-                    axis.Dims.PanPx(x);
-                else
-                    axis.Dims.PanPx(y);
-            }
-        }
-
-        public void ZoomCenter(float xfrac, float yfrac, float x, float y)
-        {
-            foreach (var axis in m_figure.Axes)
-            {
-                float frac = axis.IsHorizontal ? xfrac : yfrac;
-                float centerPx = axis.IsHorizontal ? x : y;
-                float center = axis.Dims.GetUnit(centerPx);
-
-                axis.Dims.Zoom(frac, center);
-            }
-        }
-
-        public void ZoomCenter(float x, float y)
-        {
-            foreach (var axis in m_figure.Axes)
-            {
-                float deltaPx = axis.IsHorizontal ? x - X : Y - y;
-                float delta = deltaPx * axis.Dims.UnitsPerPx;
-
-                float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
-
-                float frac = (float)Math.Pow(10, deltaFrac);
-
-                axis.Dims.Zoom(frac);
-            }
         }
 
         public void MouseDown(InputState inputState)
         {
-            X = inputState.m_x;
-            Y = inputState.m_y;
+            OldestX = inputState.m_x;
+            OldestY = inputState.m_y;
             m_leftPressed = inputState.m_leftPressed;
             m_rightPressed = inputState.m_rightPressed;
             m_ctrlPressed = inputState.m_controlPressed;
             m_shiftPressed = inputState.m_shiftPressed;
             m_altPressed = inputState.m_altPressed;
 
-            SuspendLimits();
+            m_axisManager.SuspendLimits();
         }
 
         public void MouseUp(InputState inputState)
         {
-            X = float.NaN;
-            Y = float.NaN;
+            OldestX = float.NaN;
+            OldestY = float.NaN;
 
             m_leftPressed = false;
             m_rightPressed = false;

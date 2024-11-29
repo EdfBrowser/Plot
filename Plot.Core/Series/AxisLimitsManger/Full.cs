@@ -1,8 +1,8 @@
 using Plot.Core.Renderables.Axes;
 
-namespace Plot.Core.Series.AxesMangers
+namespace Plot.Core.Series.AxisLimitsManger
 {
-    public class Full : IAxisManager
+    public class Full : IAxisLimitsManager
     {
         public double ExpansionRatio { get; set; } = 1.25;
 

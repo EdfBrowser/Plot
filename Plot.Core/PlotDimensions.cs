@@ -2,8 +2,7 @@ using System.Drawing;
 
 namespace Plot.Core
 {
-    // TODO: 修改成Class? 
-    public struct PlotDimensions
+    public class PlotDimensions
     {
         // figure dimensions (pixel)
         public float m_figureWidth;
