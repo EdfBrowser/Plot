@@ -33,6 +33,7 @@ namespace Plot.App
 
             var xAxis = formPlot1.Figure.DefaultXAxis;
             xAxis.AxisLabel.Label = "Time";
+            xAxis.AxisTick.TickGenerator.LabelFormat = TickLabelFormat.DateTime;
             var yAxis1 = formPlot1.Figure.DefaultYAxis;
             var yAxis2 = formPlot1.Figure.AddAxes(Edge.Left);
             yAxis1.AxisLabel.Label = "Stream1";

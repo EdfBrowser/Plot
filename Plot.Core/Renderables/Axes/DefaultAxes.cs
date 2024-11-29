@@ -6,9 +6,9 @@ namespace Plot.Core.Renderables.Axes
     {
         public TopAxis() : base(Edge.Top)
         {
-            Tick(false);
-            Label(false);
-            Line(true);
+            AxisTick.Visible = false;
+            AxisLabel.Visible = false;
+            AxisLine.Visible = true;
         }
     }
 
@@ -32,9 +32,9 @@ namespace Plot.Core.Renderables.Axes
     {
         public RightAxis() : base(Edge.Right)
         {
-            Tick(false);
-            Label(false);
-            Line(true);
+            AxisTick.Visible = false;
+            AxisLabel.Visible = false;
+            AxisLine.Visible = true;
         }
     }
 }

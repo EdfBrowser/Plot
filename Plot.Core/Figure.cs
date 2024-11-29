@@ -8,6 +8,8 @@ using System.Drawing;
 
 namespace Plot.Core
 {
+    // TODO: 将结构体作为参数的方法修改为普通参数
+    // TODO: 将float改为double类型
     public class Figure
     {
         #region Bitmap Manager

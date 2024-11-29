@@ -1,4 +1,5 @@
 using Plot.Core.Draws;
+using Plot.Core.Enum;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,7 +8,6 @@ using System.Linq;
 
 namespace Plot.Core.Ticks
 {
-    public enum TickLabelFormat { Numeric, DateTime };
     public class TickGenerator
     {
         private TickCollection m_tickCollection = TickCollection.Empty;
@@ -23,11 +23,18 @@ namespace Plot.Core.Ticks
 
         public TickLabelFormat LabelFormat { get; set; } = TickLabelFormat.Numeric;
 
+        // TODO: 策略模式？
         public void ReCalculate(PlotDimensions dims, Font tickFont)
         {
             int initialTickCount = (int)(10 * TickDensity);
-
-            // 先给定label的大小
+            if (LabelFormat == TickLabelFormat.DateTime)
+            {
+                float labelWidth = 20;
+                float labelHeight = 24;
+                SizeF labelSize = new SizeF(labelWidth, labelHeight);
+                ReCalculatePositionsDateTime(dims, labelSize, initialTickCount);
+            }
+            else if (LabelFormat == TickLabelFormat.Numeric)
             {
                 float labelWidth = 15;
                 float labelHeight = 12;
@@ -40,10 +47,145 @@ namespace Plot.Core.Ticks
             LargestLabelSize = GetMaxLabelSize(tickFont);
 
             // re-calculate position by largest label size
-
-            ReCalculatePositionsNumeric(dims, LargestLabelSize, null);
+            if (LabelFormat == TickLabelFormat.DateTime)
+            {
+                ReCalculatePositionsDateTime(dims, LargestLabelSize, null);
+            }
+            else if (LabelFormat == TickLabelFormat.Numeric)
+            {
+                ReCalculatePositionsNumeric(dims, LargestLabelSize, null);
+            }
         }
 
+        private void ReCalculatePositionsDateTime(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
+        {
+            float low, high;
+            int maxTickCount;
+
+            if (IsVertical)
+            {
+                low = dims.m_yMin - dims.m_unitsPerPxY; // add a extra pixel to capture the edge tick
+                high = dims.m_yMax + dims.m_unitsPerPxY;
+                maxTickCount = initialTickCount ?? (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
+            }
+            else
+            {
+                low = dims.m_xMin - dims.m_unitsPerPxX; // add a extra pixel to capture the edge tick
+                high = dims.m_xMax + dims.m_unitsPerPxX;
+                maxTickCount = initialTickCount ?? (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
+            }
+
+            if (low > high) return;
+
+            low = (float)Math.Max(low, DateTime.MinValue.ToOADate());
+            high = (float)Math.Min(high, DateTime.MaxValue.ToOADate());
+
+            DateTime from = DateTime.FromOADate(low);
+            DateTime to = DateTime.FromOADate(high);
+
+            float range = high - low; // range in days
+
+            // Calculate number of days and fractional part (time)
+            int days = (int)(range); // integer part (full days)
+            float fractional = range - days; // fractional part (time portion)
+
+            // Variables to store hours, minutes, and seconds when needed
+            int hours = 0;
+            int minutes = 0;
+            int seconds = 0;
+
+            // Determine intervals based on range size
+            int[] incs = Array.Empty<int>();
+            List<DateTime> ticks = new List<DateTime>();
+            //DateTime[] ticks = Array.Empty<DateTime>(); // Array.Empty<T>(); 一个预先创建好的空数组
+            // 根据范围大小来选择增量
+            if (range < 1) // 小于一天的范围
+            {
+                if (fractional < 0.1) // 小于 10% 一天，通常是 2-3 小时
+                {
+                    incs = new int[] { 1, 2, 3 }; // 按小时增量
+                }
+                else if (fractional < 0.5) // 小于 50% 一天，通常是 12 小时
+                {
+                    incs = new int[] { 1, 2, 4 }; // 按小时增量
+                }
+                else
+                {
+                    incs = new int[] { 6, 12, 24 }; // 增加增量（如每 6 小时，12 小时，或每 24 小时）
+                }
+            }
+            else if (range > 1 && range < 7)
+            {
+                incs = new int[] { 1, 8, 16, 24 }; // 增加增量（如每 6 小时，12 小时，或每 24 小时）
+            }
+            else if (range < 7) // 小于一周的范围
+            {
+                incs = new int[] { 1, 2, 3 }; // 按天增量
+            }
+            else if (range < 30) // 小于一个月的范围
+            {
+                incs = new int[] { 1, 2, 5, 7 }; // 按天增量或每周增量
+            }
+            else if (range < 365) // 小于一年的范围
+            {
+                incs = new int[] { 1, 2, 3, 6 }; // 按月增量
+            }
+            else // 大于一年的范围
+            {
+                incs = new int[] { 1, 2, 5 }; // 按年增量
+            }
+
+            // 如果没有合适的增量，返回
+            if (incs.Length == 0) return;
+
+            // 根据选择的增量来生成刻度
+            foreach (int inc in incs)
+            {
+                DateTime current = from;
+                ticks.Clear();
+                while (current <= to)
+                {
+                    ticks.Add(current);
+
+                    // 按照选择的增量添加时间
+                    if (range < 1) // 小于一天的范围，使用小时或更小的增量
+                    {
+                        current = current.AddHours(inc); // 按小时增量
+                    }
+                    else if (range > 1 && range < 7) // 小于一天的范围，使用小时或更小的增量
+                    {
+                        current = current.AddHours(inc); // 按小时增量
+                    }
+                    else if (range < 7) // 小于一周，使用天级增量
+                    {
+                        current = current.AddDays(inc); // 按天增量
+                    }
+                    else if (range < 30) // 小于一个月，使用天级增量或周增量
+                    {
+                        current = current.AddDays(inc); // 按天增量
+                    }
+                    else if (range < 365) // 小于一年，使用月级增量
+                    {
+                        current = current.AddMonths(inc); // 按月增量
+                    }
+                    else // 超过一年，使用年级增量
+                    {
+                        current = current.AddYears(inc); // 按年增量
+                    }
+                }
+
+                // 如果生成的刻度数目小于或等于 maxTickCount，跳出循环
+                if (ticks.Count <= maxTickCount)
+                    break;
+            }
+
+            string[] labels = ticks
+                                .Select(t => $"{t.ToString("d", Culture)} {t.ToString("T", Culture)}")
+                                .Select(x => x.Trim())
+                                .ToArray();
+            float[] tickPositionsMajor = ticks.Select(x => (float)x.ToOADate()).ToArray();
+            m_tickCollection = new TickCollection(tickPositionsMajor, null, labels);
+        }
 
         private void ReCalculatePositionsNumeric(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
         {
@@ -204,6 +346,17 @@ namespace Plot.Core.Ticks
                 if (s.Length > largestString.Length)
                     largestString = s;
 
+            if (LabelFormat == TickLabelFormat.DateTime)
+            {
+                // widen largest string based on the longest month name
+                foreach (string s in new DateTimeFormatInfo().MonthGenitiveNames)
+                {
+                    string s2 = s + " " + "1985";
+                    if (s2.Length > largestString.Length)
+                        largestString = s2;
+                }
+            }
+
             return GDI.MeasureStringUsingTemporaryGraphics(largestString, tickFont);
         }
 
@@ -271,7 +424,7 @@ namespace Plot.Core.Ticks
 
         public Tick[] GetVisibleMinorTicks(PlotDimensions dims)
         {
-            double high, low;
+            float high, low;
             if (IsVertical)
             {
                 low = dims.m_yMin - dims.m_unitsPerPxY; // add an extra pixel to capture the edge tick
