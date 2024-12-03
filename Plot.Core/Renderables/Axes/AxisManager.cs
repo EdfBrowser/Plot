@@ -61,7 +61,7 @@ namespace Plot.Core.Renderables.Axes
                 {
                     axis.Render(bmp, dims, lowQuality);
                 }
-                catch (OverflowException ex)
+                catch (OverflowException)
                 {
                     Debug.WriteLine($"OverflowException plotting: {axis}");
                 }
@@ -81,7 +81,7 @@ namespace Plot.Core.Renderables.Axes
                 axis.Dims.ResumeLimits();
         }
 
-        public void PanAll(float x, float y)
+        public void PanAll(double x, double y)
         {
             foreach (var axis in Axes)
             {
@@ -92,13 +92,13 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-        public void ZoomByFrac(float xfrac, float yfrac, float x, float y)
+        public void ZoomByFrac(double xfrac, double yfrac, float x, float y)
         {
             foreach (var axis in Axes)
             {
-                float frac = axis.IsHorizontal ? xfrac : yfrac;
+                double frac = axis.IsHorizontal ? xfrac : yfrac;
                 float centerPx = axis.IsHorizontal ? x : y;
-                float center = axis.Dims.GetUnit(centerPx);
+                double center = axis.Dims.GetUnit(centerPx);
 
                 axis.Dims.Zoom(frac, center);
             }
@@ -109,11 +109,11 @@ namespace Plot.Core.Renderables.Axes
             foreach (var axis in Axes)
             {
                 float deltaPx = axis.IsHorizontal ? x - oldestX : oldestY - y;
-                float delta = deltaPx * axis.Dims.UnitsPerPx;
+                double delta = deltaPx * axis.Dims.UnitsPerPx;
 
-                float deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
+                double deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
 
-                float frac = (float)Math.Pow(10, deltaFrac);
+                double frac = Math.Pow(10, deltaFrac);
 
                 axis.Dims.Zoom(frac);
             }

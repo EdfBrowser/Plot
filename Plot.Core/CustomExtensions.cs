@@ -13,16 +13,12 @@ namespace Plot.Core
             PointF plotOffset = new PointF(xAxis.Dims.PlotOffsetPx, yAxis.Dims.PlotOffsetPx);
             PointF dataOffset = new PointF(xAxis.Dims.DataOffsetPx, yAxis.Dims.DataOffsetPx);
 
-            (float xMin, float xMax) = xAxis.Dims.RationalLimits();
-            (float yMin, float yMax) = yAxis.Dims.RationalLimits();
-
-
             return new PlotDimensions(figureSize,
                 dataSize,
                 plotSize,
                 plotOffset,
                 dataOffset,
-                ((xMin, xMax), (yMin, yMax)),
+                (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
                 scale,
                 xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
 
@@ -30,8 +26,8 @@ namespace Plot.Core
 
         public static void SetAxisLimits(this Axis xAxis, Axis yAxis, AxisLimits axisLimits)
         {
-            xAxis.Dims.SetLimits((float)axisLimits.m_xMin, (float)axisLimits.m_xMax);
-            yAxis.Dims.SetLimits((float)axisLimits.m_yMin, (float)axisLimits.m_yMax);
+            xAxis.Dims.SetLimits(axisLimits.m_xMin, axisLimits.m_xMax);
+            yAxis.Dims.SetLimits(axisLimits.m_yMin, axisLimits.m_yMax);
         }
 
         public static AxisLimits GetAxisLimits(this Axis xAxis, Axis yAxis)

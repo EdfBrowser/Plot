@@ -23,7 +23,7 @@ namespace Plot.Core.Series
         public string Label { get; set; } = null;
 
         public int SampleRate { get; set; }
-        public float SampleInterval => 1.0f / SampleRate;
+        public double SampleInterval => 1.0 / SampleRate;
 
         public double DataMin { get; private set; } = double.MaxValue;
         public double DataMax { get; private set; } = double.MinValue;
@@ -45,22 +45,22 @@ namespace Plot.Core.Series
             if (Data == null || Data.Length == 0) return;
             List<PointF> points = new List<PointF>();
 
-            float lastPointX = Count * SampleInterval;
+            double lastPointX = Count * SampleInterval;
             float dataMinPx = Dims.GetPixelX(Dims.m_xMin);
             float dataMaxPx = Dims.GetPixelX(lastPointX - Dims.m_xMin);
 
-            float dataPointsPerpx = Dims.m_unitsPerPxX / SampleInterval;
+            double dataPointsPerpx = Dims.m_unitsPerPxX / SampleInterval;
 
             if (dataPointsPerpx < 1)
             {
                 // LOW DENSITY
                 // Per pixel only draw one point
-                float l = dataMinPx * dataPointsPerpx;
-                float r = l + dataPointsPerpx * Dims.m_plotWidth;
+                double l = dataMinPx * dataPointsPerpx;
+                double r = l + dataPointsPerpx * Dims.m_plotWidth;
                 for (int i = (int)Math.Max(0, l - 2); i < (int)Math.Min(r + 3, Count - 1); i++)
                 {
                     float x = Dims.GetPixelX(i * SampleInterval);
-                    float y = Dims.GetPixelY((float)Data[i]);
+                    float y = Dims.GetPixelY(Data[i]);
 
                     points.Add(new PointF(x, y));
                 }
@@ -78,7 +78,7 @@ namespace Plot.Core.Series
                     r = Math.Max(r, 0);
                     if (l == r)
                         continue;
-                    (float min, float max) = GetMaxMinValue(l, r - l);
+                    (double min, double max) = GetMaxMinValue(l, r - l);
 
                     points.Add(new PointF(i, Dims.GetPixelY(min)));
                     points.Add(new PointF(i, Dims.GetPixelY(max)));
@@ -93,13 +93,13 @@ namespace Plot.Core.Series
             }
         }
 
-        private (float min, float max) GetMaxMinValue(int l, int r)
+        private (double, double) GetMaxMinValue(int l, int r)
         {
-            float min = float.MaxValue, max = float.MinValue;
+            double min = double.MaxValue, max = double.MinValue;
             for (int i = l; i < l + r; i++)
             {
-                min = (float)Math.Min(min, Data[i]);
-                max = (float)Math.Max(max, Data[i]);
+                min = Math.Min(min, Data[i]);
+                max = Math.Max(max, Data[i]);
             }
 
             return (min, max);

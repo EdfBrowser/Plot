@@ -6,103 +6,9 @@ namespace Plot.Core.Renderables.Axes
 {
     public abstract class Axis : IRenderable, IAxisComponent
     {
-        public class AxisDimensions
-        {
-            public float FigureSizePx { get; private set; }
-            public float PlotSizePx { get; private set; }
-            public float PlotOffsetPx { get; private set; }
-            // The size of the plot area in pixels.
-            public float DataSizePx { get; private set; }
-            public float DataOffsetPx { get; private set; }
-
-            public bool HasBeenSet { get; private set; }
-
-            public bool IsInverted { get; set; }
-
-            public float Min { get; private set; } = float.MaxValue;
-            public float Max { get; private set; } = float.MinValue;
-
-            public float Span => Max - Min;
-            public float Center => (Max + Min) / 2;
-
-            public float UnitsPerPx => Span / PlotSizePx;
-            public float PxsPerUnit => PlotSizePx / Span;
-
-            // Remembered limits
-            // For smooth Pan and zoom
-            // For example, if you move 100px to the left and 200px to the right,
-            // you will actually move 100px to the right (the second rendering will not cause a large jump effect).
-            public float MinRemembered { get; private set; }
-            public float MaxRemembered { get; private set; }
-
-            public (float min, float max) RationalLimits()
-            {
-                float min = Min == float.MaxValue ? -10 : Min;
-                float max = Max == float.MinValue ? 10 : Max;
-                return min == max ? (min - .5f, max + .5f) : (min, max);
-            }
-
-            public void Resize(float figureSizePx, float plotSizePx, float dataSizePx, float dataOffsetPx, float plotOffsetPx)
-            {
-                FigureSizePx = figureSizePx;
-                PlotSizePx = plotSizePx;
-                DataSizePx = dataSizePx;
-                DataOffsetPx = dataOffsetPx;
-                PlotOffsetPx = plotOffsetPx;
-            }
-
-            public void SetLimits(double min, double max)
-            {
-                HasBeenSet = true;
-                Min = (float)min;
-                Max = (float)max;
-            }
-
-            public float GetUnit(float px)
-            {
-                return IsInverted
-                   ? Min + (PlotOffsetPx + PlotSizePx - px) * UnitsPerPx
-                   : Min + (px - PlotOffsetPx) * UnitsPerPx;
-            }
-
-            public void PanPx(float px)
-            {
-                if (IsInverted)
-                    px = -px;
-
-                Pan(px * UnitsPerPx);
-            }
-
-            public void Pan(float units)
-            {
-                Min += units;
-                Max += units;
-            }
-
-
-            public void Zoom(float frac = 1, float? zoomTo = null)
-            {
-                //Console.WriteLine($"Min/Max: {Min}/{Max}");
-                zoomTo = zoomTo ?? Center;
-                float spanLeft = zoomTo.Value - Min;
-                float spanRight = Max - zoomTo.Value;
-                Min = zoomTo.Value - spanLeft / frac;
-                Max = zoomTo.Value + spanRight / frac;
-            }
-
-
-
-
-            // Remembered limits
-            // For smooth Pan and zoom
-            // For example, if you move 100px to the left and 200px to the right,
-            // you will actually move 100px to the right (the second rendering will not cause a large jump effect).
-            public void SuspendLimits() => (MinRemembered, MaxRemembered) = RationalLimits();
-            public void ResumeLimits() => (Min, Max) = (MinRemembered, MaxRemembered);
-        }
-
         private Edge m_edge;
         private bool m_visible;
+        private bool m_isDateTime;
 
         public Axis(Edge edge)
         {
@@ -110,11 +16,6 @@ namespace Plot.Core.Renderables.Axes
 
             Edge = edge;
         }
-
-        protected void Grid(bool enable) => AxisTick.GridVisible = enable;
-        protected void Tick(bool enable) => AxisTick.Visible = enable;
-        protected void Label(bool enable) => AxisLabel.Visible = enable;
-        protected void Line(bool enable) => AxisLine.Visible = enable;
 
         public AxisDimensions Dims { get; } = new AxisDimensions();
         public AxisTick AxisTick { get; } = new AxisTick();
@@ -149,23 +50,32 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
+        public bool IsDateTime
+        {
+            get => m_isDateTime;
+            set
+            {
+                m_isDateTime = value;
+                Dims.IsDateTime = value;
+                AxisTick.TickGenerator.LabelFormat = value ? TickLabelFormat.DateTime : TickLabelFormat.Numeric;
+            }
+        }
+
         public float PaddingSizePx { get; private set; }
-        public float MinimalPadding { get; set; } = 10f;
-        public float RotatedSize { get; private set; }
+        public float MinimalPadding { get; set; } = 10.0f;
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
                 return;
 
-            AxisTick.RotatedSize = RotatedSize;
             AxisLabel.PaddingSizePx = PaddingSizePx;
             AxisTick.Render(bmp, dims, lowQuality);
             AxisLabel.Render(bmp, dims, lowQuality);
             AxisLine.Render(bmp, dims, lowQuality);
         }
 
-        public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.ReCalculate(dimsFull, AxisTick.TickFont);
+        public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.Recalculate(dimsFull, AxisTick.TickFont);
 
         public void ReCalculateAxisSize()
         {
@@ -173,6 +83,10 @@ namespace Plot.Core.Renderables.Axes
 
             if (AxisLabel.Visible)
                 PaddingSizePx += AxisLabel.Measure().Height;
+
+            // 刻度线
+            if (AxisTick.Visible && AxisTick.MajorTickVisible)
+                PaddingSizePx += AxisTick.MajorTickLength;
 
             if (AxisTick.Visible && AxisTick.TickLabelVisible)
             {
@@ -190,12 +104,7 @@ namespace Plot.Core.Renderables.Axes
 
                 // add the rotated label size to the size of this axis
                 PaddingSizePx += (float)rotatedSize;
-                RotatedSize = (float)rotatedSize;
             }
-
-            // 刻度线
-            if (AxisTick.Visible && AxisTick.MajorTickVisible)
-                PaddingSizePx += AxisTick.MajorTickLength;
         }
 
         public float GetSize() => Visible ? PaddingSizePx + MinimalPadding : 0;

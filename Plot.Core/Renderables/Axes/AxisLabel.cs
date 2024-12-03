@@ -31,17 +31,14 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-
-
         private void DrawLabels(PlotDimensions dims, Graphics gfx, string label, Font labelFont, Color color, Edge edge)
         {
             if (string.IsNullOrWhiteSpace(label)) return;
 
-
             // 如何解析这个元组返回值
             var (x, y) = GetAxisCenter(dims, edge);
 
-            int rotation = 0;
+            int rotation;
             switch (edge)
             {
                 case Edge.Left:
@@ -80,7 +77,7 @@ namespace Plot.Core.Renderables.Axes
                     case Edge.Bottom:
                         // 原因是此时顶部对其，从y开始画label高度为height的矩形
                         // 如果是Far，则是从y-height开始画高度为height的矩形
-                        sf.LineAlignment = StringAlignment.Near; 
+                        sf.LineAlignment = StringAlignment.Far;
                         sf.Alignment = StringAlignment.Center;
                         break;
                     default:
@@ -95,9 +92,9 @@ namespace Plot.Core.Renderables.Axes
         }
 
 
-        private (float x, float y) GetAxisCenter(PlotDimensions dims, Edge edge)
+        private (float, float) GetAxisCenter(PlotDimensions dims, Edge edge)
         {
-            float x = 0, y = 0;
+            float x, y;
             switch (edge)
             {
                 case Edge.Left:
@@ -125,10 +122,10 @@ namespace Plot.Core.Renderables.Axes
                     y = dims.m_plotOffsetY + dims.m_plotHeight / 2;
                     break;
                 case Edge.Top:
-                    y = dims.m_plotOffsetY - PaddingSizePx - Measure().Height;
+                    y = dims.m_plotOffsetY - PaddingSizePx;
                     break;
                 case Edge.Bottom:
-                    y = dims.m_plotOffsetY + dims.m_dataHeight + PaddingSizePx - Measure().Height;
+                    y = dims.m_plotOffsetY + dims.m_dataHeight + PaddingSizePx;
                     break;
                 default:
                     throw new NotImplementedException($"unsupported edge type {edge}");

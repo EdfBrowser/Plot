@@ -23,19 +23,19 @@ namespace Plot.Core
         public float m_dataOffsetY;
 
         // data limits (units)
-        public float m_xMin;
-        public float m_xMax;
-        public float m_yMin;
-        public float m_yMax;
-        public float m_xSpan;
-        public float m_ySpan;
-        public float m_xCenter;
-        public float m_yCenter;
+        public double m_xMin;
+        public double m_xMax;
+        public double m_yMin;
+        public double m_yMax;
+        public double m_xSpan;
+        public double m_ySpan;
+        public double m_xCenter;
+        public double m_yCenter;
 
-        public float m_pxPerUnitX;
-        public float m_pxPerUnitY;
-        public float m_unitsPerPxX;
-        public float m_unitsPerPxY;
+        public double m_pxPerUnitX;
+        public double m_pxPerUnitY;
+        public double m_unitsPerPxX;
+        public double m_unitsPerPxY;
 
         // Reverse axis direction
         public bool m_isReverseX;
@@ -46,7 +46,7 @@ namespace Plot.Core
 
 
         public PlotDimensions(SizeF figureSize, SizeF dataSize, SizeF plotSize, PointF plotOffset, PointF dataOffset,
-            ((float xMin, float xMax), (float yMin, float yMax)) limits,
+            ((double, double), (double, double)) limits,
             float scaleFactor, bool is_reverse_x = false, bool is_reverse_y = false)
         {
             (m_figureWidth, m_figureHeight) = (figureSize.Width, figureSize.Height);
@@ -55,9 +55,7 @@ namespace Plot.Core
             (m_dataOffsetX, m_dataOffsetY) = (dataOffset.X, dataOffset.Y);
             (m_dataWidth, m_dataHeight) = (plotSize.Width, plotSize.Height);
 
-            var (xLimits, yLimits) = limits;
-            (m_xMin, m_xMax) = (xLimits.xMin, xLimits.xMax);
-            (m_yMin, m_yMax) = (yLimits.yMin, yLimits.yMax);
+            ((m_xMin, m_xMax), (m_yMin, m_yMax)) = limits;
             (m_xSpan, m_ySpan) = (m_xMax - m_xMin, m_yMax - m_yMin);
             (m_xCenter, m_yCenter) = ((m_xMin + m_xMax) / 2, (m_yMin + m_yMax) / 2);
             (m_pxPerUnitX, m_pxPerUnitY) = (m_plotWidth / m_xSpan, m_plotHeight / m_ySpan);
@@ -68,19 +66,14 @@ namespace Plot.Core
             m_isReverseY = is_reverse_y;
         }
 
-        public (float xPx, float yPx) GetPixel((float xUnit, float yUnit) unit)
-        {
-            return (GetPixelX(unit.xUnit), GetPixelY(unit.yUnit));
-        }
-
-        public float GetPixelX(float position)
+        public float GetPixelX(double position)
         {
             return m_isReverseX
                 ? (float)(m_plotOffsetX + ((m_xMax - position) * m_pxPerUnitX))
                 : (float)(m_plotOffsetX + ((position - m_xMin) * m_pxPerUnitX));
         }
 
-        public float GetPixelY(float position)
+        public float GetPixelY(double position)
         {
             return m_isReverseY
                 ? (float)(m_plotOffsetY + ((m_yMax - position) * m_pxPerUnitY))
