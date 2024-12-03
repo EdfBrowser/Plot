@@ -8,6 +8,7 @@ namespace Plot.Core.Renderables.Axes
     {
         private Edge m_edge;
         private bool m_visible;
+        private bool m_isDateTime;
 
         public Axis(Edge edge)
         {
@@ -49,23 +50,32 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
+        public bool IsDateTime
+        {
+            get => m_isDateTime;
+            set
+            {
+                m_isDateTime = value;
+                Dims.IsDateTime = value;
+                AxisTick.TickGenerator.LabelFormat = value ? TickLabelFormat.DateTime : TickLabelFormat.Numeric;
+            }
+        }
+
         public float PaddingSizePx { get; private set; }
-        public float MinimalPadding { get; set; } = 10f;
-        public float RotatedSize { get; private set; }
+        public float MinimalPadding { get; set; } = 10.0f;
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
                 return;
 
-            AxisTick.RotatedSize = RotatedSize;
             AxisLabel.PaddingSizePx = PaddingSizePx;
             AxisTick.Render(bmp, dims, lowQuality);
             AxisLabel.Render(bmp, dims, lowQuality);
             AxisLine.Render(bmp, dims, lowQuality);
         }
 
-        public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.ReCalculate(dimsFull, AxisTick.TickFont);
+        public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.Recalculate(dimsFull, AxisTick.TickFont);
 
         public void ReCalculateAxisSize()
         {
@@ -73,6 +83,10 @@ namespace Plot.Core.Renderables.Axes
 
             if (AxisLabel.Visible)
                 PaddingSizePx += AxisLabel.Measure().Height;
+
+            // 刻度线
+            if (AxisTick.Visible && AxisTick.MajorTickVisible)
+                PaddingSizePx += AxisTick.MajorTickLength;
 
             if (AxisTick.Visible && AxisTick.TickLabelVisible)
             {
@@ -90,12 +104,7 @@ namespace Plot.Core.Renderables.Axes
 
                 // add the rotated label size to the size of this axis
                 PaddingSizePx += (float)rotatedSize;
-                RotatedSize = (float)rotatedSize;
             }
-
-            // 刻度线
-            if (AxisTick.Visible && AxisTick.MajorTickVisible)
-                PaddingSizePx += AxisTick.MajorTickLength;
         }
 
         public float GetSize() => Visible ? PaddingSizePx + MinimalPadding : 0;

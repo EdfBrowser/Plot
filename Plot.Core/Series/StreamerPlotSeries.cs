@@ -1,6 +1,7 @@
 using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series.AxisLimitsManger;
+using System;
 using System.Drawing;
 using System.Linq;
 
@@ -14,7 +15,7 @@ namespace Plot.Core.Series
             YAxis = yAxis;
             SampleRate = sampleRate;
 
-            Data = new double[SampleRate];
+            Data = new double[SampleRate * 6];
         }
 
         public Axis XAxis { get; }
@@ -28,13 +29,14 @@ namespace Plot.Core.Series
         public bool ManageAxisLimits { get; set; } = true;
 
         public int SampleRate { get; }
-        public float SampleInterval => 1.0f / SampleRate;
+        public double SampleInterval => 1.0 / SampleRate;
 
         public int NextIndex { get; private set; } = 0;
         public double DataMinX { get; private set; } = double.MaxValue;
         public double DataMaxX { get; private set; } = double.MinValue;
         public double DataMinY { get; private set; } = double.MaxValue;
         public double DataMaxY { get; private set; } = double.MinValue;
+        public double OffsetX { get; set; } = 0;
 
         public double[] Data { get; }
 
@@ -45,19 +47,23 @@ namespace Plot.Core.Series
             Count++;
 
             Data[NextIndex] = value;
-            NextIndex = (NextIndex + 1) % SampleRate;
+            NextIndex = (NextIndex + 1) % Data.Length;
         }
 
 
         public void ValidateData() { }
 
+        private DateTime m_minTime => DateTime.FromOADate(OffsetX);
+        private DateTime m_maxTime => DateTime.FromOADate(OffsetX);
         public AxisLimits GetAxisLimits()
         {
             DataMinY = Data.Min();
             DataMaxY = Data.Max();
 
-            DataMinX = Count > SampleRate ? (Count - SampleRate) * SampleInterval : 0;
-            DataMaxX = Count > SampleRate ? Count * SampleInterval : Data.Length * SampleInterval;
+            var minTime = Count > Data.Length ? m_minTime.AddSeconds((Count - Data.Length) * SampleInterval) : m_minTime;
+            var maxTime = Count > Data.Length ? m_maxTime.AddSeconds(Count * SampleInterval) : m_maxTime.AddSeconds(Data.Length * SampleInterval);
+            DataMinX = minTime.ToOADate();
+            DataMaxX = maxTime.ToOADate();
 
             return new AxisLimits(DataMinX, DataMaxX, DataMinY, DataMaxY);
         }
@@ -82,13 +88,13 @@ namespace Plot.Core.Series
             // Swipe Right
             PointF[] points = new PointF[Data.Length];
 
-            float offsetMinX = (float)DataMinX;
             for (int i = 0; i < Data.Length; i++)
             {
                 int index = (NextIndex + i) % Data.Length; // 循环索引
-                float dx = index * SampleInterval + offsetMinX;
+                var time = DateTime.FromOADate(DataMinX);
+                double dx = time.AddSeconds(index * SampleInterval).ToOADate();
                 float x = Dims.GetPixelX(dx);
-                float y = Dims.GetPixelY((float)Data[index]);
+                float y = Dims.GetPixelY(Data[index]);
 
                 points[index] = new PointF(x, y);
             }
@@ -97,6 +103,8 @@ namespace Plot.Core.Series
             {
                 if (points.Length > 1)
                     gfx.DrawLines(pen, points);
+
+                gfx.DrawLine(pen, Dims.m_dataOffsetX + NextIndex, Dims.m_dataOffsetY, Dims.m_dataOffsetX + NextIndex, Dims.m_dataOffsetY + Dims.m_dataHeight);
             }
         }
     }

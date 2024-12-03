@@ -5,13 +5,13 @@ namespace Plot.Core.Ticks
     // TODO: 是否改成struct
     public class Tick
     {
-        public float m_position;
+        public double m_position;
         public string m_label;
         public bool m_isMajor;
         public bool m_isDateTime;
         public DateTime DateTime => DateTime.FromOADate(m_position);
 
-        public Tick(float position, string label, bool isMajor, bool isDateTime)
+        public Tick(double position, string label, bool isMajor, bool isDateTime)
         {
             m_position = position;
             m_label = label;

@@ -47,7 +47,7 @@ namespace Plot.Core.Series
                 {
                     series.Plot(bmp, lowQuality, scale);
                 }
-                catch (OverflowException ex)
+                catch (OverflowException)
                 {
                     Debug.WriteLine($"OverflowException plotting: {series}");
                 }

@@ -25,7 +25,6 @@ namespace Plot.Core
                 {
                     Bitmap bmp = m_oldBitmaps[m_currentIndex];
                     bmp.Dispose();
-                    bmp = null;
                 }
 
                 m_oldBitmaps[m_currentIndex] = m_bmp;

@@ -9,9 +9,6 @@ namespace Plot.Core.EventProcess
 
         private bool m_leftPressed = false;
         private bool m_rightPressed = false;
-        private bool m_ctrlPressed = false;
-        private bool m_shiftPressed = false;
-        private bool m_altPressed = false;
 
         public EventManager(AxisManager axisManager)
         {
@@ -26,13 +23,13 @@ namespace Plot.Core.EventProcess
 
 
         #region Create Event Instance
-        private IPlotEvent CreateMousePanEvent(EventManager manager, InputState inputState)
+        private static MousePanEvent CreateMousePanEvent(EventManager manager, InputState inputState)
             => new MousePanEvent(manager, inputState);
 
-        private IPlotEvent CreateMouseScrollEvent(EventManager manager, InputState inputState)
+        private static MouseScrollEvent CreateMouseScrollEvent(EventManager manager, InputState inputState)
             => new MouseScrollEvent(manager, inputState);
 
-        private IPlotEvent CreateMouseZoomEvent(EventManager manager, InputState inputState)
+        private static MouseZoomEvent CreateMouseZoomEvent(EventManager manager, InputState inputState)
             => new MouseZoomEvent(manager, inputState);
         #endregion
 
@@ -55,9 +52,9 @@ namespace Plot.Core.EventProcess
             OldestY = inputState.m_y;
             m_leftPressed = inputState.m_leftPressed;
             m_rightPressed = inputState.m_rightPressed;
-            m_ctrlPressed = inputState.m_controlPressed;
-            m_shiftPressed = inputState.m_shiftPressed;
-            m_altPressed = inputState.m_altPressed;
+            //m_ctrlPressed = inputState.m_controlPressed;
+            //m_shiftPressed = inputState.m_shiftPressed;
+            //m_altPressed = inputState.m_altPressed;
 
             m_axisManager.SuspendLimits();
         }
@@ -69,13 +66,11 @@ namespace Plot.Core.EventProcess
 
             m_leftPressed = false;
             m_rightPressed = false;
-            m_ctrlPressed = false;
-            m_shiftPressed = false;
-            m_altPressed = false;
         }
 
         public void MouseScroll(InputState inputState)
         {
+            m_axisManager.SuspendLimits();
             IPlotEvent plotEvent = CreateMouseScrollEvent(this, inputState);
             if (plotEvent != null)
                 ProcessEvent(plotEvent);

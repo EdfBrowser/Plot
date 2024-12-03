@@ -7,7 +7,7 @@ namespace Plot.Core.EventProcess
         private readonly EventManager m_manager;
         private readonly InputState m_inputState;
 
-        private readonly float m_frac = 0.15f;
+        private readonly double m_frac = 0.15;
 
         public MouseScrollEvent(EventManager eventManager, InputState inputState)
         {
@@ -17,12 +17,12 @@ namespace Plot.Core.EventProcess
 
         public void Process(AxisManager axisManager)
         {
-            float increment = 1.0f + m_frac;
-            float decrement = 1.0f - m_frac;
+            double increment = 1.0 + m_frac;
+            double decrement = 1.0 - m_frac;
 
 
-            float xFrac = m_inputState.m_scrollUp ? increment : decrement;
-            float yFrac = m_inputState.m_scrollUp ? increment : decrement;
+            double xFrac = m_inputState.m_scrollUp ? increment : decrement;
+            double yFrac = m_inputState.m_scrollUp ? increment : decrement;
 
             axisManager.ZoomByFrac(xFrac, yFrac, m_inputState.m_x, m_inputState.m_y);
         }

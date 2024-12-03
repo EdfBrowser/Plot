@@ -51,6 +51,6 @@ namespace Plot.WinForm
                (e.X, e.Y),
                (e.Button == MouseButtons.Left, e.Button == MouseButtons.Right, e.Button == MouseButtons.Middle),
                (ModifierKeys.HasFlag(Keys.Shift), ModifierKeys.HasFlag(Keys.Control), ModifierKeys.HasFlag(Keys.Alt)),
-                e.Delta);    
+                e.Delta);
     }
 }
