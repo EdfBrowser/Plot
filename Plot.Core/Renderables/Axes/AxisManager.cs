@@ -40,6 +40,7 @@ namespace Plot.Core.Renderables.Axes
             return axis;
         }
 
+        public void ClearYAxes() => m_axes.RemoveAll(x => x.Edge == Edge.Left);
 
         private static Axis CreateAxis(Edge edge)
         {

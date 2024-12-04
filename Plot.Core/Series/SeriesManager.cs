@@ -17,7 +17,7 @@ namespace Plot.Core.Series
         }
 
         public IEnumerable<StreamerPlotSeries> GetStreamerPlotSeries() => m_seriesList.OfType<StreamerPlotSeries>(); 
-
+        public void Clear() => m_seriesList.Clear();
 
         public void GetLimitFromSeries()
         {
