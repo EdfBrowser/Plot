@@ -9,13 +9,21 @@ namespace Plot.Core.Series
 {
     public class SeriesManager
     {
-        private List<IPlotSeries> SeriesList { get; } = new List<IPlotSeries>();
+        private readonly List<IPlotSeries> m_seriesList;
+
+        public SeriesManager()
+        {
+            m_seriesList = new List<IPlotSeries>();
+        }
+
+        public IEnumerable<StreamerPlotSeries> GetStreamerPlotSeries() => m_seriesList.OfType<StreamerPlotSeries>(); 
+
 
         public void GetLimitFromSeries()
         {
             double xmin = double.MaxValue, xmax = double.MinValue;
             double ymin = double.MaxValue, ymax = double.MinValue;
-            var limits = SeriesList
+            var limits = m_seriesList
                 .Where(x => !x.XAxis.Dims.HasBeenSet || !x.YAxis.Dims.HasBeenSet)
                 .Select(X => X.GetAxisLimits());
 
@@ -30,7 +38,7 @@ namespace Plot.Core.Series
             if (xmin == double.MaxValue || xmin == double.MinValue || ymin == double.MaxValue || ymin == double.MinValue)
                 return;
 
-            foreach (var series in SeriesList)
+            foreach (var series in m_seriesList)
             {
                 AxisLimits limit = new AxisLimits(xmin, xmax, ymin, ymax);
                 series.XAxis.SetAxisLimits(series.YAxis, limit);
@@ -39,7 +47,7 @@ namespace Plot.Core.Series
 
         public void RenderSeries(Bitmap bmp, bool lowQuality, float scale)
         {
-            foreach (var series in SeriesList)
+            foreach (var series in m_seriesList)
             {
                 series.ValidateData();
 
@@ -54,23 +62,20 @@ namespace Plot.Core.Series
             }
         }
 
+        public void AddSeries(IPlotSeries series) => m_seriesList.Add(series);
+
         public StreamerPlotSeries AddStreamerPlotSeries(Axis xAxis, Axis yAxis, int sampleRate)
         {
             StreamerPlotSeries series = new StreamerPlotSeries(xAxis, yAxis, sampleRate);
-            SeriesList.Add(series);
+            AddSeries(series);
             return series;
         }
 
         public SignalPlotSeries AddSignalPlotSeries(Axis xAxis, Axis yAxis)
         {
             SignalPlotSeries series = new SignalPlotSeries(xAxis, yAxis);
-            SeriesList.Add(series);
+            AddSeries(series);
             return series;
-        }
-
-        public void ClearSeries()
-        {
-            SeriesList.Clear();
         }
     }
 }

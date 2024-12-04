@@ -6,7 +6,7 @@ namespace Plot.Core
 {
     public static class DataGen
     {
-        private static readonly Random rand = new Random(0);
+        private static readonly Random rand = new Random(100);
         private static readonly Stopwatch stopwatch = Stopwatch.StartNew();
 
         /// <summary>

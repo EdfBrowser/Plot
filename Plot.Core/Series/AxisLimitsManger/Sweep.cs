@@ -4,7 +4,7 @@ namespace Plot.Core.Series.AxisLimitsManger
 {
     public class Sweep : IAxisLimitsManager
     {
-        public double ExpansionRatio { get; set; } = 5;
+        public double ExpansionRatio { get; set; } = 0.005;
 
         public AxisLimits GetAxisLimits(AxisLimits viewLimits, AxisLimits dataLimits)
         {
@@ -13,8 +13,8 @@ namespace Plot.Core.Series.AxisLimitsManger
 
             bool yOverflow = (dataLimits.m_yMin < viewLimits.m_yMin || dataLimits.m_yMax > viewLimits.m_yMax);
             double ySpanHalf = (dataLimits.m_ySpan / 2) * ExpansionRatio;
-            double yMin = yOverflow ? dataLimits.m_yCenter - ySpanHalf : viewLimits.m_yMin;
-            double yMax = yOverflow ? dataLimits.m_yCenter + ySpanHalf : viewLimits.m_yMax;
+            double yMin = yOverflow ? ySpanHalf - dataLimits.m_yCenter : viewLimits.m_yMin;
+            double yMax = yOverflow ? ySpanHalf + dataLimits.m_yCenter : viewLimits.m_yMax;
 
             return new AxisLimits(xMin, xMax, yMin, yMax);
         }

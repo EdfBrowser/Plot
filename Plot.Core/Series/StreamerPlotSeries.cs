@@ -2,6 +2,9 @@ using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series.AxisLimitsManger;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 
@@ -26,7 +29,7 @@ namespace Plot.Core.Series
         public string Label { get; set; } = null;
 
         public IAxisLimitsManager AxisLimitsManager { get; private set; } = new Sweep();
-        public bool ManageAxisLimits { get; set; } = true;
+        public bool ManageAxisLimits { get; set; } = false;
 
         public int SampleRate { get; }
         public double SampleInterval => 1.0 / SampleRate;
@@ -50,6 +53,11 @@ namespace Plot.Core.Series
             NextIndex = (NextIndex + 1) % Data.Length;
         }
 
+        public void AddRange(IEnumerable<double> values)
+        {
+            foreach (double value in values)
+                Add(value);
+        }
 
         public void ValidateData() { }
 
@@ -70,9 +78,9 @@ namespace Plot.Core.Series
 
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
-
             if (Data.Length == 0) return;
 
+            // TODO: 提取到Axis类中，这不属于plot的职责
             if (ManageAxisLimits)
             {
                 AxisLimits viewLimit = XAxis.GetAxisLimits(YAxis);
@@ -104,8 +112,13 @@ namespace Plot.Core.Series
                 if (points.Length > 1)
                     gfx.DrawLines(pen, points);
 
-                gfx.DrawLine(pen, Dims.m_dataOffsetX + NextIndex, Dims.m_dataOffsetY, Dims.m_dataOffsetX + NextIndex, Dims.m_dataOffsetY + Dims.m_dataHeight);
+                gfx.DrawLine(pen,
+                    points[NextIndex].X,
+                    Dims.m_plotOffsetY,
+                    points[NextIndex].X,
+                    Dims.m_plotOffsetY + Dims.m_plotHeight);
             }
         }
+
     }
 }

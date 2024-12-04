@@ -1,7 +1,11 @@
 using Plot.Core;
+using Plot.Core.Enum;
+using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -9,59 +13,115 @@ namespace Plot.App
 
     public partial class App : Form
     {
-        private readonly Timer m_addNewDataTimer = new Timer() { Interval = 1, Enabled = false };
-        private readonly Timer m_updatePlotTimer = new Timer() { Interval = 5, Enabled = false };
-        private readonly List<IPlotSeries> m_seriesList = new List<IPlotSeries>();
-        private readonly StreamerPlotSeries m_streamerPlotSeries1;
-        private readonly StreamerPlotSeries m_streamerPlotSeries2;
-        private readonly SignalPlotSeries m_signalPlotSeries1;
-
-        private readonly Random m_rand = new Random();
-
+        private const int m_fps = 1;
+        private readonly Timer m_updatePlotTimer;
+        private const int m_channelCount = 16;
         private readonly double[] m_sine = DataGen.SineAnimated(100000);
-
-        int m_currentIndex;
+        private readonly Figure m_plt;
+        private readonly int[] m_indexs = new int[m_channelCount];
+        private int m_frameCount = 0;
+        private int m_playSpeed = 1;
 
         public App()
         {
             InitializeComponent();
 
             Text = "Plot.App";
-            m_addNewDataTimer.Tick += AddNewData;
-            m_updatePlotTimer.Tick += UpdatePlot;
+            m_plt = formPlot1.Figure;
+            comboBox1.SelectedIndex = 0;
+            m_updatePlotTimer = new Timer() { Interval = 1000 / (m_fps * m_playSpeed), Enabled = false };
 
-            var xAxis = formPlot1.Figure.DefaultXAxis;
-            xAxis.AxisLabel.Label = "Time";
+
+            button1.Click += Button1_Click;
+            checkBox1.CheckStateChanged += CheckBox1_CheckStateChanged;
+            comboBox1.SelectedIndexChanged += ComboBox1_SelectedIndexChanged;
+            Load += App_Load;
+            m_updatePlotTimer.Tick += UpdatePlot;
+        }
+
+        private void App_Load(object sender, EventArgs e)
+        {
+            CreateYAxes();
+            CreatePlot();
+
+            m_plt.Render();
+        }
+
+        private void CreateYAxes()
+        {
+            for (int i = 1; i < m_channelCount; i++)
+            {
+                m_plt.AxisManager.AddAxes(Edge.Left);
+            }
+        }
+
+        private void CreatePlot()
+        {
+            DateTime dateTime = new DateTime(2000, 1, 1);
+            Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
             xAxis.IsDateTime = true;
 
+            List<Axis> yAxes = m_plt.AxisManager.LeftAxes().ToList();
 
-
-            var yAxis1 = formPlot1.Figure.DefaultYAxis;
-            yAxis1.AxisLabel.Label = "Stream1";
-            //var yAxis2 = formPlot1.Figure.AddAxes(Edge.Left);
-            //yAxis2.AxisLabel.Label = "Stream2";
-            m_streamerPlotSeries1 = formPlot1.Figure.AddStreamerPlotSeries(xAxis, yAxis1, 100);
-            DateTime dateTime = new DateTime(2000, 1, 1);
-            m_streamerPlotSeries1.OffsetX = dateTime.ToOADate();
-            //m_streamerPlotSeries2 = formPlot1.Figure.AddStreamerPlotSeries(xAxis, yAxis2, 1000);
-            //m_streamerPlotSeries2.OffsetX = dateTime.ToOADate();
+            for (int i = 0; i < yAxes.Count; i++)
+            {
+                StreamerPlotSeries series = m_plt.SeriesManager.AddStreamerPlotSeries(xAxis, yAxes[i], 100);
+                series.Color = DataGen.randomColor;
+                series.OffsetX = dateTime.ToOADate();
+            }
         }
 
         private void UpdatePlot(object sender, EventArgs e)
         {
-            formPlot1.Refresh();
+            List<StreamerPlotSeries> s = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
+            for (int i = 0; i < s.Count; i++)
+            {
+                int number = s[i].SampleRate / m_fps * m_playSpeed;
+
+                if (m_frameCount % 3 == 0) number += 1;
+
+                s[i].AddRange(m_sine.Skip(m_indexs[i]).Take(number));
+                m_indexs[i] = (m_indexs[i] + number) % m_sine.Length;
+            }
+
+            m_plt.Render();
+            m_frameCount++;
         }
 
-        private void AddNewData(object sender, EventArgs e)
+        private void Button1_Click(object sender, EventArgs e)
         {
-            m_streamerPlotSeries1.Add(m_sine[m_currentIndex]);
-            m_currentIndex = (m_currentIndex + 1) % 1000;
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            m_addNewDataTimer.Enabled ^= true;
             m_updatePlotTimer.Enabled ^= true;
+        }
+
+        private void CheckBox1_CheckStateChanged(object sender, EventArgs e)
+        {
+            checkBox1.CheckState ^= CheckState.Unchecked;
+            List<StreamerPlotSeries> s = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
+            for (int i = 0; i < s.Count; i++)
+            {
+                s[i].ManageAxisLimits = checkBox1.Checked;
+            }
+        }
+
+        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (comboBox1.SelectedItem.ToString())
+            {
+                case "1x":
+                    m_playSpeed = 1;
+                    break;
+                case "2x":
+                    m_playSpeed = 2;
+                    break;
+                case "4x":
+                    m_playSpeed = 4;
+                    break;
+                case "8x":
+                    m_playSpeed = 8;
+                    break;
+            }
+
+            m_updatePlotTimer.Interval = 1000 / (m_fps * m_playSpeed);
         }
     }
 }
