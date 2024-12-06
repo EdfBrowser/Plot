@@ -107,36 +107,28 @@ namespace Plot.Core.Renderables.Axes
             float xEdgeRight = dims.m_dataOffsetX + dims.m_dataWidth - 1;
             float yEdgeTop = dims.m_dataOffsetY + 1;
             float yEdgeBottom = dims.m_dataOffsetY + dims.m_dataHeight - 1;
-
+           
             if (edge.IsHorizontal())
             {
-                float y = edge == Edge.Top ?
-                    dims.m_plotOffsetY : dims.m_plotOffsetY + dims.m_dataHeight;
-                float y2 = (edge == Edge.Top) ? dims.m_plotOffsetY + dims.m_dataHeight : dims.m_plotOffsetY;
-
                 var xs = ticks.Select(t => dims.GetPixelX(t)).Where(x => xEdgeLeft < x && x < xEdgeRight);
                 using (var pen = GDI.Pen(color, tickWidth))
                 {
                     pen.DashStyle = style;
                     foreach (var x in xs)
                     {
-                        gfx.DrawLine(pen, x, y, x, y2);
+                        gfx.DrawLine(pen, x, yEdgeTop, x, yEdgeBottom);
                     }
                 }
             }
             else if (edge.IsVertical())
             {
-                float x = edge == Edge.Left ?
-                     dims.m_plotOffsetX : dims.m_plotOffsetX + dims.m_dataWidth;
-                float x2 = edge == Edge.Left ? dims.m_plotOffsetX + dims.m_dataWidth : dims.m_plotOffsetX;
-
                 var ys = ticks.Select(t => dims.GetPixelY(t)).Where(y => yEdgeTop < y && y < yEdgeBottom);
                 using (var pen = GDI.Pen(color, tickWidth))
                 {
                     pen.DashStyle = style;
                     foreach (var y in ys)
                     {
-                        gfx.DrawLine(pen, x, y, x2, y);
+                        gfx.DrawLine(pen, xEdgeLeft, y, xEdgeRight, y);
                     }
                 }
             }

@@ -13,7 +13,7 @@ namespace Plot.Core.Renderables.Axes
         // Axis Line
         public bool AxisLineVisible { get; set; } = true;
         public Color AxisLineColor { get; set; } = Color.Black;
-        public float AxisLineWidth { get; set; } = 1;
+        public float AxisLineWidth { get; set; } = 1f;
 
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)

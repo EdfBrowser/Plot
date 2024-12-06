@@ -7,7 +7,7 @@ namespace Plot.Core.Draws
 {
     public static class GDI
     {
-        public static Font Font(string fontName = null, float fontSize = 12, bool bold = false, FontFamily fontFamily = null)
+        public static Font Font(string fontName = null, float fontSize = 14, bool bold = false, FontFamily fontFamily = null)
         {
             if (fontName != null)
             {

@@ -1,5 +1,4 @@
 using Plot.Core.Draws;
-using Plot.Core.Enum;
 using Plot.Core.EventProcess;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
@@ -33,18 +32,19 @@ namespace Plot.Core
 
             public Bitmap GetLatestBitmap => m_bmp;
 
-            public void CreateBitmap(int width, int height)
+            public bool CreateBitmap(int width, int height)
             {
                 // 旧的bitmap
                 if (m_bmp != null)
                 {
                     // if the size don`t changed, return immediately
-                    if (m_bmp.Width == width && m_bmp.Height == height) return;
+                    if (m_bmp.Width == width && m_bmp.Height == height) return false;
 
                     StoreBitmap();
                 }
 
                 m_bmp = new Bitmap(width, height);
+                return true;
             }
         }
 
@@ -65,12 +65,7 @@ namespace Plot.Core
             m_axisManager = new AxisManager();
             m_eventManager = new EventManager(m_axisManager);
             m_eventManager.MouseEventCompleted += OnMouseEventCompleted;
-
-            m_axisManager.CreateDefaultAxes();
         }
-
-        public Axis DefaultXAxis => m_axisManager.DefaultXAxis;
-        public Axis DefaultYAxis => m_axisManager.DefaultYAxis;
 
         // TODO: Draw Title
         public string LabelTitle { get; set; }
@@ -78,13 +73,56 @@ namespace Plot.Core
         public event EventHandler OnBitmapChanged;
         public event EventHandler OnBitmapUpdated;
 
+        private void OnMouseEventCompleted(object sender, EventArgs e) => Render();
+      
+        private void RenderFigureArea(Bitmap bmp, bool lowQuality, float scale)
+        {
+            PlotDimensions dims = CreateDefaultXYPlotDimensions(scale);
+            Color figureColor = Color.White;
+            // clear and set the background of figure
+            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
+            {
+                gfx.Clear(figureColor);
+            }
+        }
+
+        private void RenderDataArea(Bitmap bmp, bool lowQuality, float scale)
+        {
+            PlotDimensions dims = CreateDefaultXYPlotDimensions(scale);
+            Color dataAreaColor = Color.White;
+            Color boundaryColor = Color.Gray;
+            float boundaryWidth = 1f;
+            // set the background of data area
+            using (var brush = GDI.Brush(dataAreaColor))
+            using (var pen = GDI.Pen(boundaryColor, boundaryWidth))
+            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
+            {
+                gfx.FillRectangle(brush,
+                    dims.m_plotOffsetX + 1,
+                    dims.m_plotOffsetY + 1,
+                    dims.m_dataWidth - 1,
+                    dims.m_dataHeight - 1);
+
+                gfx.DrawRectangle(pen,
+                    dims.m_dataOffsetX,
+                    dims.m_dataOffsetY,
+                    dims.m_dataWidth,
+                    dims.m_dataHeight);
+            }
+        }
+
+        private PlotDimensions CreateDefaultXYPlotDimensions(float scale)
+         => m_axisManager.GetDefaultXAxis().CreatePlotDimensions(m_axisManager.GetDefaultYAxis(), scale);
+
+        public Bitmap GetLatestBitmap() => m_bitmapManager.GetLatestBitmap;
 
         public void Resize(float width, float height)
         {
             if (width < 10 || height < 10) return;
 
-            m_bitmapManager.CreateBitmap((int)width, (int)height);
-            OnBitmapChanged?.Invoke(null, null);
+            bool changed = m_bitmapManager.CreateBitmap((int)width, (int)height);
+            if (changed)
+                OnBitmapChanged?.Invoke(null, null);
 
             Render();
         }
@@ -104,6 +142,7 @@ namespace Plot.Core
             RenderFigureArea(bmp, lowQuality, scale);
             RenderDataArea(bmp, lowQuality, scale);
             m_axisManager.RenderAxes(bmp, lowQuality, scale);
+            // TODO: 当连续绘制时，只需要绘制必要部分
             m_seriesManager.RenderSeries(bmp, lowQuality, scale);
 
             // 如果此时最新的bitmap不是bmp所持有的，不进行更新
@@ -112,57 +151,10 @@ namespace Plot.Core
                 OnBitmapUpdated?.Invoke(null, null);
         }
 
-        private void RenderFigureArea(Bitmap bmp, bool lowQuality, float scale)
-        {
-            PlotDimensions dims = DefaultXAxis.CreatePlotDimensions(DefaultYAxis, scale);
-            Color figureColor = Color.White;
-            // clear and set the background of figure
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
-            {
-                gfx.Clear(figureColor);
-            }
-        }
+        public AxisManager AxisManager => m_axisManager;
 
-        private void RenderDataArea(Bitmap bmp, bool lowQuality, float scale)
-        {
-            PlotDimensions dims = DefaultXAxis.CreatePlotDimensions(DefaultYAxis, scale);
-            Color dataAreaColor = Color.White;
-            // set the background of data area
-            using (var brush = GDI.Brush(dataAreaColor))
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
-            {
-                var dataRect = new RectangleF(
-                      x: dims.m_plotOffsetX,
-                      y: dims.m_plotOffsetY,
-                      width: dims.m_dataWidth,
-                      height: dims.m_dataHeight);
+        public SeriesManager SeriesManager => m_seriesManager;
 
-                gfx.FillRectangle(brush, dataRect);
-            }
-        }
-
-        public Axis AddAxes(Edge edge) => m_axisManager.AddAxes(edge);
-        public Bitmap GetLatestBitmap() => m_bitmapManager.GetLatestBitmap;
-
-
-
-        #region Series
-
-        public StreamerPlotSeries AddStreamerPlotSeries(Axis xAxis, Axis yAxis, int sampleRate) => m_seriesManager.AddStreamerPlotSeries(xAxis, yAxis, sampleRate);
-        public SignalPlotSeries AddSignalPlotSeries(Axis xAxis, Axis yAxis) => m_seriesManager.AddSignalPlotSeries(xAxis, yAxis);
-        public void ClearSeries() => m_seriesManager.ClearSeries();
-
-        #endregion
-
-        // TODO: 减少结构体的复制
-        #region Event
-        public void MouseDown(InputState inputState) => m_eventManager.MouseDown(inputState);
-        public void MouseUp(InputState inputState) => m_eventManager.MouseUp(inputState);
-        public void MouseMove(InputState inputState) => m_eventManager.MouseMove(inputState);
-        public void MouseDoubleClick(InputState inputState) => m_eventManager.MouseDoubleClick(inputState);
-        public void MouseWheel(InputState inputState) => m_eventManager.MouseScroll(inputState);
-
-        private void OnMouseEventCompleted(object sender, EventArgs e) => Render();
-        #endregion
+        public EventManager EventManager => m_eventManager;
     }
 }

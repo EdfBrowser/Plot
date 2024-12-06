@@ -18,6 +18,7 @@ namespace Plot.Core.Renderables.Axes
         }
 
         public AxisDimensions Dims { get; } = new AxisDimensions();
+        // TODO: 当plotSize很小时，不需要显示刻度
         public AxisTick AxisTick { get; } = new AxisTick();
         public AxisLine AxisLine { get; } = new AxisLine();
         public AxisLabel AxisLabel { get; } = new AxisLabel();

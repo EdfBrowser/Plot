@@ -9,32 +9,36 @@ namespace Plot.Core.Renderables.Axes
 {
     public class AxisManager
     {
-        private List<Axis> Axes { get; } = new List<Axis>();
-        private List<Axis> TopAxes => Axes.Where(x => x.Edge == Edge.Top).ToList();
-        private List<Axis> BottomAxes => Axes.Where(x => x.Edge == Edge.Bottom).ToList();
-        private List<Axis> LeftAxes => Axes.Where(x => x.Edge == Edge.Left).ToList();
-        private List<Axis> RightAxes => Axes.Where(x => x.Edge == Edge.Right).ToList();
+        private readonly List<Axis> m_axes;
 
-        public Axis DefaultXAxis => BottomAxes[0];
-        public Axis DefaultYAxis => LeftAxes[0];
+        public AxisManager()
+        {
+            m_axes = new List<Axis>();
+
+            CreateDefaultAxes();
+        }
 
         public float AxisSpace { get; set; } = 20;
 
-        public void CreateDefaultAxes()
+        private void CreateDefaultAxes()
         {
-            Axes.Add(CreateAxis(Edge.Top));
-            Axes.Add(CreateAxis(Edge.Bottom));
-            Axes.Add(CreateAxis(Edge.Left));
-            Axes.Add(CreateAxis(Edge.Right));
+            m_axes.Add(CreateAxis(Edge.Bottom));
+            m_axes.Add(CreateAxis(Edge.Left));
         }
+
+        public IEnumerable<Axis> TopAxes() => m_axes.Where(x => x.Edge == Edge.Top);
+        public IEnumerable<Axis> BottomAxes() => m_axes.Where(x => x.Edge == Edge.Bottom);
+        public IEnumerable<Axis> LeftAxes() => m_axes.Where(x => x.Edge == Edge.Left);
+        public IEnumerable<Axis> RightAxes() => m_axes.Where(x => x.Edge == Edge.Right);
 
         public Axis AddAxes(Edge edge)
         {
             Axis axis = CreateAxis(edge);
-            Axes.Add(axis);
+            m_axes.Add(axis);
             return axis;
         }
 
+        public void ClearYAxes() => m_axes.RemoveAll(x => x.Edge == Edge.Left);
 
         private static Axis CreateAxis(Edge edge)
         {
@@ -48,14 +52,25 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
+        public Axis GetDefaultXAxis()
+        {
+            Axis axis = BottomAxes().FirstOrDefault();
+            return axis ?? throw new ArgumentNullException($"{nameof(BottomAxes)} Collection don`t any items");
+        }
+
+        public Axis GetDefaultYAxis()
+        {
+            Axis axis = LeftAxes().FirstOrDefault();
+            return axis ?? throw new ArgumentNullException($"{nameof(LeftAxes)} Collection don`t any items");
+        }
 
         // TODO: 减少PlotDimensions复制次数，能否跟Series那样
         public void RenderAxes(Bitmap bmp, bool lowQuality, float scale)
         {
-            foreach (var axis in Axes)
+            foreach (var axis in m_axes)
             {
-                PlotDimensions dims = axis.IsHorizontal ? axis.CreatePlotDimensions(LeftAxes[0], scale)
-                    : BottomAxes[0].CreatePlotDimensions(axis, scale);
+                PlotDimensions dims = axis.IsHorizontal ? axis.CreatePlotDimensions(GetDefaultYAxis(), scale)
+                    : GetDefaultXAxis().CreatePlotDimensions(axis, scale);
 
                 try
                 {
@@ -71,19 +86,19 @@ namespace Plot.Core.Renderables.Axes
         #region Mouse even
         public void SuspendLimits()
         {
-            foreach (var axis in Axes)
+            foreach (var axis in m_axes)
                 axis.Dims.SuspendLimits();
         }
 
         public void ResumeLimits()
         {
-            foreach (var axis in Axes)
+            foreach (var axis in m_axes)
                 axis.Dims.ResumeLimits();
         }
 
         public void PanAll(double x, double y)
         {
-            foreach (var axis in Axes)
+            foreach (var axis in m_axes)
             {
                 if (axis.IsHorizontal)
                     axis.Dims.PanPx(x);
@@ -94,7 +109,7 @@ namespace Plot.Core.Renderables.Axes
 
         public void ZoomByFrac(double xfrac, double yfrac, float x, float y)
         {
-            foreach (var axis in Axes)
+            foreach (var axis in m_axes)
             {
                 double frac = axis.IsHorizontal ? xfrac : yfrac;
                 float centerPx = axis.IsHorizontal ? x : y;
@@ -106,7 +121,7 @@ namespace Plot.Core.Renderables.Axes
 
         public void ZoomByXY(float x, float y, float oldestX, float oldestY)
         {
-            foreach (var axis in Axes)
+            foreach (var axis in m_axes)
             {
                 float deltaPx = axis.IsHorizontal ? x - oldestX : oldestY - y;
                 double delta = deltaPx * axis.Dims.UnitsPerPx;
@@ -134,7 +149,7 @@ namespace Plot.Core.Renderables.Axes
             SizeF figureSizPx = new SizeF(width, height);
 
             {
-                foreach (Axis axis in Axes)
+                foreach (Axis axis in m_axes)
                 {
                     GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
@@ -149,7 +164,7 @@ namespace Plot.Core.Renderables.Axes
             }
 
             {
-                foreach (Axis axis in Axes)
+                foreach (Axis axis in m_axes)
                 {
                     GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
@@ -166,11 +181,11 @@ namespace Plot.Core.Renderables.Axes
             if (axis.IsHorizontal)
             {
                 xAxis = axis;
-                yAxis = DefaultYAxis;
+                yAxis = GetDefaultYAxis();
             }
             else if (axis.IsVertical)
             {
-                xAxis = DefaultXAxis;
+                xAxis = GetDefaultXAxis();
                 yAxis = axis;
             }
             else
@@ -187,20 +202,31 @@ namespace Plot.Core.Renderables.Axes
 
         private void RecalculateDataPadding(float width, float height)
         {
-            float PadLeft = LeftAxes.Select(t => t.GetSize()).Max();
-            float PadRight = RightAxes.Select(t => t.GetSize()).Max();
-            float PadTop = TopAxes.Select(t => t.GetSize()).Max();
-            float PadBottom = BottomAxes.Select(t => t.GetSize()).Max();
+            IEnumerable<Axis> left = LeftAxes();
+            IEnumerable<Axis> right = RightAxes();
+            IEnumerable<Axis> bottom = BottomAxes();
+            IEnumerable<Axis> top = TopAxes();
 
-            ArrangeAxes(width, TopAxes, PadLeft, PadRight);
-            ArrangeAxes(width, BottomAxes, PadLeft, PadRight);
-            ArrangeAxes(height, LeftAxes, PadTop, PadBottom);
-            ArrangeAxes(height, RightAxes, PadTop, PadBottom);
+            float padLeft = 10f, padRight = 10f, padTop = 10f, padBottom = 10f;
+
+            if (left.Any())
+                padLeft = left.Select(t => t.GetSize()).Max();
+            if (right.Any())
+                padRight = right.Select(t => t.GetSize()).Max();
+            if (bottom.Any())
+                padBottom = bottom.Select(t => t.GetSize()).Max();
+            if (top.Any())
+                padTop = top.Select(t => t.GetSize()).Max();
+
+            ArrangeAxes(width, TopAxes(), padLeft, padRight);
+            ArrangeAxes(width, BottomAxes(), padLeft, padRight);
+            ArrangeAxes(height, LeftAxes(), padTop, padBottom);
+            ArrangeAxes(height, RightAxes(), padTop, padBottom);
         }
 
-        private void ArrangeAxes(float px, List<Axis> axes, float p1, float p2)
+        private void ArrangeAxes(float px, IEnumerable<Axis> axes, float p1, float p2)
         {
-            int axisCount = axes.Count;
+            int axisCount = axes.Count();
             if (axisCount == 0) return;
 
             float totalSpacing = AxisSpace * (axisCount - 1);
@@ -217,7 +243,18 @@ namespace Plot.Core.Renderables.Axes
                 plotOffset += plotSize + AxisSpace;
             }
         }
+
         #endregion
+
+
+
+        public void SetGrid(bool enable)
+        {
+            foreach (Axis axis in m_axes)
+            {
+                axis.AxisTick.GridVisible = enable;
+            }
+        }
     }
 
 }
