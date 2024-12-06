@@ -38,6 +38,8 @@ namespace Plot.App
             comboBox2 = new System.Windows.Forms.ComboBox();
             groupBox4 = new System.Windows.Forms.GroupBox();
             comboBox3 = new System.Windows.Forms.ComboBox();
+            groupBox6 = new System.Windows.Forms.GroupBox();
+            checkBox2 = new System.Windows.Forms.CheckBox();
             groupBox5 = new System.Windows.Forms.GroupBox();
             button1 = new System.Windows.Forms.Button();
             flowLayoutPanel1.SuspendLayout();
@@ -45,6 +47,7 @@ namespace Plot.App
             groupBox2.SuspendLayout();
             groupBox3.SuspendLayout();
             groupBox4.SuspendLayout();
+            groupBox6.SuspendLayout();
             groupBox5.SuspendLayout();
             SuspendLayout();
             // 
@@ -62,6 +65,7 @@ namespace Plot.App
             flowLayoutPanel1.Controls.Add(groupBox2);
             flowLayoutPanel1.Controls.Add(groupBox3);
             flowLayoutPanel1.Controls.Add(groupBox4);
+            flowLayoutPanel1.Controls.Add(groupBox6);
             flowLayoutPanel1.Controls.Add(groupBox5);
             flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Left;
             flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
@@ -115,7 +119,7 @@ namespace Plot.App
             groupBox3.Controls.Add(comboBox2);
             groupBox3.Location = new System.Drawing.Point(3, 106);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new System.Drawing.Size(100, 68);
+            groupBox3.Size = new System.Drawing.Size(97, 47);
             groupBox3.TabIndex = 2;
             groupBox3.TabStop = false;
             groupBox3.Text = "帧数";
@@ -127,13 +131,13 @@ namespace Plot.App
             comboBox2.Items.AddRange(new object[] { "15", "30", "60" });
             comboBox2.Location = new System.Drawing.Point(3, 19);
             comboBox2.Name = "comboBox2";
-            comboBox2.Size = new System.Drawing.Size(94, 25);
+            comboBox2.Size = new System.Drawing.Size(91, 25);
             comboBox2.TabIndex = 0;
             // 
             // groupBox4
             // 
             groupBox4.Controls.Add(comboBox3);
-            groupBox4.Location = new System.Drawing.Point(3, 180);
+            groupBox4.Location = new System.Drawing.Point(3, 159);
             groupBox4.Name = "groupBox4";
             groupBox4.Size = new System.Drawing.Size(100, 49);
             groupBox4.TabIndex = 3;
@@ -150,10 +154,30 @@ namespace Plot.App
             comboBox3.Size = new System.Drawing.Size(94, 25);
             comboBox3.TabIndex = 0;
             // 
+            // groupBox6
+            // 
+            groupBox6.Controls.Add(checkBox2);
+            groupBox6.Location = new System.Drawing.Point(3, 214);
+            groupBox6.Name = "groupBox6";
+            groupBox6.Size = new System.Drawing.Size(100, 49);
+            groupBox6.TabIndex = 4;
+            groupBox6.TabStop = false;
+            groupBox6.Text = "网格线";
+            // 
+            // checkBox2
+            // 
+            checkBox2.Dock = System.Windows.Forms.DockStyle.Fill;
+            checkBox2.Location = new System.Drawing.Point(3, 19);
+            checkBox2.Name = "checkBox2";
+            checkBox2.Size = new System.Drawing.Size(94, 27);
+            checkBox2.TabIndex = 1;
+            checkBox2.Text = "开启/关闭";
+            checkBox2.UseVisualStyleBackColor = true;
+            // 
             // groupBox5
             // 
             groupBox5.Controls.Add(button1);
-            groupBox5.Location = new System.Drawing.Point(3, 235);
+            groupBox5.Location = new System.Drawing.Point(3, 269);
             groupBox5.Name = "groupBox5";
             groupBox5.Size = new System.Drawing.Size(100, 52);
             groupBox5.TabIndex = 4;
@@ -185,6 +209,7 @@ namespace Plot.App
             groupBox2.ResumeLayout(false);
             groupBox3.ResumeLayout(false);
             groupBox4.ResumeLayout(false);
+            groupBox6.ResumeLayout(false);
             groupBox5.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -203,5 +228,7 @@ namespace Plot.App
         private System.Windows.Forms.ComboBox comboBox3;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.GroupBox groupBox6;
+        private System.Windows.Forms.CheckBox checkBox2;
     }
 }

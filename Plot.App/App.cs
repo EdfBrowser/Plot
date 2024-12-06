@@ -38,17 +38,18 @@ namespace Plot.App
             comboBox2.SelectedIndex = 0;
             comboBox3.SelectedIndex = 0;
 
-            UpdateParametersFromComboBoxes();
 
 
             button1.Click += Button1_Click;
             checkBox1.CheckStateChanged += CheckBox1_CheckStateChanged;
+            checkBox2.CheckStateChanged += CheckBox2_CheckStateChanged;
             comboBox1.SelectedIndexChanged += ComboBox1_SelectedIndexChanged;
             comboBox2.SelectedIndexChanged += ComboBox2_SelectedIndexChanged;
             comboBox3.SelectedIndexChanged += ComboBox3_SelectedIndexChanged;
             Load += App_Load;
             m_updatePlotTimer.Tick += UpdatePlot;
         }
+
 
         private void UpdateParametersFromComboBoxes()
         {
@@ -68,8 +69,15 @@ namespace Plot.App
 
         private void App_Load(object sender, EventArgs e)
         {
+            WorkFlow();
+        }
+
+        private void WorkFlow()
+        {
+            UpdateParametersFromComboBoxes();
             InitializeAxesAndSeries();
             UpdateAxisLimits();
+            CheckBox2_CheckStateChanged(null, null);
             m_plt.Render();
         }
 
@@ -162,10 +170,13 @@ namespace Plot.App
         private void ComboBox3_SelectedIndexChanged(object sender, EventArgs e)
         {
             m_updatePlotTimer.Stop();
+            WorkFlow();
+        }
 
-            UpdateParametersFromComboBoxes();
-            InitializeAxesAndSeries();
-            UpdateAxisLimits();
+
+        private void CheckBox2_CheckStateChanged(object sender, EventArgs e)
+        {
+            m_plt.AxisManager.SetGrid(checkBox2.Checked);
             m_plt.Render();
         }
     }

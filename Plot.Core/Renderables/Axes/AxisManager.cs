@@ -22,10 +22,8 @@ namespace Plot.Core.Renderables.Axes
 
         private void CreateDefaultAxes()
         {
-            m_axes.Add(CreateAxis(Edge.Top));
             m_axes.Add(CreateAxis(Edge.Bottom));
             m_axes.Add(CreateAxis(Edge.Left));
-            m_axes.Add(CreateAxis(Edge.Right));
         }
 
         public IEnumerable<Axis> TopAxes() => m_axes.Where(x => x.Edge == Edge.Top);
@@ -204,15 +202,26 @@ namespace Plot.Core.Renderables.Axes
 
         private void RecalculateDataPadding(float width, float height)
         {
-            float PadLeft = LeftAxes().Select(t => t.GetSize()).Max();
-            float PadRight = RightAxes().Select(t => t.GetSize()).Max();
-            float PadTop = TopAxes().Select(t => t.GetSize()).Max();
-            float PadBottom = BottomAxes().Select(t => t.GetSize()).Max();
+            IEnumerable<Axis> left = LeftAxes();
+            IEnumerable<Axis> right = RightAxes();
+            IEnumerable<Axis> bottom = BottomAxes();
+            IEnumerable<Axis> top = TopAxes();
 
-            ArrangeAxes(width, TopAxes(), PadLeft, PadRight);
-            ArrangeAxes(width, BottomAxes(), PadLeft, PadRight);
-            ArrangeAxes(height, LeftAxes(), PadTop, PadBottom);
-            ArrangeAxes(height, RightAxes(), PadTop, PadBottom);
+            float padLeft = 10f, padRight = 10f, padTop = 10f, padBottom = 10f;
+
+            if (left.Any())
+                padLeft = left.Select(t => t.GetSize()).Max();
+            if (right.Any())
+                padRight = right.Select(t => t.GetSize()).Max();
+            if (bottom.Any())
+                padBottom = bottom.Select(t => t.GetSize()).Max();
+            if (top.Any())
+                padTop = top.Select(t => t.GetSize()).Max();
+
+            ArrangeAxes(width, TopAxes(), padLeft, padRight);
+            ArrangeAxes(width, BottomAxes(), padLeft, padRight);
+            ArrangeAxes(height, LeftAxes(), padTop, padBottom);
+            ArrangeAxes(height, RightAxes(), padTop, padBottom);
         }
 
         private void ArrangeAxes(float px, IEnumerable<Axis> axes, float p1, float p2)
@@ -234,7 +243,18 @@ namespace Plot.Core.Renderables.Axes
                 plotOffset += plotSize + AxisSpace;
             }
         }
+
         #endregion
+
+
+
+        public void SetGrid(bool enable)
+        {
+            foreach (Axis axis in m_axes)
+            {
+                axis.AxisTick.GridVisible = enable;
+            }
+        }
     }
 
 }

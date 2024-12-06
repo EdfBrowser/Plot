@@ -90,22 +90,29 @@ namespace Plot.Core
         {
             PlotDimensions dims = CreateDefaultXYPlotDimensions(scale);
             Color dataAreaColor = Color.White;
+            Color boundaryColor = Color.Gray;
+            float boundaryWidth = 1f;
             // set the background of data area
             using (var brush = GDI.Brush(dataAreaColor))
+            using (var pen = GDI.Pen(boundaryColor, boundaryWidth))
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
-                var dataRect = new RectangleF(
-                      x: dims.m_plotOffsetX,
-                      y: dims.m_plotOffsetY,
-                      width: dims.m_dataWidth,
-                      height: dims.m_dataHeight);
+                gfx.FillRectangle(brush,
+                    dims.m_plotOffsetX + 1,
+                    dims.m_plotOffsetY + 1,
+                    dims.m_dataWidth - 1,
+                    dims.m_dataHeight - 1);
 
-                gfx.FillRectangle(brush, dataRect);
+                gfx.DrawRectangle(pen,
+                    dims.m_dataOffsetX,
+                    dims.m_dataOffsetY,
+                    dims.m_dataWidth,
+                    dims.m_dataHeight);
             }
         }
 
         private PlotDimensions CreateDefaultXYPlotDimensions(float scale)
-         => m_axisManager.GetDefaultXAxis().CreatePlotDimensions(m_axisManager.GetDefaultXAxis(), scale);
+         => m_axisManager.GetDefaultXAxis().CreatePlotDimensions(m_axisManager.GetDefaultYAxis(), scale);
 
         public Bitmap GetLatestBitmap() => m_bitmapManager.GetLatestBitmap;
 
