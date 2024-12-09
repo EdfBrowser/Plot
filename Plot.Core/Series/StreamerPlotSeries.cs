@@ -15,6 +15,8 @@ namespace Plot.Core.Series
             SampleRate = sampleRate;
 
             int length = (int)Math.Ceiling(xAxis.Dims.Span);
+            if (XAxis.AxisTick.TickGenerator.LabelFormat == Enum.TickLabelFormat.DateTime)
+                length = DateTime.FromOADate(XAxis.Dims.Span).Second;
             Data = new double[length * sampleRate];
         }
 
@@ -62,9 +64,9 @@ namespace Plot.Core.Series
                 int index = (NextIndex + i) % Data.Length; // 循环索引
                 double dx = index * SampleInterval;
                 if (XAxis.AxisTick.TickGenerator.LabelFormat == Enum.TickLabelFormat.DateTime)
-                    dx += dx * 1.0 / 24 / 3600 + OffsetX;
+                    dx = 1.0 / 24 / 3600 * dx + OffsetX;
                 else
-                    dx += OffsetX;
+                    dx = dx + OffsetX;
                 float x = Dims.GetPixelX(dx);
                 float y = Dims.GetPixelY(Data[index]);
 

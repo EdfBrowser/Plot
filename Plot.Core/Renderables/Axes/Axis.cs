@@ -111,5 +111,8 @@ namespace Plot.Core.Renderables.Axes
         }
 
         public float GetSize() => Visible ? MarginSizePx + MinimalMargin : 0;
+
+        public DateTime Origin { get; private set; }
+        public void SetDateTimeOrigin(DateTime startDateTime) => Origin = startDateTime;
     }
 }

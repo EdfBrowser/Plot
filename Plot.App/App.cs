@@ -84,9 +84,10 @@ namespace Plot.App
             double unit = Measure();
             if (xAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime)
             {
-                double startDateTime = DateTime.MinValue.AddSeconds(0).ToOADate();
-                double endDateTime = DateTime.MinValue.AddSeconds(unit).ToOADate();
-                xAxis.Dims.SetLimits(startDateTime, endDateTime);
+                DateTime startDateTime = DateTime.MinValue;
+                DateTime endDateTime = startDateTime.AddSeconds(unit);
+                xAxis.SetDateTimeOrigin(startDateTime);
+                xAxis.Dims.SetLimits(startDateTime.ToOADate(), endDateTime.ToOADate());
             }
             else
                 xAxis.Dims.SetLimits(0, unit);
@@ -187,13 +188,13 @@ namespace Plot.App
                 double seriesMaxY = series.Data.Max();
                 double seriesMinX = m_count > series.Data.Length ?
                     (m_count - series.Data.Length) * series.SampleInterval : 0;
+                seriesMinX = series.XAxis.Origin.AddSeconds(seriesMinX).ToOADate();
                 double seriesMaxX = m_count > series.Data.Length ?
                     m_count * series.SampleInterval : series.Data.Length * series.SampleInterval;
+                seriesMaxX = series.XAxis.Origin.AddSeconds(seriesMaxX).ToOADate();
 
-                double xMin = series.XAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime ?
-                        DateTime.MinValue.AddSeconds(seriesMinX).ToOADate() : seriesMinX;// lastMinX < seriesMinX ? lastMinX : seriesMinX;
-                double xMax = series.XAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime ?
-                    DateTime.MinValue.AddSeconds(seriesMaxX).ToOADate() : seriesMaxX;// lastMaxX > seriesMaxX ? lastMaxX : seriesMaxX;
+                double xMin = seriesMinX;//astMinX < seriesMinX ? lastMinX : seriesMinX;
+                double xMax = seriesMaxX;//lastMaxX > seriesMaxX ? lastMaxX : seriesMaxX;
 
                 double yMin = seriesMinY;// lastMinY < seriesMinY ? lastMinY : seriesMinY;
                 double yMax = seriesMaxY;// lastMaxY > seriesMaxY ? lastMaxY : seriesMaxY;
