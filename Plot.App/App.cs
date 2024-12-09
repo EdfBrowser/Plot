@@ -11,7 +11,6 @@ using System.Windows.Forms;
 
 namespace Plot.App
 {
-    // TODO: 手动添加每个刻度的距离，和lchart一样
     public partial class App : Form
     {
         private int m_fps;
@@ -71,13 +70,26 @@ namespace Plot.App
         private void ResetXAxis()
         {
             Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
-            xAxis.AxisTick.MajorTickVisible = false;
-            xAxis.AxisTick.MinorTickVisible = false;
-            xAxis.AxisTick.TickLabelVisible = false;
-            double unit = Measure();
-            xAxis.Dims.SetLimits(0, unit);
-            xAxis.AxisTick.TickGenerator.MajorDiv = 1;
+            //xAxis.AxisTick.MajorTickVisible = false;
+            //xAxis.AxisTick.MinorTickVisible = false;
+            //xAxis.AxisTick.TickLabelVisible = false;
+            xAxis.AxisTick.TickGenerator.MajorDiv = 1.0;
+            xAxis.AxisTick.TickGenerator.LabelFormat = TickLabelFormat.DateTime;
+            xAxis.AxisTick.TickGenerator.Rotation = -90;
+            xAxis.AxisTick.TickLabelRotation = -90;
+            xAxis.AxisTick.HorizontalAlignment = StringAlignment.Far;
+            xAxis.AxisTick.VerticalAlignment = StringAlignment.Center;
             xAxis.AxisTick.TickGenerator.MinorDivCount = (int)(1 / 0.25);
+
+            double unit = Measure();
+            if (xAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime)
+            {
+                double startDateTime = DateTime.MinValue.AddSeconds(0).ToOADate();
+                double endDateTime = DateTime.MinValue.AddSeconds(unit).ToOADate();
+                xAxis.Dims.SetLimits(startDateTime, endDateTime);
+            }
+            else
+                xAxis.Dims.SetLimits(0, unit);
         }
 
         private void ResetYAxes()
@@ -117,7 +129,7 @@ namespace Plot.App
 
             ResetXAxis();
             ResetYAxes();
-            CreateSeries();
+            ResetSeries();
 
             UpdateAxisLimits();
             CheckBox2_CheckStateChanged(null, null);
@@ -129,10 +141,7 @@ namespace Plot.App
             WorkFlow();
         }
 
-
-
-
-        private void CreateSeries()
+        private void ResetSeries()
         {
             m_plt.SeriesManager.Clear();
             Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
@@ -173,7 +182,7 @@ namespace Plot.App
             foreach (var series in seriesList)
             {
                 (double lastMinX, double lastMaxX) = series.XAxis.Dims.GetLimits();
-                (double lastMinY, double lastMaxY) = series.YAxis.Dims.GetLimits();
+                //(double lastMinY, double lastMaxY) = series.YAxis.Dims.GetLimits();
                 double seriesMinY = series.Data.Min();
                 double seriesMaxY = series.Data.Max();
                 double seriesMinX = m_count > series.Data.Length ?
@@ -181,8 +190,10 @@ namespace Plot.App
                 double seriesMaxX = m_count > series.Data.Length ?
                     m_count * series.SampleInterval : series.Data.Length * series.SampleInterval;
 
-                double xMin = lastMinX;// lastMinX < seriesMinX ? lastMinX : seriesMinX;
-                double xMax = lastMaxX;// lastMaxX > seriesMaxX ? lastMaxX : seriesMaxX;
+                double xMin = series.XAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime ?
+                        DateTime.MinValue.AddSeconds(seriesMinX).ToOADate() : seriesMinX;// lastMinX < seriesMinX ? lastMinX : seriesMinX;
+                double xMax = series.XAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime ?
+                    DateTime.MinValue.AddSeconds(seriesMaxX).ToOADate() : seriesMaxX;// lastMaxX > seriesMaxX ? lastMaxX : seriesMaxX;
 
                 double yMin = seriesMinY;// lastMinY < seriesMinY ? lastMinY : seriesMinY;
                 double yMax = seriesMaxY;// lastMaxY > seriesMaxY ? lastMaxY : seriesMaxY;
@@ -196,10 +207,8 @@ namespace Plot.App
 
         private void FormPlot1_PltSizeChanged(object sender, EventArgs e)
         {
-            ResetXAxis();
-            UpdateAxisLimits();
-
-            m_plt.Render();
+            m_updatePlotTimer.Stop();
+            WorkFlow();
         }
 
         private void Button1_Click(object sender, EventArgs e)

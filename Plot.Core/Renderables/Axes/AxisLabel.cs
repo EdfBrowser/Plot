@@ -51,7 +51,7 @@ namespace Plot.Core.Renderables.Axes
                 sf.LineAlignment = VerticalAlignment;
 
                 gfx.TranslateTransform(x, y);
-                gfx.RotateTransform(-Rotation);
+                gfx.RotateTransform(Rotation);
                 gfx.DrawString(label, labelFont, brush, 0, 0, sf);
                 gfx.ResetTransform();
             }

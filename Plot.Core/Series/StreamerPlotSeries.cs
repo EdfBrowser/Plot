@@ -60,7 +60,11 @@ namespace Plot.Core.Series
             for (int i = 0; i < Data.Length; i++)
             {
                 int index = (NextIndex + i) % Data.Length; // 循环索引
-                double dx = index * SampleInterval + OffsetX;
+                double dx = index * SampleInterval;
+                if (XAxis.AxisTick.TickGenerator.LabelFormat == Enum.TickLabelFormat.DateTime)
+                    dx += dx * 1.0 / 24 / 3600 + OffsetX;
+                else
+                    dx += OffsetX;
                 float x = Dims.GetPixelX(dx);
                 float y = Dims.GetPixelY(Data[index]);
 

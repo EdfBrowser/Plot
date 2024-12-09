@@ -23,10 +23,12 @@ namespace Plot.Core.Ticks
         public float LargestLabelHeight => LargestLabelSize.Height;
 
         public TickLabelFormat LabelFormat { get; set; } = TickLabelFormat.Numeric;
-        public double? MajorDiv { get; set; }
-        public int? MinorDivCount { get; set; }
+        public double? MajorDiv { get; set; } = null;
+        public int? MinorDivCount { get; set; } = null;
 
         public string DateTimeFormatString { get; set; }
+
+        public float Rotation { get; set; } = 0;
 
         public void Recalculate(PlotDimensions dims, Font tickFont)
         {
@@ -87,6 +89,9 @@ namespace Plot.Core.Ticks
             {
                 RecalculatePositionsNumeric(dims, LargestLabelSize, null);
             }
+
+            // use the results of the first pass to estimate the size of the largest tick label
+            LargestLabelSize = GetMaxLabelSize(tickFont);
         }
 
         private void RecalculatePositionsDateTime(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
@@ -115,7 +120,7 @@ namespace Plot.Core.Ticks
             DateTime from = DateTime.FromOADate(low);
             DateTime to = DateTime.FromOADate(high);
 
-            IDateTimeUnit tickUnit = DateTimeUnitFactory.CreateBestUnit(from, to, Culture, maxTickCount);
+            IDateTimeUnit tickUnit = DateTimeUnitFactory.CreateBestUnit(from, to, Culture, maxTickCount, MajorDiv);
             (double[] tickPositionsMajor, string[] tickLabels) = tickUnit.GetTicksAndLabels(from, to, DateTimeFormatString);
             tickLabels = tickLabels.Select(x => x.Trim()).ToArray();
 
@@ -277,7 +282,7 @@ namespace Plot.Core.Ticks
                 if (s.Length > largestString.Length)
                     largestString = s;
 
-            return GDI.MeasureStringUsingTemporaryGraphics(largestString, tickFont);
+            return GDI.MeasureStringUsingTemporaryGraphics(largestString, tickFont, Rotation);
         }
 
         private Tick[] GetMajorTicks()

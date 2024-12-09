@@ -19,12 +19,17 @@ namespace Plot.Core.Draws
         }
 
 
-        public static SizeF MeasureStringUsingTemporaryGraphics(string text, Font font)
+        public static SizeF MeasureStringUsingTemporaryGraphics(string text, Font font, float rotation = 0)
         {
             using (Bitmap bmp = new Bitmap(1, 1))
             using (Graphics gfx = Graphics(bmp, true, 1f))
             {
-                return MeasureString(gfx, text, font);
+                gfx.RotateTransform(rotation);
+                SizeF sizef = MeasureString(gfx, text, font);
+                gfx.ResetTransform();
+                if (90 == Math.Abs(rotation))
+                    sizef = new SizeF(sizef.Height, sizef.Width);
+                return sizef;
             }
         }
 

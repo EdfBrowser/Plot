@@ -8,15 +8,17 @@ namespace Plot.Core.Ticks
 {
     public abstract class DateTimeUnitBase : IDateTimeUnit
     {
-        public DateTimeUnitBase(CultureInfo culture, int maxTickCount)
+        public DateTimeUnitBase(CultureInfo culture, int maxTickCount, double? manualSpacing)
         {
             m_culture = culture ?? CultureInfo.CurrentCulture;
             m_maxTickCount = maxTickCount;
+            if (manualSpacing != null)
+                m_deltas = new double[] { manualSpacing.Value };
         }
 
         protected DateTimeUnit m_kind;
         protected CultureInfo m_culture;
-        protected int[] m_deltas;
+        protected double[] m_deltas;
         protected int m_maxTickCount;
 
         protected virtual DateTime Floor(DateTime value)
@@ -24,7 +26,7 @@ namespace Plot.Core.Ticks
             return new DateTime(value.Year, value.Month, value.Day, value.Hour, value.Minute, 0);
         }
 
-        protected virtual DateTime Increment(DateTime value, int delta)
+        protected virtual DateTime Increment(DateTime value, double delta)
         {
             return value.AddSeconds(delta);
         }
@@ -33,7 +35,7 @@ namespace Plot.Core.Ticks
         {
             string date = value.ToString("d", m_culture); // short date
             string time = value.ToString("T", m_culture); // long time
-            return $"{date}\n{time}";
+            return $"{date} {time}";
         }
 
         public (double[], string[]) GetTicksAndLabels(DateTime from, DateTime to, string format)
@@ -46,7 +48,7 @@ namespace Plot.Core.Ticks
             return (positions, labels);
         }
 
-        protected DateTime[] GetTicks(DateTime from, DateTime to, int[] deltas, int maxTickCount)
+        protected DateTime[] GetTicks(DateTime from, DateTime to, double[] deltas, int maxTickCount)
         {
             DateTime[] result = new DateTime[] { };
             foreach (var delta in deltas)
@@ -58,7 +60,7 @@ namespace Plot.Core.Ticks
             return result;
         }
 
-        protected virtual DateTime[] GetTicks(DateTime from, DateTime to, int delta)
+        protected virtual DateTime[] GetTicks(DateTime from, DateTime to, double delta)
         {
             var dates = new List<DateTime>();
             DateTime dt = Floor(from);

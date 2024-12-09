@@ -8,23 +8,24 @@ namespace Plot.Core.Ticks
 {
     public static class DateTimeUnitFactory
     {
-        public static IDateTimeUnit Create(DateTimeUnit kind, CultureInfo culture, int maxTickCount)
+        public static IDateTimeUnit Create(DateTimeUnit kind, CultureInfo culture, int maxTickCount, double? manualSpacing)
         {
             switch (kind)
             {
                 case DateTimeUnit.Hour:
-                    return new DateTimeUnitHour(culture, maxTickCount);
+                    return new DateTimeUnitHour(culture, maxTickCount, manualSpacing);
                 case DateTimeUnit.Minute:
-                    return new DateTimeUnitMinute(culture, maxTickCount);
+                    return new DateTimeUnitMinute(culture, maxTickCount, manualSpacing);
                 case DateTimeUnit.Second:
-                    return new DateTimeUnitSecond(culture, maxTickCount);
+                    return new DateTimeUnitSecond(culture, maxTickCount, manualSpacing);
                 default:
                     throw new NotImplementedException($"unsupported kind type {kind}");
             }
         }
 
         // TODO: DateTime结构体传递问题
-        public static IDateTimeUnit CreateBestUnit(DateTime from, DateTime to, CultureInfo culture, int maxTickCount)
+        public static IDateTimeUnit CreateBestUnit(DateTime from, DateTime to, CultureInfo culture,
+            int maxTickCount, double? manualSpacing)
         {
             double daysApart = to.ToOADate() - from.ToOADate();
 
@@ -41,7 +42,8 @@ namespace Plot.Core.Ticks
             var bestTickUnitKind = tickUnitBorders.FirstOrDefault(tr => daysApart > tr.Value.border);
             bestTickUnitKind = bestTickUnitKind ?? tickUnitBorders.Last(); // last tickUnit if not found best
 
-            return Create(bestTickUnitKind.Value.kind, culture, maxTickCount);
+            return Create(bestTickUnitKind.Value.kind, culture, maxTickCount, manualSpacing);
         }
+
     }
 }

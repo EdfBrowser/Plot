@@ -29,7 +29,7 @@ namespace Plot.Core.Renderables.Axes
 
         // Tick AxisLabel
         public bool TickLabelVisible { get; set; } = true;
-        public int TickLabelRotation { get; set; } = 0;
+        public float TickLabelRotation { get; set; } = 0;
         public Color TickLabelColor { get; set; } = Color.Black;
 
         // Major Tick
@@ -52,6 +52,9 @@ namespace Plot.Core.Renderables.Axes
         public Color MinorGridColor { get; set; } = Color.LightGray;
         public DashStyle MinorGridStyle { get; set; } = DashStyle.Solid;
         public Font TickFont { get; set; } = GDI.Font();
+        public StringAlignment HorizontalAlignment { get; set; } = StringAlignment.Near;
+        public StringAlignment VerticalAlignment { get; set; } = StringAlignment.Near;
+
 
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
@@ -188,11 +191,11 @@ namespace Plot.Core.Renderables.Axes
                             float x = dims.m_plotOffsetX - majorTickLength;
                             float y = dims.GetPixelY(majorTicks[i].m_position);
 
-                            sf.Alignment = StringAlignment.Far;
-                            sf.LineAlignment = StringAlignment.Center;
+                            sf.Alignment = HorizontalAlignment;
+                            sf.LineAlignment = VerticalAlignment;
 
                             gfx.TranslateTransform(x, y);
-                            gfx.RotateTransform(-rotation);
+                            gfx.RotateTransform(rotation);
                             gfx.DrawString(majorTicks[i].m_label, TickFont, brush, 0, 0, sf);
                             gfx.ResetTransform();
                         }
@@ -207,11 +210,11 @@ namespace Plot.Core.Renderables.Axes
                             float x = dims.GetPixelX(majorTicks[i].m_position);
                             float y = dims.m_plotOffsetY + dims.m_dataHeight + majorTickLength;
 
-                            sf.Alignment = StringAlignment.Far;
-                            sf.LineAlignment = StringAlignment.Near;
+                            sf.Alignment = HorizontalAlignment;
+                            sf.LineAlignment = VerticalAlignment;
 
                             gfx.TranslateTransform(x, y);
-                            gfx.RotateTransform(-rotation);
+                            gfx.RotateTransform(rotation);
                             gfx.DrawString(majorTicks[i].m_label, TickFont, brush, 0, 0, sf);
                             gfx.ResetTransform();
                         }
