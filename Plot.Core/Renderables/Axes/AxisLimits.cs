@@ -18,5 +18,11 @@ namespace Plot.Core.Renderables.Axes
         {
             (m_xMin, m_xMax, m_yMin, m_yMax) = (xMin, xMax, yMin, yMax);
         }
+
+        public AxisLimits((double, double) x, (double, double) y)
+        {
+            (m_xMin, m_xMax) = x;
+            (m_yMin, m_yMax) = y;
+        }
     }
 }

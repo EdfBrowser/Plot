@@ -12,8 +12,6 @@ namespace Plot.Core.Series
         float LineWidth { get; set; }
         string Label { get; set; }
 
-        AxisLimits GetAxisLimits();
-
         void ValidateData();
 
         void Plot(Bitmap bmp, bool lowQuality, float scale);

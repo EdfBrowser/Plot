@@ -53,6 +53,7 @@ namespace Plot.Core.Renderables.Axes
         public DashStyle MinorGridStyle { get; set; } = DashStyle.Solid;
         public Font TickFont { get; set; } = GDI.Font();
 
+
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
@@ -107,7 +108,7 @@ namespace Plot.Core.Renderables.Axes
             float xEdgeRight = dims.m_dataOffsetX + dims.m_dataWidth - 1;
             float yEdgeTop = dims.m_dataOffsetY + 1;
             float yEdgeBottom = dims.m_dataOffsetY + dims.m_dataHeight - 1;
-           
+
             if (edge.IsHorizontal())
             {
                 var xs = ticks.Select(t => dims.GetPixelX(t)).Where(x => xEdgeLeft < x && x < xEdgeRight);

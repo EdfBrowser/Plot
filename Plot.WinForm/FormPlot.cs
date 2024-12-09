@@ -28,6 +28,8 @@ namespace Plot.WinForm
             pictureBox1.MouseDoubleClick += PictureBox1_MouseDoubleClick;
         }
 
+        public event EventHandler PltSizeChanged;
+
         public Figure Figure => m_figure;
 
         private void OnBitmapUpdated(object sender, EventArgs e) => pictureBox1.Refresh();
@@ -35,8 +37,11 @@ namespace Plot.WinForm
 
 
         #region Event
-        private void PictureBox1_SizeChanged(object sender, EventArgs e) => m_figure.Resize(pictureBox1.Width, pictureBox1.Height);
-
+        private void PictureBox1_SizeChanged(object sender, EventArgs e)
+        {
+            m_figure.Resize(pictureBox1.Width, pictureBox1.Height);
+            PltSizeChanged?.Invoke(sender, e);
+        }
         private void PictureBox1_MouseWheel(object sender, MouseEventArgs e) => m_eventManager.MouseScroll(GetInputState(e));
         private void PictureBox1_MouseDown(object sender, MouseEventArgs e) => m_eventManager.MouseDown(GetInputState(e));
         private void PictureBox1_MouseUp(object sender, MouseEventArgs e) => m_eventManager.MouseUp(GetInputState(e));

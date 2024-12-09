@@ -18,23 +18,10 @@ namespace Plot.Core
                 plotSize,
                 plotOffset,
                 dataOffset,
-                (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
+                (xAxis.Dims.GetLimits(), yAxis.Dims.GetLimits()),
                 scale,
                 xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
 
-        }
-
-        public static void SetAxisLimits(this Axis xAxis, Axis yAxis, AxisLimits axisLimits)
-        {
-            xAxis.Dims.SetLimits(axisLimits.m_xMin, axisLimits.m_xMax);
-            yAxis.Dims.SetLimits(axisLimits.m_yMin, axisLimits.m_yMax);
-        }
-
-        public static AxisLimits GetAxisLimits(this Axis xAxis, Axis yAxis)
-        {
-            (double xMin, double xMax) = xAxis.Dims.RationalLimits();
-            (double yMin, double yMax) = yAxis.Dims.RationalLimits();
-            return new AxisLimits(xMin, xMax, yMin, yMax);
         }
     }
 }

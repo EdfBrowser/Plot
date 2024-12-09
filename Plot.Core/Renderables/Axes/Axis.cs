@@ -8,7 +8,6 @@ namespace Plot.Core.Renderables.Axes
     {
         private Edge m_edge;
         private bool m_visible;
-        private bool m_isDateTime;
 
         public Axis(Edge edge)
         {
@@ -18,7 +17,6 @@ namespace Plot.Core.Renderables.Axes
         }
 
         public AxisDimensions Dims { get; } = new AxisDimensions();
-        // TODO: 当plotSize很小时，不需要显示刻度
         public AxisTick AxisTick { get; } = new AxisTick();
         public AxisLine AxisLine { get; } = new AxisLine();
         public AxisLabel AxisLabel { get; } = new AxisLabel();
@@ -51,26 +49,16 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-        public bool IsDateTime
-        {
-            get => m_isDateTime;
-            set
-            {
-                m_isDateTime = value;
-                Dims.IsDateTime = value;
-                AxisTick.TickGenerator.LabelFormat = value ? TickLabelFormat.DateTime : TickLabelFormat.Numeric;
-            }
-        }
-
-        public float PaddingSizePx { get; private set; }
-        public float MinimalPadding { get; set; } = 10.0f;
+        public float LabelOffsetPx { get; private set; }
+        public float MarginSizePx { get; private set; }
+        public float MinimalMargin { get; set; } = 10.0f;
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
                 return;
 
-            AxisLabel.PaddingSizePx = PaddingSizePx;
+            AxisLabel.OffsetPx = LabelOffsetPx;
             AxisTick.Render(bmp, dims, lowQuality);
             AxisLabel.Render(bmp, dims, lowQuality);
             AxisLine.Render(bmp, dims, lowQuality);
@@ -80,34 +68,48 @@ namespace Plot.Core.Renderables.Axes
 
         public void ReCalculateAxisSize()
         {
-            PaddingSizePx = 0f;
-
-            if (AxisLabel.Visible)
-                PaddingSizePx += AxisLabel.Measure().Height;
+            MarginSizePx = 0f;
 
             // 刻度线
             if (AxisTick.Visible && AxisTick.MajorTickVisible)
-                PaddingSizePx += AxisTick.MajorTickLength;
+                MarginSizePx += AxisTick.MajorTickLength;
 
             if (AxisTick.Visible && AxisTick.TickLabelVisible)
             {
-                // determine how many pixels the largest tick label occupies
-                float maxHeight = AxisTick.TickGenerator.LargestLabelHeight;
-                float maxWidth = AxisTick.TickGenerator.LargestLabelWidth * 1.2f;
+                float originalWidth = AxisTick.TickGenerator.LargestLabelWidth;
+                float originalHeight = AxisTick.TickGenerator.LargestLabelHeight;
 
-                // calculate the width and height of the rotated label
-                float largerEdgeLength = Math.Max(maxWidth, maxHeight);
-                float shorterEdgeLength = Math.Min(maxWidth, maxHeight);
-                float differenceInEdgeLengths = largerEdgeLength - shorterEdgeLength;
-                double radians = AxisTick.TickLabelRotation * Math.PI / 180;
-                double fraction = IsHorizontal ? Math.Sin(radians) : Math.Cos(radians);
-                double rotatedSize = shorterEdgeLength + differenceInEdgeLengths * fraction;
+                float angle = AxisLabel.Rotation; // 获取实际旋转角度
+                double radians = angle * Math.PI / 180;
 
-                // add the rotated label size to the size of this axis
-                PaddingSizePx += (float)rotatedSize;
+                float rotatedWidth = (float)(Math.Abs(originalWidth * Math.Cos(radians)) + Math.Abs(originalHeight * Math.Sin(radians)));
+                float rotatedHeight = (float)(Math.Abs(originalWidth * Math.Sin(radians)) + Math.Abs(originalHeight * Math.Cos(radians)));
+
+                float largerRotatedSize = Math.Max(rotatedWidth, rotatedHeight);
+
+                MarginSizePx += largerRotatedSize;
+
+                LabelOffsetPx = MarginSizePx;
+            }
+
+            if (AxisLabel.Label != null && AxisLabel.Visible && AxisLabel.LabelExtendOutward)
+            {
+                SizeF size = AxisLabel.Measure();
+                float originalWidth = size.Width;
+                float originalHeight = size.Height;
+
+                float angle = AxisLabel.Rotation; // 获取实际旋转角度
+                double radians = angle * Math.PI / 180;
+
+                float rotatedWidth = (float)(Math.Abs(originalWidth * Math.Cos(radians)) + Math.Abs(originalHeight * Math.Sin(radians)));
+                float rotatedHeight = (float)(Math.Abs(originalWidth * Math.Sin(radians)) + Math.Abs(originalHeight * Math.Cos(radians)));
+
+                float largerRotatedSize = Math.Max(rotatedWidth, rotatedHeight);
+
+                MarginSizePx += largerRotatedSize;
             }
         }
 
-        public float GetSize() => Visible ? PaddingSizePx + MinimalPadding : 0;
+        public float GetSize() => Visible ? MarginSizePx + MinimalMargin : 0;
     }
 }

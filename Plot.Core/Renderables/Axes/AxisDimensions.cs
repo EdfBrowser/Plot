@@ -1,5 +1,3 @@
-using System;
-
 namespace Plot.Core.Renderables.Axes
 {
     public class AxisDimensions
@@ -10,8 +8,6 @@ namespace Plot.Core.Renderables.Axes
         // The size of the plot area in pixels.
         public float DataSizePx { get; private set; }
         public float DataOffsetPx { get; private set; }
-
-        public bool HasBeenSet { get; private set; }
 
         public bool IsInverted { get; set; }
 
@@ -31,29 +27,7 @@ namespace Plot.Core.Renderables.Axes
         public double MinRemembered { get; private set; }
         public double MaxRemembered { get; private set; }
 
-        public bool IsDateTime { get; set; }
 
-        public (double, double) RationalLimits()
-        {
-            double min, max;
-            if (IsDateTime)
-            {
-                min = Min == double.MaxValue ? DateTime.MinValue.ToOADate() : Min;
-                max = Max == double.MinValue ? DateTime.MinValue.AddSeconds(10).ToOADate() : Max;
-            }
-            else
-            {
-                min = Min == double.MaxValue ? -10 : Min;
-                max = Max == double.MinValue ? 10 : Max;
-                if (min == max)
-                {
-                    min -= .5;
-                    max += .5;
-                }
-            }
-
-            return (min, max);
-        }
 
         public void Resize(float figureSizePx, float plotSizePx, float dataSizePx, float dataOffsetPx, float plotOffsetPx)
         {
@@ -64,9 +38,16 @@ namespace Plot.Core.Renderables.Axes
             PlotOffsetPx = plotOffsetPx;
         }
 
+        public (double, double) GetLimits()
+        {
+            double min = Min == double.MaxValue ? -5 : Min;
+            double max = Max == double.MinValue ? 5 : Max;
+
+            return (min == max) ? (min - 1, max + 1) : (min, max);
+        }
+
         public void SetLimits(double min, double max)
         {
-            HasBeenSet = true;
             Min = min;
             Max = max;
         }
@@ -106,7 +87,7 @@ namespace Plot.Core.Renderables.Axes
         // For smooth Pan and zoom
         // For example, if you move 100px to the left and 200px to the right,
         // you will actually move 100px to the right (the second rendering will not cause a large jump effect).
-        public void SuspendLimits() => (MinRemembered, MaxRemembered) = RationalLimits();
+        public void SuspendLimits() => (MinRemembered, MaxRemembered) = GetLimits();
         public void ResumeLimits() => (Min, Max) = (MinRemembered, MaxRemembered);
     }
 

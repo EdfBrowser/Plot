@@ -119,11 +119,11 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-        public void ZoomByXY(float x, float y, float oldestX, float oldestY)
+        public void ZoomByXY(float xDeltaPx, float yDeltaPx)
         {
             foreach (var axis in m_axes)
             {
-                float deltaPx = axis.IsHorizontal ? x - oldestX : oldestY - y;
+                float deltaPx = axis.IsHorizontal ? xDeltaPx : yDeltaPx;
                 double delta = deltaPx * axis.Dims.UnitsPerPx;
 
                 double deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
@@ -151,11 +151,15 @@ namespace Plot.Core.Renderables.Axes
             {
                 foreach (Axis axis in m_axes)
                 {
+                    // 初始化min和max值
+                    (double min, double max) = axis.Dims.GetLimits();
+                    axis.Dims.SetLimits(min, max);
+
                     GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
                     PlotDimensions dimsFull = new PlotDimensions(figureSizPx, figureSizPx, figureSizPx,
                                                 new PointF(0, 0), new PointF(0, 0),
-                                                (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
+                                                (xAxis.Dims.GetLimits(), yAxis.Dims.GetLimits()),
                                                 1f, xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
                     CalculatePadding(dimsFull, axis);
                 }

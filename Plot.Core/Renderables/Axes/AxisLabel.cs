@@ -10,13 +10,19 @@ namespace Plot.Core.Renderables.Axes
         public Edge Edge { get; set; }
         public bool Visible { get; set; } = true;
 
+        public bool LabelExtendOutward { get; set; } = true;
         public string Label { get; set; }
 
         // Axis AxisLabel
         public bool AxisLabelVisible { get; set; } = true;
         public Color AxisLabelColor { get; set; } = Color.Black;
-        public Font LabelFont { get; } = GDI.Font();
-        public float PaddingSizePx { get; set; }
+        public Font LabelFont { get; set; } = GDI.Font(fontSize: 14);
+        public float OffsetPx { get; set; }
+        public float Rotation { get; set; } = 0;
+
+        public StringAlignment HorizontalAlignment { get; set; } = StringAlignment.Near;
+        public StringAlignment VerticalAlignment { get; set; } = StringAlignment.Near;
+
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
@@ -38,54 +44,14 @@ namespace Plot.Core.Renderables.Axes
             // 如何解析这个元组返回值
             var (x, y) = GetAxisCenter(dims, edge);
 
-            int rotation;
-            switch (edge)
-            {
-                case Edge.Left:
-                    rotation = -90;
-                    break;
-                case Edge.Right:
-                    rotation = 90;
-                    break;
-                case Edge.Top:
-                    rotation = 0;
-                    break;
-                case Edge.Bottom:
-                    rotation = 0;
-                    break;
-                default:
-                    throw new NotImplementedException($"unsupported edge type {edge}");
-            }
-
             using (var brush = GDI.Brush(color))
             using (var sf = new StringFormat())
             {
-                switch (edge)
-                {
-                    case Edge.Left:
-                        sf.LineAlignment = StringAlignment.Near;
-                        sf.Alignment = StringAlignment.Center;
-                        break;
-                    case Edge.Right:
-                        sf.LineAlignment = StringAlignment.Near;
-                        sf.Alignment = StringAlignment.Center;
-                        break;
-                    case Edge.Top:
-                        sf.LineAlignment = StringAlignment.Near;
-                        sf.Alignment = StringAlignment.Center;
-                        break;
-                    case Edge.Bottom:
-                        // 原因是此时顶部对其，从y开始画label高度为height的矩形
-                        // 如果是Far，则是从y-height开始画高度为height的矩形
-                        sf.LineAlignment = StringAlignment.Far;
-                        sf.Alignment = StringAlignment.Center;
-                        break;
-                    default:
-                        throw new NotImplementedException($"unsupported edge type {edge}");
-                }
+                sf.Alignment = HorizontalAlignment;
+                sf.LineAlignment = VerticalAlignment;
 
                 gfx.TranslateTransform(x, y);
-                gfx.RotateTransform(rotation);
+                gfx.RotateTransform(-Rotation);
                 gfx.DrawString(label, labelFont, brush, 0, 0, sf);
                 gfx.ResetTransform();
             }
@@ -95,13 +61,17 @@ namespace Plot.Core.Renderables.Axes
         private (float, float) GetAxisCenter(PlotDimensions dims, Edge edge)
         {
             float x, y;
+            float marginSizePx = LabelExtendOutward ? OffsetPx : -OffsetPx;
+            float delta;
             switch (edge)
             {
                 case Edge.Left:
-                    x = dims.m_plotOffsetX - PaddingSizePx;
+                    delta = -marginSizePx;
+                    x = dims.m_plotOffsetX + delta;
                     break;
                 case Edge.Right:
-                    x = dims.m_plotOffsetX + dims.m_dataWidth + PaddingSizePx;
+                    delta = marginSizePx;
+                    x = dims.m_plotOffsetX + dims.m_dataWidth + delta;
                     break;
                 case Edge.Top:
                     x = dims.m_plotOffsetX + dims.m_plotWidth / 2;
@@ -122,10 +92,12 @@ namespace Plot.Core.Renderables.Axes
                     y = dims.m_plotOffsetY + dims.m_plotHeight / 2;
                     break;
                 case Edge.Top:
-                    y = dims.m_plotOffsetY - PaddingSizePx;
+                    delta = -marginSizePx;
+                    y = dims.m_plotOffsetY + delta;
                     break;
                 case Edge.Bottom:
-                    y = dims.m_plotOffsetY + dims.m_dataHeight + PaddingSizePx;
+                    delta = marginSizePx;
+                    y = dims.m_plotOffsetY + dims.m_dataHeight + delta;
                     break;
                 default:
                     throw new NotImplementedException($"unsupported edge type {edge}");

@@ -1,12 +1,8 @@
 using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
-using Plot.Core.Series.AxisLimitsManger;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 
 namespace Plot.Core.Series
 {
@@ -18,7 +14,8 @@ namespace Plot.Core.Series
             YAxis = yAxis;
             SampleRate = sampleRate;
 
-            Data = new double[SampleRate * 6];
+            int length = (int)Math.Ceiling(xAxis.Dims.Span);
+            Data = new double[length * sampleRate];
         }
 
         public Axis XAxis { get; }
@@ -28,27 +25,17 @@ namespace Plot.Core.Series
         public float LineWidth { get; set; } = 1f;
         public string Label { get; set; } = null;
 
-        public IAxisLimitsManager AxisLimitsManager { get; private set; } = new Sweep();
-        public bool ManageAxisLimits { get; set; } = false;
-
         public int SampleRate { get; }
         public double SampleInterval => 1.0 / SampleRate;
 
         public int NextIndex { get; private set; } = 0;
-        public double DataMinX { get; private set; } = double.MaxValue;
-        public double DataMaxX { get; private set; } = double.MinValue;
-        public double DataMinY { get; private set; } = double.MaxValue;
-        public double DataMaxY { get; private set; } = double.MinValue;
-        public double OffsetX { get; set; } = 0;
 
         public double[] Data { get; }
 
-        public long Count { get; private set; }
+        public double OffsetX { get; set; } = 0;
 
         public void Add(double value)
         {
-            Count++;
-
             Data[NextIndex] = value;
             NextIndex = (NextIndex + 1) % Data.Length;
         }
@@ -61,35 +48,9 @@ namespace Plot.Core.Series
 
         public void ValidateData() { }
 
-        private DateTime m_minTime => DateTime.FromOADate(OffsetX);
-        private DateTime m_maxTime => DateTime.FromOADate(OffsetX);
-        public AxisLimits GetAxisLimits()
-        {
-            DataMinY = Data.Min();
-            DataMaxY = Data.Max();
-
-            var minTime = Count > Data.Length ? m_minTime.AddSeconds((Count - Data.Length) * SampleInterval) : m_minTime;
-            var maxTime = Count > Data.Length ? m_maxTime.AddSeconds(Count * SampleInterval) : m_maxTime.AddSeconds(Data.Length * SampleInterval);
-            DataMinX = minTime.ToOADate();
-            DataMaxX = maxTime.ToOADate();
-
-            return new AxisLimits(DataMinX, DataMaxX, DataMinY, DataMaxY);
-        }
-
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
             if (Data.Length == 0) return;
-
-            // TODO: 提取到Axis类中，这不属于plot的职责
-            if (ManageAxisLimits)
-            {
-                AxisLimits viewLimit = XAxis.GetAxisLimits(YAxis);
-                AxisLimits dataLimit = GetAxisLimits();
-
-                AxisLimits limits = AxisLimitsManager.GetAxisLimits(viewLimit, dataLimit);
-
-                XAxis.SetAxisLimits(YAxis, limits);
-            }
 
             PlotDimensions Dims = XAxis.CreatePlotDimensions(YAxis, scale);
 
@@ -99,8 +60,7 @@ namespace Plot.Core.Series
             for (int i = 0; i < Data.Length; i++)
             {
                 int index = (NextIndex + i) % Data.Length; // 循环索引
-                var time = DateTime.FromOADate(DataMinX);
-                double dx = time.AddSeconds(index * SampleInterval).ToOADate();
+                double dx = index * SampleInterval + OffsetX;
                 float x = Dims.GetPixelX(dx);
                 float y = Dims.GetPixelY(Data[index]);
 

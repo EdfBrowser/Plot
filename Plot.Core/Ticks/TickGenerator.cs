@@ -11,6 +11,7 @@ namespace Plot.Core.Ticks
     public class TickGenerator
     {
         private TickCollection m_tickCollection = TickCollection.Empty;
+        private TickCollection m_manualTick = null;
 
         public bool IsVertical { get; set; } = true;
 
@@ -22,13 +23,37 @@ namespace Plot.Core.Ticks
         public float LargestLabelHeight => LargestLabelSize.Height;
 
         public TickLabelFormat LabelFormat { get; set; } = TickLabelFormat.Numeric;
+        public double? MajorDiv { get; set; }
+        public int? MinorDivCount { get; set; }
 
         public string DateTimeFormatString { get; set; }
 
         public void Recalculate(PlotDimensions dims, Font tickFont)
         {
-            RecalculateAutomatic(dims, tickFont);
+            if (m_manualTick != null)
+                RecalculateManualTicks(dims, tickFont);
+            else
+                RecalculateAutomatic(dims, tickFont);
         }
+
+        private void RecalculateManualTicks(PlotDimensions dims, Font tickFont)
+        {
+            double min = IsVertical ? dims.m_yMin : dims.m_xMin;
+            double max = IsVertical ? dims.m_yMax : dims.m_xMax;
+
+            var visibleIndexs = Enumerable.Range(0, m_manualTick.Major.Length)
+                                .Where(x => m_manualTick.Major[x] >= min)
+                                .Where(x => m_manualTick.Major[x] <= max);
+            double[] tickMajor = visibleIndexs.Select(x => m_manualTick.Major[x]).ToArray();
+            string[] tickLabels = visibleIndexs.Select(x => m_manualTick.Labels[x]).ToArray();
+
+            m_tickCollection = new TickCollection(tickMajor, null, tickLabels);
+
+            LargestLabelSize = GetMaxLabelSize(tickFont);
+        }
+
+        public void SetManualTick(double[] positions, string[] labels)
+            => m_manualTick = new TickCollection(positions, null, labels);
 
         // TODO: 策略模式？
         private void RecalculateAutomatic(PlotDimensions dims, Font tickFont)
@@ -107,14 +132,14 @@ namespace Plot.Core.Ticks
                 low = dims.m_yMin - dims.m_unitsPerPxY; // add a extra pixel to capture the edge tick
                 high = dims.m_yMax + dims.m_unitsPerPxY;
                 maxTickCount = initialTickCount ?? (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
-                tickSpacing = GetIdealTickSpacing(low, high, maxTickCount, Radix);
+                tickSpacing = MajorDiv ?? GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
             else
             {
                 low = dims.m_xMin - dims.m_unitsPerPxX; // add a extra pixel to capture the edge tick
                 high = dims.m_xMax + dims.m_unitsPerPxX;
                 maxTickCount = initialTickCount ?? (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
-                tickSpacing = GetIdealTickSpacing(low, high, maxTickCount, Radix);
+                tickSpacing = MajorDiv ?? GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
 
 
@@ -146,22 +171,19 @@ namespace Plot.Core.Ticks
 
         private double[] GetMinorPositions(double[] majorTicks, double min, double max)
         {
-            int divisions = 5;
+            int divCount = MinorDivCount ?? 4;
+            divCount += 1;
 
             if (majorTicks is null || majorTicks.Length < 2)
                 return Array.Empty<double>();
 
             double majorTickSpacing = majorTicks[1] - majorTicks[0];
-            double minorTickSpacing = majorTickSpacing / divisions;
-
-            List<double> majorTicksWithPadding = new List<double>();
-            majorTicksWithPadding.Add(majorTicks[0] - majorTickSpacing);
-            majorTicksWithPadding.AddRange(majorTicks);
+            double minorTickSpacing = majorTickSpacing / divCount;
 
             List<double> minorTicks = new List<double>();
-            foreach (var majorTickPosition in majorTicksWithPadding)
+            foreach (var majorTickPosition in majorTicks)
             {
-                for (int i = 1; i < divisions; i++)
+                for (int i = 1; i < divCount; i++)
                 {
                     double minorTickPosition = majorTickPosition + minorTickSpacing * i;
                     if ((minorTickPosition > min) && (minorTickPosition < max))
@@ -244,7 +266,6 @@ namespace Plot.Core.Ticks
 
             return idealSpacing;
         }
-
 
         private SizeF GetMaxLabelSize(Font tickFont)
         {

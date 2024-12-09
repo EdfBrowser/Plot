@@ -74,7 +74,7 @@ namespace Plot.Core
         public event EventHandler OnBitmapUpdated;
 
         private void OnMouseEventCompleted(object sender, EventArgs e) => Render();
-      
+
         private void RenderFigureArea(Bitmap bmp, bool lowQuality, float scale)
         {
             PlotDimensions dims = CreateDefaultXYPlotDimensions(scale);
@@ -136,7 +136,6 @@ namespace Plot.Core
                 if (bmp == null) return;
             }
 
-            m_seriesManager.GetLimitFromSeries();
             m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
 
             RenderFigureArea(bmp, lowQuality, scale);
@@ -150,6 +149,8 @@ namespace Plot.Core
             if (bmp == m_bitmapManager.GetLatestBitmap)
                 OnBitmapUpdated?.Invoke(null, null);
         }
+
+        public float GetXDataSizePx() => m_axisManager.GetDefaultXAxis().Dims.DataSizePx;
 
         public AxisManager AxisManager => m_axisManager;
 
