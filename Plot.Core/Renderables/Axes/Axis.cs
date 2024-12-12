@@ -61,58 +61,72 @@ namespace Plot.Core.Renderables.Axes
             AxisLabel.OffsetPx = LabelOffsetPx;
             AxisTick.Render(bmp, dims, lowQuality);
             AxisLabel.Render(bmp, dims, lowQuality);
+            // TODO: bug!!! 底部的轴线很粗
             AxisLine.Render(bmp, dims, lowQuality);
         }
 
         public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.Recalculate(dimsFull, AxisTick.TickFont);
 
+        public void SetDateTimeOrigin(DateTime startDateTime) => AxisTick.TickGenerator.OriginTime = startDateTime;
+
         public void ReCalculateAxisSize()
         {
             MarginSizePx = 0f;
 
-            // 刻度线
-            if (AxisTick.Visible && AxisTick.MajorTickVisible)
-                MarginSizePx += AxisTick.MajorTickLength;
-
-            if (AxisTick.Visible && AxisTick.TickLabelVisible)
+            if (AxisTick.Visible)
             {
-                float originalWidth = AxisTick.TickGenerator.LargestLabelWidth;
-                float originalHeight = AxisTick.TickGenerator.LargestLabelHeight;
+                if (AxisTick.MajorTickVisible)
+                    MarginSizePx += AxisTick.MajorTickLength;
 
-                float angle = AxisLabel.Rotation; // 获取实际旋转角度
-                double radians = angle * Math.PI / 180;
+                if (AxisTick.TickLabelVisible && AxisTick.TicksExtendOutward)
+                {
+                    float originalWidth = AxisTick.TickGenerator.LargestLabelWidth;
+                    float originalHeight = AxisTick.TickGenerator.LargestLabelHeight;
+                    float angle = AxisTick.TickLabelRotation;
 
-                float rotatedWidth = (float)(Math.Abs(originalWidth * Math.Cos(radians)) + Math.Abs(originalHeight * Math.Sin(radians)));
-                float rotatedHeight = (float)(Math.Abs(originalWidth * Math.Sin(radians)) + Math.Abs(originalHeight * Math.Cos(radians)));
-
-                float largerRotatedSize = Math.Max(rotatedWidth, rotatedHeight);
-
-                MarginSizePx += largerRotatedSize;
-
-                LabelOffsetPx = MarginSizePx;
+                    float largerRotatedSize = RotationSize(angle, originalWidth, originalHeight);
+                    MarginSizePx += largerRotatedSize;
+                    LabelOffsetPx = MarginSizePx;
+                }
             }
 
-            if (AxisLabel.Label != null && AxisLabel.Visible && AxisLabel.LabelExtendOutward)
+            if (AxisLabel.Visible && AxisLabel.LabelExtendOutward)
             {
                 SizeF size = AxisLabel.Measure();
                 float originalWidth = size.Width;
                 float originalHeight = size.Height;
+                float angle = AxisLabel.Rotation;
 
-                float angle = AxisLabel.Rotation; // 获取实际旋转角度
-                double radians = angle * Math.PI / 180;
-
-                float rotatedWidth = (float)(Math.Abs(originalWidth * Math.Cos(radians)) + Math.Abs(originalHeight * Math.Sin(radians)));
-                float rotatedHeight = (float)(Math.Abs(originalWidth * Math.Sin(radians)) + Math.Abs(originalHeight * Math.Cos(radians)));
-
-                float largerRotatedSize = Math.Max(rotatedWidth, rotatedHeight);
+                float largerRotatedSize = RotationSize(angle, originalWidth, originalHeight);
 
                 MarginSizePx += largerRotatedSize;
             }
         }
 
-        public float GetSize() => Visible ? MarginSizePx + MinimalMargin : 0;
+        private float RotationSize(float angle, float originalWidth, float originalHeight)
+        {
+            if (angle == 0)
+                return Edge.IsVertical() ? originalWidth: originalHeight;
 
-        public DateTime Origin { get; private set; }
-        public void SetDateTimeOrigin(DateTime startDateTime) => Origin = startDateTime;
+            double radians = angle * Math.PI / 180;
+
+            float rotatedWidth = (float)(Math.Abs(originalWidth * Math.Cos(radians)) + Math.Abs(originalHeight * Math.Sin(radians)));
+            float rotatedHeight = (float)(Math.Abs(originalWidth * Math.Sin(radians)) + Math.Abs(originalHeight * Math.Cos(radians)));
+
+            float largerRotatedSize = Math.Max(rotatedWidth, rotatedHeight);
+            return largerRotatedSize;
+        }
+
+        public float GetSize() => Visible ? MarginSizePx + MinimalMargin : MinimalMargin;
+
+        public XAxisScrollMode ScrollMode { get; set; }
+        public double ScrollPosition { get; set; }
+    }
+
+    public enum XAxisScrollMode :byte
+    {
+        None,
+        Sweeping,
+        Scrolling,
     }
 }

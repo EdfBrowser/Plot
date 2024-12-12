@@ -2,6 +2,7 @@ using Plot.Core.Draws;
 using Plot.Core.EventProcess;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
+using Plot.Core.Ticks;
 using System;
 using System.Drawing;
 
@@ -122,9 +123,10 @@ namespace Plot.Core
 
             bool changed = m_bitmapManager.CreateBitmap((int)width, (int)height);
             if (changed)
+            {
                 OnBitmapChanged?.Invoke(null, null);
-
-            Render();
+                Render();
+            }
         }
 
         public void Render(bool lowQuality = false, float scale = 1.0f)
@@ -136,16 +138,40 @@ namespace Plot.Core
                 if (bmp == null) return;
             }
 
-            m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
+            Axis y = m_axisManager.GetDefaultYAxis();
+            Axis x = m_axisManager.GetDefaultXAxis();
+            double range = x.Dims.Span;
+            if (x.ScrollMode == XAxisScrollMode.Scrolling)
+            {
+                // scrollposition = max
+                if (x.ScrollPosition > x.Dims.Max)
+                {
+                    x.Dims.SetLimits(x.ScrollPosition - range, x.ScrollPosition);
+                }
+
+                // TODO: AxisLayout
+                m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
+            }
+            else if (x.ScrollMode == XAxisScrollMode.Sweeping)
+            {
+                // TODO: AxisLayout
+                m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
+
+                // 类似与StreamerSeries，只更新这个range
+                // scrollposition =
+                Tick[] ticks = x.AxisTick.TickGenerator.GetVisibleMajorTicks(x.CreatePlotDimensions(y, scale));
+
+               //x.ScrollPosition
+            }
+
 
             RenderFigureArea(bmp, lowQuality, scale);
             RenderDataArea(bmp, lowQuality, scale);
             m_axisManager.RenderAxes(bmp, lowQuality, scale);
-            // TODO: 当连续绘制时，只需要绘制必要部分
             m_seriesManager.RenderSeries(bmp, lowQuality, scale);
 
-            // 如果此时最新的bitmap不是bmp所持有的，不进行更新
             // TODO: 采用一种机制来检测是不是最新的，不是最新的中断后重新渲染
+            // 如果此时最新的bitmap不是bmp所持有的，不进行更新
             if (bmp == m_bitmapManager.GetLatestBitmap)
                 OnBitmapUpdated?.Invoke(null, null);
         }
@@ -153,9 +179,7 @@ namespace Plot.Core
         public float GetXDataSizePx() => m_axisManager.GetDefaultXAxis().Dims.DataSizePx;
 
         public AxisManager AxisManager => m_axisManager;
-
         public SeriesManager SeriesManager => m_seriesManager;
-
         public EventManager EventManager => m_eventManager;
     }
 }

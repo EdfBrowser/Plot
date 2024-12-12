@@ -5,6 +5,7 @@ using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -13,17 +14,16 @@ namespace Plot.App
 {
     public partial class App : Form
     {
-        private int m_fps;
         private int m_channelCount;
-        private int m_frameCount = 0;
-        private int m_playSpeed;
 
+        private readonly Timer m_addDataTimer;
         private readonly Timer m_updatePlotTimer;
         private readonly double[] m_sine = DataGen.SineAnimated(1_000_0);
+        private readonly int m_sample = 100;
         private readonly Figure m_plt;
+        private readonly Random m_random = new Random(10);
 
         private int[] m_indexs;
-
 
         public App()
         {
@@ -33,25 +33,76 @@ namespace Plot.App
             m_plt = formPlot1.Figure;
 
             formPlot1.PltSizeChanged += FormPlot1_PltSizeChanged;
-            m_updatePlotTimer = new Timer() { Enabled = false };
+            m_addDataTimer = new Timer() { Enabled = false, Interval = 10 };
+            m_updatePlotTimer = new Timer() { Enabled = false, Interval = 50 };
 
-            comboBox1.SelectedIndex = 0;
-            comboBox2.SelectedIndex = 0;
             comboBox3.SelectedIndex = 0;
 
-
-
             button1.Click += Button1_Click;
-            checkBox1.CheckStateChanged += CheckBox1_CheckStateChanged;
-            checkBox2.CheckStateChanged += CheckBox2_CheckStateChanged;
-            comboBox1.SelectedIndexChanged += ComboBox1_SelectedIndexChanged;
-            comboBox2.SelectedIndexChanged += ComboBox2_SelectedIndexChanged;
-            comboBox3.SelectedIndexChanged += ComboBox3_SelectedIndexChanged;
+            button2.Click += Button2_Click;
             Load += App_Load;
+            m_addDataTimer.Tick += AddDataTimer_Tick;
             m_updatePlotTimer.Tick += UpdatePlot;
         }
 
 
+        private void App_Load(object sender, EventArgs e)
+        {
+            WorkFlow();
+        }
+
+
+        private long m_count = 0;
+        private void AddDataTimer_Tick(object sender, EventArgs e)
+        {
+            var seriesList = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
+            for (int i = 0; i < seriesList.Count; i++)
+            {
+                seriesList[i].Data[m_indexs[i]] = m_sine[m_indexs[i]];
+                m_indexs[i] = (m_indexs[i] + 1) % seriesList[i].Data.Length;
+            }
+
+            m_count += 1;
+
+            double lastX = m_count * (1.0 / m_sample);
+            m_plt.AxisManager.GetDefaultXAxis().ScrollPosition = lastX;
+        }
+       
+        private void UpdatePlot(object sender, EventArgs e)
+        {
+            m_plt.Render();
+        }
+
+
+        private void FormPlot1_PltSizeChanged(object sender, EventArgs e)
+        {
+            Button1_Click(this, e);
+            WorkFlow();
+        }
+
+        private void Button1_Click(object sender, EventArgs e)
+        {
+            m_addDataTimer.Enabled ^= true;
+            m_updatePlotTimer.Enabled ^= true;
+        }
+
+        private void Button2_Click(object sender, EventArgs e)
+        {
+            Button1_Click(this, e); 
+            WorkFlow();
+        }
+
+        #region chart
+        private void WorkFlow()
+        {
+            UpdateChartParameters();
+
+            CreateChart();
+            Start();
+
+            m_plt.AxisManager.SetGrid(checkBox2.Checked);
+            m_plt.Render();
+        }
 
         private double Measure()
         {
@@ -67,181 +118,61 @@ namespace Plot.App
             return m_xTotalUnit;
         }
 
-        private void ResetXAxis()
+        private void CreateChart()
         {
             Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
-            //xAxis.AxisTick.MajorTickVisible = false;
-            //xAxis.AxisTick.MinorTickVisible = false;
-            //xAxis.AxisTick.TickLabelVisible = false;
+            xAxis.ScrollPosition = 0;
+            xAxis.ScrollMode = XAxisScrollMode.Scrolling;
             xAxis.AxisTick.TickGenerator.MajorDiv = 1.0;
             xAxis.AxisTick.TickGenerator.LabelFormat = TickLabelFormat.DateTime;
-            xAxis.AxisTick.TickGenerator.Rotation = -90;
-            xAxis.AxisTick.TickLabelRotation = -90;
-            xAxis.AxisTick.HorizontalAlignment = StringAlignment.Far;
-            xAxis.AxisTick.VerticalAlignment = StringAlignment.Center;
+            xAxis.AxisTick.TickLabelRotation = 0;
             xAxis.AxisTick.TickGenerator.MinorDivCount = (int)(1 / 0.25);
+            xAxis.AxisTick.TickGenerator.DateTimeFormatString = "yyyy/MM/dd\nhh:mm:ss";
+            xAxis.AxisTick.HorizontalAlignment = StringAlignment.Near;
+            xAxis.AxisTick.VerticalAlignment = StringAlignment.Near;
 
             double unit = Measure();
             if (xAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime)
-            {
-                DateTime startDateTime = DateTime.MinValue;
-                DateTime endDateTime = startDateTime.AddSeconds(unit);
-                xAxis.SetDateTimeOrigin(startDateTime);
-                xAxis.Dims.SetLimits(startDateTime.ToOADate(), endDateTime.ToOADate());
-            }
-            else
-                xAxis.Dims.SetLimits(0, unit);
+                xAxis.SetDateTimeOrigin(DateTime.Now);
+
+            xAxis.Dims.SetLimits(0, unit);
         }
 
-        private void ResetYAxes()
+        private void UpdateChartParameters()
+        {
+            m_channelCount = int.Parse(comboBox3.SelectedItem.ToString());
+            m_indexs = new int[m_channelCount];
+            checkBox1.CheckState ^= CheckState.Unchecked;
+        }
+
+        private void Start()
         {
             m_plt.AxisManager.ClearYAxes();
+            m_plt.SeriesManager.Clear();
+
+            Axis x = m_plt.AxisManager.GetDefaultXAxis();
             for (int i = 0; i < m_channelCount; i++)
             {
-                Axis axis = m_plt.AxisManager.AddAxes(Edge.Left);
-                axis.AxisTick.MajorTickVisible = false;
-                axis.AxisTick.MinorTickVisible = false;
-                axis.AxisTick.TickLabelVisible = false;
-                axis.AxisLabel.Label = $"Channel {i}";
-                axis.AxisLabel.LabelExtendOutward = false;
-                axis.AxisLabel.Rotation = 0;
-                axis.AxisLabel.LabelFont = GDI.Font(fontSize: 14);
-                axis.AxisLabel.HorizontalAlignment = StringAlignment.Near;
-                axis.AxisLabel.VerticalAlignment = StringAlignment.Center;
+                Axis y = m_plt.AxisManager.AddAxes(Edge.Left);
+                y.AxisTick.MajorTickVisible = false;
+                y.AxisTick.MinorTickVisible = false;
+                y.AxisTick.TickLabelVisible = false;
+                y.AxisLabel.Label = $"Channel {i}";
+                y.AxisLabel.LabelExtendOutward = false;
+                y.AxisLabel.Rotation = 0;
+                y.AxisLabel.HorizontalAlignment = StringAlignment.Near;
+                y.AxisLabel.VerticalAlignment = StringAlignment.Center;
+
+                var series = new StreamerPlotSeries(x, y, m_sample * 6);
+                series.SampleRate = m_sample;
+                series.Color = DataGen.randomColor;
+
+                m_plt.SeriesManager.AddSeries(series);
             }
 
             m_plt.AxisManager.AxisSpace = 10;
         }
 
-        private void UpdateParametersFromComboBoxes()
-        {
-            m_playSpeed = int.Parse(comboBox1.SelectedItem.ToString());
-            m_fps = int.Parse(comboBox2.SelectedItem.ToString());
-            m_channelCount = int.Parse(comboBox3.SelectedItem.ToString());
-            m_indexs = new int[m_channelCount];
-
-
-            m_updatePlotTimer.Interval = 1000 / (m_fps * m_playSpeed);
-        }
-
-        private void WorkFlow()
-        {
-            UpdateParametersFromComboBoxes();
-
-            ResetXAxis();
-            ResetYAxes();
-            ResetSeries();
-
-            UpdateAxisLimits();
-            CheckBox2_CheckStateChanged(null, null);
-            m_plt.Render();
-        }
-
-        private void App_Load(object sender, EventArgs e)
-        {
-            WorkFlow();
-        }
-
-        private void ResetSeries()
-        {
-            m_plt.SeriesManager.Clear();
-            Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
-
-            List<Axis> yAxes = m_plt.AxisManager.LeftAxes().ToList();
-            foreach (var yAxis in yAxes)
-            {
-                var series = new StreamerPlotSeries(xAxis, yAxis, 100);
-                series.Color = DataGen.randomColor;
-
-                m_plt.SeriesManager.AddSeries(series);
-            }
-        }
-
-        private long m_count = 0;
-        private void UpdatePlot(object sender, EventArgs e)
-        {
-            var seriesList = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
-            for (int i = 0; i < seriesList.Count; i++)
-            {
-                int number = seriesList[i].SampleRate / m_fps * m_playSpeed;
-                if (m_frameCount % 3 == 0) number += 1;
-                m_frameCount++;
-
-                seriesList[i].AddRange(m_sine.Skip(m_indexs[i]).Take(number));
-                m_indexs[i] = (m_indexs[i] + number) % m_sine.Length;
-                m_count += number;
-            }
-            if (checkBox1.Checked)
-                UpdateAxisLimits();
-
-            m_plt.Render();
-        }
-
-        private void UpdateAxisLimits()
-        {
-            var seriesList = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
-            foreach (var series in seriesList)
-            {
-                (double lastMinX, double lastMaxX) = series.XAxis.Dims.GetLimits();
-                //(double lastMinY, double lastMaxY) = series.YAxis.Dims.GetLimits();
-                double seriesMinY = series.Data.Min();
-                double seriesMaxY = series.Data.Max();
-                double seriesMinX = m_count > series.Data.Length ?
-                    (m_count - series.Data.Length) * series.SampleInterval : 0;
-                seriesMinX = series.XAxis.Origin.AddSeconds(seriesMinX).ToOADate();
-                double seriesMaxX = m_count > series.Data.Length ?
-                    m_count * series.SampleInterval : series.Data.Length * series.SampleInterval;
-                seriesMaxX = series.XAxis.Origin.AddSeconds(seriesMaxX).ToOADate();
-
-                double xMin = seriesMinX;//astMinX < seriesMinX ? lastMinX : seriesMinX;
-                double xMax = seriesMaxX;//lastMaxX > seriesMaxX ? lastMaxX : seriesMaxX;
-
-                double yMin = seriesMinY;// lastMinY < seriesMinY ? lastMinY : seriesMinY;
-                double yMax = seriesMaxY;// lastMaxY > seriesMaxY ? lastMaxY : seriesMaxY;
-
-                series.XAxis.Dims.SetLimits(xMin, xMax);
-                series.YAxis.Dims.SetLimits(yMin, yMax);
-
-                series.OffsetX = xMin;
-            }
-        }
-
-        private void FormPlot1_PltSizeChanged(object sender, EventArgs e)
-        {
-            m_updatePlotTimer.Stop();
-            WorkFlow();
-        }
-
-        private void Button1_Click(object sender, EventArgs e)
-        {
-            m_updatePlotTimer.Enabled ^= true;
-        }
-
-        private void CheckBox1_CheckStateChanged(object sender, EventArgs e)
-        {
-            checkBox1.CheckState ^= CheckState.Unchecked;
-        }
-
-        private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            UpdateParametersFromComboBoxes();
-        }
-
-        private void ComboBox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            UpdateParametersFromComboBoxes();
-        }
-
-        private void ComboBox3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            m_updatePlotTimer.Stop();
-            WorkFlow();
-        }
-
-        private void CheckBox2_CheckStateChanged(object sender, EventArgs e)
-        {
-            m_plt.AxisManager.SetGrid(checkBox2.Checked);
-            m_plt.Render();
-        }
+        #endregion
     }
 }

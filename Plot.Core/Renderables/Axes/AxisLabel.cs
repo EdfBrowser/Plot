@@ -21,7 +21,7 @@ namespace Plot.Core.Renderables.Axes
         public float Rotation { get; set; } = 0;
 
         public StringAlignment HorizontalAlignment { get; set; } = StringAlignment.Near;
-        public StringAlignment VerticalAlignment { get; set; } = StringAlignment.Near;
+        public StringAlignment VerticalAlignment { get; set; } = StringAlignment.Center;
 
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
@@ -49,7 +49,7 @@ namespace Plot.Core.Renderables.Axes
             {
                 sf.Alignment = HorizontalAlignment;
                 sf.LineAlignment = VerticalAlignment;
-
+                
                 gfx.TranslateTransform(x, y);
                 gfx.RotateTransform(Rotation);
                 gfx.DrawString(label, labelFont, brush, 0, 0, sf);
@@ -106,7 +106,11 @@ namespace Plot.Core.Renderables.Axes
             return (x, y);
         }
 
-        public SizeF Measure() => GDI.MeasureStringUsingTemporaryGraphics(Label, LabelFont);
-
+        public SizeF Measure()
+        {
+            if (Label == null)
+                return SizeF.Empty;
+            return GDI.MeasureStringUsingTemporaryGraphics(Label, LabelFont);
+        }
     }
 }

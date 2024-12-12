@@ -19,16 +19,12 @@ namespace Plot.Core.Draws
         }
 
 
-        public static SizeF MeasureStringUsingTemporaryGraphics(string text, Font font, float rotation = 0)
+        public static SizeF MeasureStringUsingTemporaryGraphics(string text, Font font)
         {
             using (Bitmap bmp = new Bitmap(1, 1))
             using (Graphics gfx = Graphics(bmp, true, 1f))
             {
-                gfx.RotateTransform(rotation);
                 SizeF sizef = MeasureString(gfx, text, font);
-                gfx.ResetTransform();
-                if (90 == Math.Abs(rotation))
-                    sizef = new SizeF(sizef.Height, sizef.Width);
                 return sizef;
             }
         }
@@ -70,10 +66,10 @@ namespace Plot.Core.Draws
         }
 
 
-        public static Brush Brush(Color color, int alpha = 1) => new SolidBrush(Color.FromArgb(alpha * 255, color));
+        public static Brush Brush(Color color, float alpha = 1) => new SolidBrush(Color.FromArgb((int)(alpha * 255), color));
 
 
-        public static Pen Pen(Color color, float width, int alpha = 1) => new Pen(Color.FromArgb(alpha * 255, color), width);
+        public static Pen Pen(Color color, float width, float alpha = 1f) => new Pen(Color.FromArgb((int)(alpha * 255), color), width);
 
 
     }

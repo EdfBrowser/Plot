@@ -29,7 +29,16 @@ namespace Plot.Core.Renderables.Axes
 
         // Tick AxisLabel
         public bool TickLabelVisible { get; set; } = true;
-        public float TickLabelRotation { get; set; } = 0;
+        private float m_tickLabelRotation = 0;
+        public float TickLabelRotation
+        {
+            get => m_tickLabelRotation;
+            set
+            {
+                m_tickLabelRotation = value;
+                TickGenerator.Rotation = value;
+            }
+        }
         public Color TickLabelColor { get; set; } = Color.Black;
 
         // Major Tick
