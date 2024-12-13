@@ -1,11 +1,8 @@
 using Plot.Core;
-using Plot.Core.Draws;
 using Plot.Core.Enum;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -85,15 +82,16 @@ namespace Plot.App
                     double min = seriesList[i].Data.Min();
                     double max = seriesList[i].Data.Max();
 
-                    seriesList[i].YAxis.Dims.SetLimits(min, max);
-                }
+                    double expand = seriesList[i].YAxis.Dims.Span * 0.05;
+                    (double ymin, double ymax) = seriesList[i].YAxis.Dims.GetLimits();
+                    bool exceed = ymin > min || ymax < max;
+                    ymin = exceed ? min + expand : ymin;
+                    ymax = exceed ? max + expand : ymax;
 
-                //for (int i = 0; i < seriesList.Count; i++)
-                //{
-                //    seriesList[i].OffsetX = seriesList[i].XAxis.Dims.Min;
-                //}
+                    seriesList[i].YAxis.Dims.SetLimits(ymin, ymax);
+                }
             }
-           
+
             m_plt.Render();
         }
 
@@ -152,9 +150,10 @@ namespace Plot.App
             xAxis.AxisTick.TickGenerator.LabelFormat = TickLabelFormat.DateTime;
             xAxis.AxisTick.TickLabelRotation = 0;
             xAxis.AxisTick.TickGenerator.MinorDivCount = (int)(1 / 0.25);
-            xAxis.AxisTick.TickGenerator.DateTimeFormatString = "yyyy/MM/dd\nhh:mm:ss";
+            xAxis.AxisTick.TickGenerator.DateTimeFormatString = "HH:mm:ss";
             xAxis.AxisTick.HorizontalAlignment = StringAlignment.Near;
-            xAxis.AxisTick.VerticalAlignment = StringAlignment.Near;
+            xAxis.AxisTick.VerticalAlignment = StringAlignment.Far;
+            xAxis.AxisTick.TicksExtendOutward = false;
 
             if (xAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime)
                 xAxis.SetDateTimeOrigin(DateTime.Now);

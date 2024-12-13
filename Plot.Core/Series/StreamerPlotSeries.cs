@@ -1,6 +1,5 @@
 using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 
@@ -36,7 +35,6 @@ namespace Plot.Core.Series
         public double SampleInterval => 1.0 / SampleRate;
         // TODO: 移除不在视界内的数据
         public List<double> Data { get; private set; } = new List<double>();
-        public double OffsetX { get; set; } = 0;
 
         public void AddSample(double sample)
         {

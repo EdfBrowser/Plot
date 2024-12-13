@@ -69,7 +69,7 @@ namespace Plot.Core.Renderables.Axes
         }
 
         public void RecalculateTickPositions(PlotDimensions dims) => AxisTick.TickGenerator.Recalculate(dims, AxisTick.TickFont);
-       
+
         public void SetDateTimeOrigin(DateTime startDateTime) => AxisTick.TickGenerator.OriginTime = startDateTime;
 
         public void ReCalculateAxisSize()

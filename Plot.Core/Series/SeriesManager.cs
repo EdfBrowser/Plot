@@ -39,6 +39,6 @@ namespace Plot.Core.Series
 
         public void AddSeries(IPlotSeries series) => m_seriesList.Add(series);
 
-       
+
     }
 }

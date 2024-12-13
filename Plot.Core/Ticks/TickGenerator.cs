@@ -86,7 +86,7 @@ namespace Plot.Core.Ticks
         {
             double low, high, tickSpacing;
             int maxTickCount;
-           
+
             if (IsVertical)
             {
                 low = dims.m_yMin - dims.m_unitsPerPxY; // add a extra pixel to capture the edge tick
@@ -107,7 +107,7 @@ namespace Plot.Core.Ticks
                 tickSpacing = MajorDiv ?? GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
 
-           
+
             // now  that tick-spacing is known, start to generate list of ticks
             double firstTickOffset = low % tickSpacing;
             int tickCount = (int)((high - low) / tickSpacing) + 2;
@@ -129,15 +129,8 @@ namespace Plot.Core.Ticks
 
             string[] labels = GetTicksLabel(tickPositionsMajor);
 
-            if (LabelFormat == TickLabelFormat.Numeric)
-            {
-                double[] tickPositionsMinor = GetMinorPositions(tickPositionsMajor, low, high);
-                m_tickCollection = new TickCollection(tickPositionsMajor, tickPositionsMinor, labels);
-            }
-            else
-            {
-                m_tickCollection = new TickCollection(tickPositionsMajor, null, labels);
-            }
+            double[] tickPositionsMinor = GetMinorPositions(tickPositionsMajor, low, high);
+            m_tickCollection = new TickCollection(tickPositionsMajor, tickPositionsMinor, labels);
         }
 
         private double[] GetMinorPositions(double[] majorTicks, double min, double max)
@@ -187,7 +180,9 @@ namespace Plot.Core.Ticks
         public string GetDateTimeLabel(double value)
         {
             // 映射日期
-            return OriginTime.AddSeconds(value).ToString(DateTimeFormatString);
+            // TODO: 动态映射
+            string label = OriginTime.AddSeconds(Math.Abs(value)).ToString(DateTimeFormatString);
+            return value < 0 ? $"-{label}" : label;
         }
 
         private string GetNumericLabel(double value)

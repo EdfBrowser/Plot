@@ -2,8 +2,6 @@ using Plot.Core.Draws;
 using Plot.Core.Enum;
 using Plot.Core.Ticks;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -27,7 +25,7 @@ namespace Plot.Core.Renderables.Axes
         public bool Visible { get; set; } = true;
 
         // Direction
-        public bool TicksExtendOutward { get; } = true;
+        public bool TicksExtendOutward { get; set; } = true;
 
         // Tick AxisLabel
         public bool TickLabelVisible { get; set; } = true;
@@ -123,7 +121,8 @@ namespace Plot.Core.Renderables.Axes
 
                 if (TickLabelVisible)
                 {
-                    DrawTicksLabel(dims, gfx, TickGenerator.GetVisibleMajorTicks(dims), Edge, TickLabelRotation, MajorTickLength);
+                    float tickLength = TicksExtendOutward ? MajorTickLength : -MajorTickLength;
+                    DrawTicksLabel(dims, gfx, TickGenerator.GetVisibleMajorTicks(dims), Edge, TickLabelRotation, tickLength);
                 }
             }
         }

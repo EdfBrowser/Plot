@@ -2,11 +2,8 @@ using Plot.Core.Draws;
 using Plot.Core.EventProcess;
 using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
-using Plot.Core.Ticks;
 using System;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 
 namespace Plot.Core
 {
@@ -80,10 +77,9 @@ namespace Plot.Core
 
         private void RenderFigureArea(Bitmap bmp, bool lowQuality, float scale)
         {
-            PlotDimensions dims = CreateDefaultXYPlotDimensions(scale);
             Color figureColor = Color.White;
             // clear and set the background of figure
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
+            using (var gfx = GDI.Graphics(bmp, lowQuality, scale))
             {
                 gfx.Clear(figureColor);
             }
@@ -98,7 +94,7 @@ namespace Plot.Core
             // set the background of data area
             using (var brush = GDI.Brush(dataAreaColor))
             using (var pen = GDI.Pen(boundaryColor, boundaryWidth))
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
+            using (var gfx = GDI.Graphics(bmp, lowQuality, scale))
             {
                 gfx.FillRectangle(brush,
                     dims.m_plotOffsetX + 1,

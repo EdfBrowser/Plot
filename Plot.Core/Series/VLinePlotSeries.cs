@@ -24,13 +24,12 @@ namespace Plot.Core.Series
 
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
-            PlotDimensions Dims = XAxis.CreatePlotDimensions(YAxis, scale);
-            float px = Dims.GetPixelX(X);
-            float yMin = Dims.m_dataOffsetY;//Dims.GetPixelY(Dims.m_yMin);
-            float yMax = Dims.m_dataOffsetY + Dims.m_dataHeight;//Dims.GetPixelY(Dims.m_yMax);
+            float px = XAxis.Dims.GetPixel(X);
+            float yMin = YAxis.Dims.DataOffsetPx;
+            float yMax = YAxis.Dims.DataOffsetPx + YAxis.Dims.DataSizePx;
 
             using (var pen = GDI.Pen(Color, LineWidth))
-            using (var gfx = GDI.Graphics(bmp, Dims, lowQuality, true))
+            using (var gfx = GDI.Graphics(bmp, lowQuality, scale))
                 gfx.DrawLine(pen, px, yMin, px, yMax);
         }
 
