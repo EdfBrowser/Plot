@@ -257,7 +257,8 @@ namespace Plot.Core.Renderables.Axes
         {
             foreach (Axis axis in m_axes)
             {
-                axis.AxisTick.GridVisible = enable;
+                axis.AxisTick.MajorGridVisible = enable;
+                axis.AxisTick.MinorGridVisible = enable;
             }
         }
     }

@@ -59,14 +59,17 @@ namespace Plot.Core.Renderables.Axes
                 return;
 
             AxisLabel.OffsetPx = LabelOffsetPx;
+
+            AxisTick.ScrollPosition = ScrollPosition;
+
             AxisTick.Render(bmp, dims, lowQuality);
             AxisLabel.Render(bmp, dims, lowQuality);
             // TODO: bug!!! 底部的轴线很粗
             AxisLine.Render(bmp, dims, lowQuality);
         }
 
-        public void RecalculateTickPositions(PlotDimensions dimsFull) => AxisTick.TickGenerator.Recalculate(dimsFull, AxisTick.TickFont);
-
+        public void RecalculateTickPositions(PlotDimensions dims) => AxisTick.TickGenerator.Recalculate(dims, AxisTick.TickFont);
+       
         public void SetDateTimeOrigin(DateTime startDateTime) => AxisTick.TickGenerator.OriginTime = startDateTime;
 
         public void ReCalculateAxisSize()
@@ -106,7 +109,7 @@ namespace Plot.Core.Renderables.Axes
         private float RotationSize(float angle, float originalWidth, float originalHeight)
         {
             if (angle == 0)
-                return Edge.IsVertical() ? originalWidth: originalHeight;
+                return Edge.IsVertical() ? originalWidth : originalHeight;
 
             double radians = angle * Math.PI / 180;
 
@@ -119,14 +122,15 @@ namespace Plot.Core.Renderables.Axes
 
         public float GetSize() => Visible ? MarginSizePx + MinimalMargin : MinimalMargin;
 
-        public XAxisScrollMode ScrollMode { get; set; }
+        public XAxisScrollMode ScrollMode { get; set; } = XAxisScrollMode.None;
         public double ScrollPosition { get; set; }
     }
 
-    public enum XAxisScrollMode :byte
+    public enum XAxisScrollMode : byte
     {
         None,
         Sweeping,
         Scrolling,
+        Stepping,
     }
 }

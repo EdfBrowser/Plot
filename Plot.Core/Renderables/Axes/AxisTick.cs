@@ -2,6 +2,8 @@ using Plot.Core.Draws;
 using Plot.Core.Enum;
 using Plot.Core.Ticks;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -53,23 +55,28 @@ namespace Plot.Core.Renderables.Axes
         public float MinorTickWidth { get; set; } = 1;
         public Color MinorTickColor { get; set; } = Color.Black;
 
-        public bool GridVisible { get; set; } = true;
+        public bool MajorGridVisible { get; set; } = true;
         public DashStyle MajorGridStyle { get; set; } = DashStyle.Solid;
         public Color MajorGridColor { get; set; } = Color.LightGray;
         public float MajorGridWidth { get; set; } = 1;
+
+        public bool MinorGridVisible { get; set; } = true;
         public float MinorGridWidth { get; set; } = 1;
         public Color MinorGridColor { get; set; } = Color.LightGray;
         public DashStyle MinorGridStyle { get; set; } = DashStyle.Solid;
+
         public Font TickFont { get; set; } = GDI.Font();
         public StringAlignment HorizontalAlignment { get; set; } = StringAlignment.Near;
         public StringAlignment VerticalAlignment { get; set; } = StringAlignment.Near;
 
-
+        public double ScrollPosition { get; set; } = 0;
+        public bool Animation { get; set; } = false;
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
             if (!Visible)
                 return;
+
             double[] majorTicks = TickGenerator.GetVisibleMajorTicks(dims)
              .Select(t => t.m_position)
              .ToArray();
@@ -78,11 +85,21 @@ namespace Plot.Core.Renderables.Axes
                 .Select(t => t.m_position)
                 .ToArray();
 
+            if (Animation)
+            {
+                majorTicks = majorTicks.Where(t => t < ScrollPosition).ToArray();
+                minorTicks = minorTicks.Where(t => t < ScrollPosition).ToArray();
+            }
+
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
-                if (GridVisible)
+                if (MajorGridVisible)
                 {
                     DrawGridLines(dims, gfx, majorTicks, MajorGridStyle, MajorGridColor, MajorGridWidth, Edge);
+                }
+
+                if (MinorGridVisible)
+                {
                     DrawGridLines(dims, gfx, minorTicks, MinorGridStyle, MinorGridColor, MinorGridWidth, Edge);
                 }
 
@@ -147,7 +164,7 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-        private static void DrawTicks(PlotDimensions dims, Graphics gfx, double[] ticks, float tickLength,
+        private void DrawTicks(PlotDimensions dims, Graphics gfx, double[] ticks, float tickLength,
         Color color, Edge edge, float tickWidth)
         {
             if (ticks == null || ticks.Length == 0) return;
@@ -197,6 +214,8 @@ namespace Plot.Core.Renderables.Axes
                     case Edge.Left:
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
+                            if (majorTicks[i].m_position > ScrollPosition && Animation) break;
+
                             float x = dims.m_plotOffsetX - majorTickLength;
                             float y = dims.GetPixelY(majorTicks[i].m_position);
 
@@ -216,6 +235,8 @@ namespace Plot.Core.Renderables.Axes
                     case Edge.Bottom:
                         for (int i = 0; i < majorTicks.Length; i++)
                         {
+                            if (majorTicks[i].m_position > ScrollPosition && Animation) break;
+
                             float x = dims.GetPixelX(majorTicks[i].m_position);
                             float y = dims.m_plotOffsetY + dims.m_dataHeight + majorTickLength;
 

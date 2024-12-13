@@ -4,7 +4,9 @@ using Plot.Core.Renderables.Axes;
 using Plot.Core.Series;
 using Plot.Core.Ticks;
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 
 namespace Plot.Core
 {
@@ -141,30 +143,36 @@ namespace Plot.Core
             Axis y = m_axisManager.GetDefaultYAxis();
             Axis x = m_axisManager.GetDefaultXAxis();
             double range = x.Dims.Span;
-            if (x.ScrollMode == XAxisScrollMode.Scrolling)
+            if (x.ScrollMode == XAxisScrollMode.Stepping)
+            {
+                if (x.ScrollPosition >= x.Dims.Max)
+                {
+                    double max = x.ScrollPosition + range * 0.5;
+                    double min = max - range;
+                    x.Dims.SetLimits(min, max);
+                }
+            }
+            else if (x.ScrollMode == XAxisScrollMode.Scrolling)
             {
                 // scrollposition = max
-                if (x.ScrollPosition > x.Dims.Max)
+                if (x.ScrollPosition >= x.Dims.Max)
                 {
-                    x.Dims.SetLimits(x.ScrollPosition - range, x.ScrollPosition);
+                    double max = x.ScrollPosition;
+                    double min = max - range;
+                    x.Dims.SetLimits(min, max);
                 }
-
-                // TODO: AxisLayout
-                m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
             }
             else if (x.ScrollMode == XAxisScrollMode.Sweeping)
             {
-                // TODO: AxisLayout
-                m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
-
-                // 类似与StreamerSeries，只更新这个range
-                // scrollposition =
-                Tick[] ticks = x.AxisTick.TickGenerator.GetVisibleMajorTicks(x.CreatePlotDimensions(y, scale));
-
-               //x.ScrollPosition
+                if (x.ScrollPosition >= x.Dims.Max)
+                {
+                    x.Dims.SetLimits(x.ScrollPosition, x.ScrollPosition + range);
+                    x.AxisTick.Animation = true;
+                }
             }
 
-
+            // TODO: AxisLayout
+            m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
             RenderFigureArea(bmp, lowQuality, scale);
             RenderDataArea(bmp, lowQuality, scale);
             m_axisManager.RenderAxes(bmp, lowQuality, scale);

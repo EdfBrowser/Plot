@@ -52,11 +52,18 @@ namespace Plot.Core.Renderables.Axes
             Max = max;
         }
 
-        public double GetUnit(double px)
+        public double GetUnit(float px)
         {
             return IsInverted
                ? Min + (PlotOffsetPx + PlotSizePx - px) * UnitsPerPx
                : Min + (px - PlotOffsetPx) * UnitsPerPx;
+        }
+
+        public float GetPixel(double unit)
+        {
+            return IsInverted
+               ? (float)(PlotOffsetPx + (Max - unit) * PxsPerUnit)
+               : (float)(PlotOffsetPx + (unit - Min) * PxsPerUnit);
         }
 
         public void PanPx(double px)

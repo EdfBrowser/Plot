@@ -20,12 +20,12 @@ namespace Plot.WinForm
             InitializeComponent();
 
             pictureBox1.SizeChanged += PictureBox1_SizeChanged;
-            pictureBox1.MouseWheel += PictureBox1_MouseWheel;
-            pictureBox1.MouseDown += PictureBox1_MouseDown;
-            pictureBox1.MouseUp += PictureBox1_MouseUp;
-            pictureBox1.MouseMove += PictureBox1_MouseMove;
-            pictureBox1.MouseClick += PictureBox1_MouseClick;
-            pictureBox1.MouseDoubleClick += PictureBox1_MouseDoubleClick;
+            //pictureBox1.MouseWheel += PictureBox1_MouseWheel;
+            //pictureBox1.MouseDown += PictureBox1_MouseDown;
+            //pictureBox1.MouseUp += PictureBox1_MouseUp;
+            //pictureBox1.MouseMove += PictureBox1_MouseMove;
+            //pictureBox1.MouseClick += PictureBox1_MouseClick;
+            //pictureBox1.MouseDoubleClick += PictureBox1_MouseDoubleClick;
         }
 
         public event EventHandler PltSizeChanged;

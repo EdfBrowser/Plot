@@ -22,8 +22,10 @@ namespace Plot.App
         private readonly int m_sample = 100;
         private readonly Figure m_plt;
         private readonly Random m_random = new Random(10);
+        private long m_count = 0;
 
         private int[] m_indexs;
+        private string m_scrolling;
 
         public App()
         {
@@ -36,9 +38,9 @@ namespace Plot.App
             m_addDataTimer = new Timer() { Enabled = false, Interval = 10 };
             m_updatePlotTimer = new Timer() { Enabled = false, Interval = 50 };
 
+            comboBox1.SelectedIndex = 0;
             comboBox3.SelectedIndex = 0;
 
-            button1.Click += Button1_Click;
             button2.Click += Button2_Click;
             Load += App_Load;
             m_addDataTimer.Tick += AddDataTimer_Tick;
@@ -52,44 +54,64 @@ namespace Plot.App
         }
 
 
-        private long m_count = 0;
         private void AddDataTimer_Tick(object sender, EventArgs e)
         {
             var seriesList = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
             for (int i = 0; i < seriesList.Count; i++)
             {
-                seriesList[i].Data[m_indexs[i]] = m_sine[m_indexs[i]];
-                m_indexs[i] = (m_indexs[i] + 1) % seriesList[i].Data.Length;
+                seriesList[i].AddSample(m_sine[m_indexs[i]]);
+                m_indexs[i] = (m_indexs[i] + 1) % m_sine.Length;
             }
 
             m_count += 1;
 
             double lastX = m_count * (1.0 / m_sample);
             m_plt.AxisManager.GetDefaultXAxis().ScrollPosition = lastX;
+            if (m_scrolling == "Sweeping")
+            {
+                var vline = m_plt.SeriesManager.GetVLinePlotSeries().FirstOrDefault();
+                if (vline != null)
+                    vline.X = lastX;
+            }
         }
-       
+
         private void UpdatePlot(object sender, EventArgs e)
         {
+            // 更新Y轴
+            {
+                var seriesList = m_plt.SeriesManager.GetStreamerPlotSeries().ToList();
+                for (int i = 0; i < seriesList.Count; i++)
+                {
+                    double min = seriesList[i].Data.Min();
+                    double max = seriesList[i].Data.Max();
+
+                    seriesList[i].YAxis.Dims.SetLimits(min, max);
+                }
+
+                //for (int i = 0; i < seriesList.Count; i++)
+                //{
+                //    seriesList[i].OffsetX = seriesList[i].XAxis.Dims.Min;
+                //}
+            }
+           
             m_plt.Render();
         }
 
 
         private void FormPlot1_PltSizeChanged(object sender, EventArgs e)
         {
-            Button1_Click(this, e);
-            WorkFlow();
-        }
-
-        private void Button1_Click(object sender, EventArgs e)
-        {
-            m_addDataTimer.Enabled ^= true;
-            m_updatePlotTimer.Enabled ^= true;
+            Measure();
         }
 
         private void Button2_Click(object sender, EventArgs e)
         {
-            Button1_Click(this, e); 
+            m_addDataTimer.Stop();
+            m_updatePlotTimer.Stop();
+
             WorkFlow();
+
+            m_addDataTimer.Start();
+            m_updatePlotTimer.Start();
         }
 
         #region chart
@@ -98,13 +120,14 @@ namespace Plot.App
             UpdateChartParameters();
 
             CreateChart();
+            Measure();
             Start();
 
             m_plt.AxisManager.SetGrid(checkBox2.Checked);
             m_plt.Render();
         }
 
-        private double Measure()
+        private void Measure()
         {
             Graphics g = CreateGraphics();
             // 每1英寸=2.54厘米
@@ -115,14 +138,16 @@ namespace Plot.App
 
             g.Dispose();
 
-            return m_xTotalUnit;
+            Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
+            xAxis.Dims.SetLimits(0, m_xTotalUnit);
         }
 
         private void CreateChart()
         {
             Axis xAxis = m_plt.AxisManager.GetDefaultXAxis();
+            xAxis.AxisTick.Animation = false;
             xAxis.ScrollPosition = 0;
-            xAxis.ScrollMode = XAxisScrollMode.Scrolling;
+            xAxis.ScrollMode = (XAxisScrollMode)Enum.Parse(typeof(XAxisScrollMode), m_scrolling);
             xAxis.AxisTick.TickGenerator.MajorDiv = 1.0;
             xAxis.AxisTick.TickGenerator.LabelFormat = TickLabelFormat.DateTime;
             xAxis.AxisTick.TickLabelRotation = 0;
@@ -131,18 +156,18 @@ namespace Plot.App
             xAxis.AxisTick.HorizontalAlignment = StringAlignment.Near;
             xAxis.AxisTick.VerticalAlignment = StringAlignment.Near;
 
-            double unit = Measure();
             if (xAxis.AxisTick.TickGenerator.LabelFormat == TickLabelFormat.DateTime)
                 xAxis.SetDateTimeOrigin(DateTime.Now);
-
-            xAxis.Dims.SetLimits(0, unit);
         }
 
         private void UpdateChartParameters()
         {
+            m_count = 0;
+
             m_channelCount = int.Parse(comboBox3.SelectedItem.ToString());
             m_indexs = new int[m_channelCount];
-            checkBox1.CheckState ^= CheckState.Unchecked;
+
+            m_scrolling = comboBox1.SelectedItem.ToString();
         }
 
         private void Start()
@@ -157,13 +182,16 @@ namespace Plot.App
                 y.AxisTick.MajorTickVisible = false;
                 y.AxisTick.MinorTickVisible = false;
                 y.AxisTick.TickLabelVisible = false;
+                y.AxisTick.MajorGridVisible = false;
+                y.AxisTick.MinorGridVisible = false;
+
                 y.AxisLabel.Label = $"Channel {i}";
                 y.AxisLabel.LabelExtendOutward = false;
                 y.AxisLabel.Rotation = 0;
                 y.AxisLabel.HorizontalAlignment = StringAlignment.Near;
                 y.AxisLabel.VerticalAlignment = StringAlignment.Center;
 
-                var series = new StreamerPlotSeries(x, y, m_sample * 6);
+                var series = new StreamerPlotSeries(x, y);
                 series.SampleRate = m_sample;
                 series.Color = DataGen.randomColor;
 
@@ -171,6 +199,13 @@ namespace Plot.App
             }
 
             m_plt.AxisManager.AxisSpace = 10;
+
+            if (m_scrolling == "Sweeping")
+            {
+                var vline = new VLinePlotSeries(x, m_plt.AxisManager.GetDefaultYAxis());
+                vline.Color = DataGen.randomColor;
+                m_plt.SeriesManager.AddSeries(vline);
+            }
         }
 
         #endregion

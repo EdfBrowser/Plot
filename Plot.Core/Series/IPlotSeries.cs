@@ -10,7 +10,6 @@ namespace Plot.Core.Series
 
         Color Color { get; set; }
         float LineWidth { get; set; }
-        string Label { get; set; }
 
         void ValidateData();
 

@@ -31,20 +31,17 @@ namespace Plot.App
             formPlot1 = new WinForm.FormPlot();
             flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             groupBox1 = new System.Windows.Forms.GroupBox();
-            checkBox1 = new System.Windows.Forms.CheckBox();
+            comboBox1 = new System.Windows.Forms.ComboBox();
             groupBox4 = new System.Windows.Forms.GroupBox();
             comboBox3 = new System.Windows.Forms.ComboBox();
             groupBox6 = new System.Windows.Forms.GroupBox();
             checkBox2 = new System.Windows.Forms.CheckBox();
-            groupBox5 = new System.Windows.Forms.GroupBox();
-            button1 = new System.Windows.Forms.Button();
             groupBox7 = new System.Windows.Forms.GroupBox();
             button2 = new System.Windows.Forms.Button();
             flowLayoutPanel1.SuspendLayout();
             groupBox1.SuspendLayout();
             groupBox4.SuspendLayout();
             groupBox6.SuspendLayout();
-            groupBox5.SuspendLayout();
             groupBox7.SuspendLayout();
             SuspendLayout();
             // 
@@ -61,7 +58,6 @@ namespace Plot.App
             flowLayoutPanel1.Controls.Add(groupBox1);
             flowLayoutPanel1.Controls.Add(groupBox4);
             flowLayoutPanel1.Controls.Add(groupBox6);
-            flowLayoutPanel1.Controls.Add(groupBox5);
             flowLayoutPanel1.Controls.Add(groupBox7);
             flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Left;
             flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
@@ -72,23 +68,23 @@ namespace Plot.App
             // 
             // groupBox1
             // 
-            groupBox1.Controls.Add(checkBox1);
+            groupBox1.Controls.Add(comboBox1);
             groupBox1.Location = new System.Drawing.Point(3, 3);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new System.Drawing.Size(100, 44);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
-            groupBox1.Text = "自动缩放";
+            groupBox1.Text = "滚动效果";
             // 
-            // checkBox1
+            // comboBox1
             // 
-            checkBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            checkBox1.Location = new System.Drawing.Point(3, 19);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new System.Drawing.Size(94, 22);
-            checkBox1.TabIndex = 0;
-            checkBox1.Text = "开启/关闭";
-            checkBox1.UseVisualStyleBackColor = true;
+            comboBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Items.AddRange(new object[] { "Scrolling", "Sweeping", "Stepping" });
+            comboBox1.Location = new System.Drawing.Point(3, 19);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new System.Drawing.Size(94, 25);
+            comboBox1.TabIndex = 1;
             // 
             // groupBox4
             // 
@@ -130,35 +126,15 @@ namespace Plot.App
             checkBox2.Text = "开启/关闭";
             checkBox2.UseVisualStyleBackColor = true;
             // 
-            // groupBox5
-            // 
-            groupBox5.Controls.Add(button1);
-            groupBox5.Location = new System.Drawing.Point(3, 163);
-            groupBox5.Name = "groupBox5";
-            groupBox5.Size = new System.Drawing.Size(100, 52);
-            groupBox5.TabIndex = 4;
-            groupBox5.TabStop = false;
-            groupBox5.Text = "启动";
-            // 
-            // button1
-            // 
-            button1.Dock = System.Windows.Forms.DockStyle.Fill;
-            button1.Location = new System.Drawing.Point(3, 19);
-            button1.Name = "button1";
-            button1.Size = new System.Drawing.Size(94, 30);
-            button1.TabIndex = 5;
-            button1.Text = "开始/暂停";
-            button1.UseVisualStyleBackColor = true;
-            // 
             // groupBox7
             // 
             groupBox7.Controls.Add(button2);
-            groupBox7.Location = new System.Drawing.Point(3, 221);
+            groupBox7.Location = new System.Drawing.Point(3, 163);
             groupBox7.Name = "groupBox7";
             groupBox7.Size = new System.Drawing.Size(100, 52);
             groupBox7.TabIndex = 6;
             groupBox7.TabStop = false;
-            groupBox7.Text = "重置";
+            groupBox7.Text = "创建";
             // 
             // button2
             // 
@@ -167,7 +143,7 @@ namespace Plot.App
             button2.Name = "button2";
             button2.Size = new System.Drawing.Size(94, 30);
             button2.TabIndex = 5;
-            button2.Text = "重置";
+            button2.Text = "创建图表";
             button2.UseVisualStyleBackColor = true;
             // 
             // App
@@ -184,7 +160,6 @@ namespace Plot.App
             groupBox1.ResumeLayout(false);
             groupBox4.ResumeLayout(false);
             groupBox6.ResumeLayout(false);
-            groupBox5.ResumeLayout(false);
             groupBox7.ResumeLayout(false);
             ResumeLayout(false);
         }
@@ -194,14 +169,12 @@ namespace Plot.App
         private WinForm.FormPlot formPlot1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.ComboBox comboBox3;
-        private System.Windows.Forms.GroupBox groupBox5;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.CheckBox checkBox2;
         private System.Windows.Forms.GroupBox groupBox7;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.ComboBox comboBox1;
     }
 }

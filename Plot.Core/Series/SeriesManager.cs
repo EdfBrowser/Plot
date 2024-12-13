@@ -16,6 +16,8 @@ namespace Plot.Core.Series
         }
 
         public IEnumerable<StreamerPlotSeries> GetStreamerPlotSeries() => m_seriesList.OfType<StreamerPlotSeries>();
+        public IEnumerable<VLinePlotSeries> GetVLinePlotSeries() => m_seriesList.OfType<VLinePlotSeries>();
+
         public void Clear() => m_seriesList.Clear();
 
         public void RenderSeries(Bitmap bmp, bool lowQuality, float scale)
@@ -36,5 +38,7 @@ namespace Plot.Core.Series
         }
 
         public void AddSeries(IPlotSeries series) => m_seriesList.Add(series);
+
+       
     }
 }
