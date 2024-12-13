@@ -15,9 +15,11 @@ namespace Plot.Core.EventProcess
 
         public void Process(AxisManager axisManager)
         {
-            float x = m_inputState.m_shiftPressed ? m_manager.OldestX : m_inputState.m_x;
-            float y = m_inputState.m_controlPressed ? m_manager.OldestY : m_inputState.m_y;
+            float x = m_inputState.m_shiftPressed ? m_inputState.m_x : m_manager.OldestX;
+            float y = m_inputState.m_controlPressed ? m_inputState.m_y : m_manager.OldestY;
 
+            x -= m_manager.OldestX;
+            y -= m_manager.OldestY;
             axisManager.PanAll(x, y);
         }
     }

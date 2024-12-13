@@ -11,6 +11,7 @@ namespace Plot.Core.Ticks
     public class TickGenerator
     {
         private TickCollection m_tickCollection = TickCollection.Empty;
+        private TickCollection m_manualTick = null;
 
         public bool IsVertical { get; set; } = true;
 
@@ -22,79 +23,63 @@ namespace Plot.Core.Ticks
         public float LargestLabelHeight => LargestLabelSize.Height;
 
         public TickLabelFormat LabelFormat { get; set; } = TickLabelFormat.Numeric;
+        public double? MajorDiv { get; set; } = null;
+        public int? MinorDivCount { get; set; } = null;
 
         public string DateTimeFormatString { get; set; }
 
+        public float Rotation { get; set; } = 0;
+
+        public DateTime OriginTime { get; set; } = DateTime.MinValue;
+
         public void Recalculate(PlotDimensions dims, Font tickFont)
         {
-            RecalculateAutomatic(dims, tickFont);
+            if (m_manualTick != null)
+                RecalculateManualTicks(dims, tickFont);
+            else
+                RecalculateAutomatic(dims, tickFont);
         }
+
+        private void RecalculateManualTicks(PlotDimensions dims, Font tickFont)
+        {
+            double min = IsVertical ? dims.m_yMin : dims.m_xMin;
+            double max = IsVertical ? dims.m_yMax : dims.m_xMax;
+
+            var visibleIndexs = Enumerable.Range(0, m_manualTick.Major.Length)
+                                .Where(x => m_manualTick.Major[x] >= min)
+                                .Where(x => m_manualTick.Major[x] <= max);
+            double[] tickMajor = visibleIndexs.Select(x => m_manualTick.Major[x]).ToArray();
+            string[] tickLabels = visibleIndexs.Select(x => m_manualTick.Labels[x]).ToArray();
+
+            m_tickCollection = new TickCollection(tickMajor, null, tickLabels);
+
+            LargestLabelSize = GetMaxLabelSize(tickFont);
+        }
+
+        public void SetManualTick(double[] positions, string[] labels)
+            => m_manualTick = new TickCollection(positions, null, labels);
 
         // TODO: 策略模式？
         private void RecalculateAutomatic(PlotDimensions dims, Font tickFont)
         {
-            int initialTickCount = (int)(10 * TickDensity);
-            if (LabelFormat == TickLabelFormat.DateTime)
             {
-                float labelWidth = 20f;
-                float labelHeight = 24f;
-                SizeF labelSize = new SizeF(labelWidth, labelHeight);
-                RecalculatePositionsDateTime(dims, labelSize, initialTickCount);
-            }
-            else if (LabelFormat == TickLabelFormat.Numeric)
-            {
+                int initialTickCount = (int)(10 * TickDensity);
+
                 float labelWidth = 15f;
                 float labelHeight = 12f;
                 SizeF labelSize = new SizeF(labelWidth, labelHeight);
-
                 RecalculatePositionsNumeric(dims, labelSize, initialTickCount);
+
+                // use the results of the first pass to estimate the size of the largest tick label
+                LargestLabelSize = GetMaxLabelSize(tickFont);
             }
 
-            // use the results of the first pass to estimate the size of the largest tick label
-            LargestLabelSize = GetMaxLabelSize(tickFont);
-
-            // re-calculate position by largest label size
-            if (LabelFormat == TickLabelFormat.DateTime)
-            {
-                RecalculatePositionsDateTime(dims, LargestLabelSize, null);
-            }
-            else if (LabelFormat == TickLabelFormat.Numeric)
             {
                 RecalculatePositionsNumeric(dims, LargestLabelSize, null);
+
+                // use the results of the first pass to estimate the size of the largest tick label
+                LargestLabelSize = GetMaxLabelSize(tickFont);
             }
-        }
-
-        private void RecalculatePositionsDateTime(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
-        {
-            double low, high;
-            int maxTickCount;
-
-            if (IsVertical)
-            {
-                low = dims.m_yMin - dims.m_unitsPerPxY;
-                high = dims.m_yMax + dims.m_unitsPerPxY;
-                maxTickCount = initialTickCount ?? (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
-            }
-            else
-            {
-                low = dims.m_xMin - dims.m_unitsPerPxX;
-                high = dims.m_xMax + dims.m_unitsPerPxX;
-                maxTickCount = initialTickCount ?? (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
-            }
-
-            if (low > high) return;
-
-            low = Math.Max(low, DateTime.MinValue.ToOADate());
-            high = Math.Min(high, DateTime.MaxValue.ToOADate());
-
-            DateTime from = DateTime.FromOADate(low);
-            DateTime to = DateTime.FromOADate(high);
-
-            IDateTimeUnit tickUnit = DateTimeUnitFactory.CreateBestUnit(from, to, Culture, maxTickCount);
-            (double[] tickPositionsMajor, string[] tickLabels) = tickUnit.GetTicksAndLabels(from, to, DateTimeFormatString);
-            tickLabels = tickLabels.Select(x => x.Trim()).ToArray();
-
-            m_tickCollection = new TickCollection(tickPositionsMajor, null, tickLabels);
         }
 
         private void RecalculatePositionsNumeric(PlotDimensions dims, SizeF labelSize, int? initialTickCount)
@@ -105,16 +90,21 @@ namespace Plot.Core.Ticks
             if (IsVertical)
             {
                 low = dims.m_yMin - dims.m_unitsPerPxY; // add a extra pixel to capture the edge tick
+                // The Minimum value is 0 of DateTime.
+                low = LabelFormat == TickLabelFormat.DateTime ? Math.Max(0, low) : low;
+
                 high = dims.m_yMax + dims.m_unitsPerPxY;
                 maxTickCount = initialTickCount ?? (int)(dims.m_plotHeight / labelSize.Height * TickDensity);
-                tickSpacing = GetIdealTickSpacing(low, high, maxTickCount, Radix);
+                tickSpacing = MajorDiv ?? GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
             else
             {
                 low = dims.m_xMin - dims.m_unitsPerPxX; // add a extra pixel to capture the edge tick
+                // The Minimum value is 0 of DateTime.
+                low = LabelFormat == TickLabelFormat.DateTime ? Math.Max(0, low) : low;
                 high = dims.m_xMax + dims.m_unitsPerPxX;
                 maxTickCount = initialTickCount ?? (int)(dims.m_plotWidth / labelSize.Width * TickDensity);
-                tickSpacing = GetIdealTickSpacing(low, high, maxTickCount, Radix);
+                tickSpacing = MajorDiv ?? GetIdealTickSpacing(low, high, maxTickCount, Radix);
             }
 
 
@@ -140,28 +130,24 @@ namespace Plot.Core.Ticks
             string[] labels = GetTicksLabel(tickPositionsMajor);
 
             double[] tickPositionsMinor = GetMinorPositions(tickPositionsMajor, low, high);
-
             m_tickCollection = new TickCollection(tickPositionsMajor, tickPositionsMinor, labels);
         }
 
         private double[] GetMinorPositions(double[] majorTicks, double min, double max)
         {
-            int divisions = 5;
+            int divCount = MinorDivCount ?? 4;
+            divCount += 1;
 
             if (majorTicks is null || majorTicks.Length < 2)
                 return Array.Empty<double>();
 
             double majorTickSpacing = majorTicks[1] - majorTicks[0];
-            double minorTickSpacing = majorTickSpacing / divisions;
-
-            List<double> majorTicksWithPadding = new List<double>();
-            majorTicksWithPadding.Add(majorTicks[0] - majorTickSpacing);
-            majorTicksWithPadding.AddRange(majorTicks);
+            double minorTickSpacing = majorTickSpacing / divCount;
 
             List<double> minorTicks = new List<double>();
-            foreach (var majorTickPosition in majorTicksWithPadding)
+            foreach (var majorTickPosition in majorTicks)
             {
-                for (int i = 1; i < divisions; i++)
+                for (int i = 1; i < divCount; i++)
                 {
                     double minorTickPosition = majorTickPosition + minorTickSpacing * i;
                     if ((minorTickPosition > min) && (minorTickPosition < max))
@@ -181,14 +167,22 @@ namespace Plot.Core.Ticks
 
             for (int i = 0; i < positions.Length; i++)
             {
-                labels[i] = GetNumericLabel(positions[i]);
-
-                //if (labels[i] == "-0")
-                //    labels[i] = "0";
+                if (LabelFormat == TickLabelFormat.DateTime)
+                    labels[i] = GetDateTimeLabel(positions[i]);
+                else if (LabelFormat == TickLabelFormat.Numeric)
+                    labels[i] = GetNumericLabel(positions[i]);
             }
 
 
             return labels;
+        }
+
+        public string GetDateTimeLabel(double value)
+        {
+            // 映射日期
+            // TODO: 动态映射
+            string label = OriginTime.AddSeconds(Math.Abs(value)).ToString(DateTimeFormatString);
+            return value < 0 ? $"-{label}" : label;
         }
 
         private string GetNumericLabel(double value)
@@ -225,7 +219,7 @@ namespace Plot.Core.Ticks
 
             int divisions = 0;
             int tickCount = 0;
-            while ((tickCount < maxTickCount) && (tickSpacings.Count < 1000))
+            while (tickCount < maxTickCount)
             {
                 tickSpacings.Add(tickSpacings.Last() / divBy[divisions++ % divBy.Length]);
                 tickCount = (int)(range / tickSpacings.Last());
@@ -244,7 +238,6 @@ namespace Plot.Core.Ticks
 
             return idealSpacing;
         }
-
 
         private SizeF GetMaxLabelSize(Font tickFont)
         {
@@ -313,7 +306,8 @@ namespace Plot.Core.Ticks
             }
 
             return GetMajorTicks()
-                .Where(x => x.m_position >= low && x.m_position <= high).OrderBy(x => x.m_position)
+                .Where(x => x.m_position >= low && x.m_position <= high)
+                .OrderBy(x => x.m_position)
                 .ToArray();
         }
 
@@ -333,6 +327,7 @@ namespace Plot.Core.Ticks
 
             return GetMinorTicks()
                 .Where(t => t.m_position >= low && t.m_position <= high)
+                .OrderBy(x => x.m_position)
                 .ToArray();
         }
     }

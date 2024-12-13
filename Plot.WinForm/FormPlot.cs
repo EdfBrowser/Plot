@@ -20,13 +20,15 @@ namespace Plot.WinForm
             InitializeComponent();
 
             pictureBox1.SizeChanged += PictureBox1_SizeChanged;
-            pictureBox1.MouseWheel += PictureBox1_MouseWheel;
-            pictureBox1.MouseDown += PictureBox1_MouseDown;
-            pictureBox1.MouseUp += PictureBox1_MouseUp;
-            pictureBox1.MouseMove += PictureBox1_MouseMove;
-            pictureBox1.MouseClick += PictureBox1_MouseClick;
-            pictureBox1.MouseDoubleClick += PictureBox1_MouseDoubleClick;
+            //pictureBox1.MouseWheel += PictureBox1_MouseWheel;
+            //pictureBox1.MouseDown += PictureBox1_MouseDown;
+            //pictureBox1.MouseUp += PictureBox1_MouseUp;
+            //pictureBox1.MouseMove += PictureBox1_MouseMove;
+            //pictureBox1.MouseClick += PictureBox1_MouseClick;
+            //pictureBox1.MouseDoubleClick += PictureBox1_MouseDoubleClick;
         }
+
+        public event EventHandler PltSizeChanged;
 
         public Figure Figure => m_figure;
 
@@ -35,8 +37,11 @@ namespace Plot.WinForm
 
 
         #region Event
-        private void PictureBox1_SizeChanged(object sender, EventArgs e) => m_figure.Resize(pictureBox1.Width, pictureBox1.Height);
-
+        private void PictureBox1_SizeChanged(object sender, EventArgs e)
+        {
+            m_figure.Resize(pictureBox1.Width, pictureBox1.Height);
+            PltSizeChanged?.Invoke(sender, e);
+        }
         private void PictureBox1_MouseWheel(object sender, MouseEventArgs e) => m_eventManager.MouseScroll(GetInputState(e));
         private void PictureBox1_MouseDown(object sender, MouseEventArgs e) => m_eventManager.MouseDown(GetInputState(e));
         private void PictureBox1_MouseUp(object sender, MouseEventArgs e) => m_eventManager.MouseUp(GetInputState(e));

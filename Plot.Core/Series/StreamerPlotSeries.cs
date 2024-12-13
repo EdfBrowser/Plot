@@ -1,24 +1,19 @@
 using Plot.Core.Draws;
 using Plot.Core.Renderables.Axes;
-using Plot.Core.Series.AxisLimitsManger;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 
 namespace Plot.Core.Series
 {
     public class StreamerPlotSeries : IPlotSeries
     {
-        public StreamerPlotSeries(Axis xAxis, Axis yAxis, int sampleRate)
+        private int m_sampleRate = 1;
+        public int m_maxDataPoints = 1;
+
+        public StreamerPlotSeries(Axis xAxis, Axis yAxis)
         {
             XAxis = xAxis;
             YAxis = yAxis;
-            SampleRate = sampleRate;
-
-            Data = new double[SampleRate * 6];
         }
 
         public Axis XAxis { get; }
@@ -28,97 +23,60 @@ namespace Plot.Core.Series
         public float LineWidth { get; set; } = 1f;
         public string Label { get; set; } = null;
 
-        public IAxisLimitsManager AxisLimitsManager { get; private set; } = new Sweep();
-        public bool ManageAxisLimits { get; set; } = false;
-
-        public int SampleRate { get; }
-        public double SampleInterval => 1.0 / SampleRate;
-
-        public int NextIndex { get; private set; } = 0;
-        public double DataMinX { get; private set; } = double.MaxValue;
-        public double DataMaxX { get; private set; } = double.MinValue;
-        public double DataMinY { get; private set; } = double.MaxValue;
-        public double DataMaxY { get; private set; } = double.MinValue;
-        public double OffsetX { get; set; } = 0;
-
-        public double[] Data { get; }
-
-        public long Count { get; private set; }
-
-        public void Add(double value)
+        public int SampleRate
         {
-            Count++;
-
-            Data[NextIndex] = value;
-            NextIndex = (NextIndex + 1) % Data.Length;
+            get => m_sampleRate;
+            set
+            {
+                m_sampleRate = value;
+                m_maxDataPoints = value * (int)XAxis.Dims.Span;
+            }
         }
+        public double SampleInterval => 1.0 / SampleRate;
+        // TODO: 移除不在视界内的数据
+        public List<double> Data { get; private set; } = new List<double>();
 
-        public void AddRange(IEnumerable<double> values)
+        public void AddSample(double sample)
         {
-            foreach (double value in values)
-                Add(value);
+            //if (Data.Count >= m_maxDataPoints)
+            //    Data.RemoveAt(0);
+
+            Data.Add(sample);
         }
 
         public void ValidateData() { }
 
-        private DateTime m_minTime => DateTime.FromOADate(OffsetX);
-        private DateTime m_maxTime => DateTime.FromOADate(OffsetX);
-        public AxisLimits GetAxisLimits()
-        {
-            DataMinY = Data.Min();
-            DataMaxY = Data.Max();
-
-            var minTime = Count > Data.Length ? m_minTime.AddSeconds((Count - Data.Length) * SampleInterval) : m_minTime;
-            var maxTime = Count > Data.Length ? m_maxTime.AddSeconds(Count * SampleInterval) : m_maxTime.AddSeconds(Data.Length * SampleInterval);
-            DataMinX = minTime.ToOADate();
-            DataMaxX = maxTime.ToOADate();
-
-            return new AxisLimits(DataMinX, DataMaxX, DataMinY, DataMaxY);
-        }
-
         public void Plot(Bitmap bmp, bool lowQuality, float scale)
         {
-            if (Data.Length == 0) return;
+            if (Data == null || Data.Count == 0) return;
 
-            // TODO: 提取到Axis类中，这不属于plot的职责
-            if (ManageAxisLimits)
+            //CleanOldData(XAxis.Dims.Min, XAxis.Dims.Max);
+
+            List<PointF> points = new List<PointF>();
+            for (int i = 0; i < Data.Count; i++)
             {
-                AxisLimits viewLimit = XAxis.GetAxisLimits(YAxis);
-                AxisLimits dataLimit = GetAxisLimits();
+                double dx = i * SampleInterval;
 
-                AxisLimits limits = AxisLimitsManager.GetAxisLimits(viewLimit, dataLimit);
+                float x = XAxis.Dims.GetPixel(dx);
+                float y = YAxis.Dims.GetPixel(Data[i]);
 
-                XAxis.SetAxisLimits(YAxis, limits);
+                if (x > XAxis.Dims.PlotOffsetPx && x < (XAxis.Dims.PlotOffsetPx + XAxis.Dims.DataSizePx))
+                    if (y > YAxis.Dims.PlotOffsetPx && y < (YAxis.Dims.PlotOffsetPx + YAxis.Dims.DataSizePx))
+                        points.Add(new PointF(x, y));
             }
 
-            PlotDimensions Dims = XAxis.CreatePlotDimensions(YAxis, scale);
-
-            // Swipe Right
-            PointF[] points = new PointF[Data.Length];
-
-            for (int i = 0; i < Data.Length; i++)
-            {
-                int index = (NextIndex + i) % Data.Length; // 循环索引
-                var time = DateTime.FromOADate(DataMinX);
-                double dx = time.AddSeconds(index * SampleInterval).ToOADate();
-                float x = Dims.GetPixelX(dx);
-                float y = Dims.GetPixelY(Data[index]);
-
-                points[index] = new PointF(x, y);
-            }
-            using (var gfx = GDI.Graphics(bmp, Dims, lowQuality, true))
+            using (var gfx = GDI.Graphics(bmp, lowQuality, scale))
             using (var pen = GDI.Pen(Color, LineWidth))
-            {
-                if (points.Length > 1)
-                    gfx.DrawLines(pen, points);
-
-                gfx.DrawLine(pen,
-                    points[NextIndex].X,
-                    Dims.m_plotOffsetY,
-                    points[NextIndex].X,
-                    Dims.m_plotOffsetY + Dims.m_plotHeight);
-            }
+                if (points.Count > 1)
+                    gfx.DrawLines(pen, points.ToArray());
         }
 
+        //public void CleanOldData(double xmin, double xmax)
+        //{
+        //    // 清除不在视界内的数据
+        //    //Data.RemoveAll(sample => (Data.IndexOf(sample) * SampleInterval + OffsetX) < xmin);
+        //    //||
+        //    //(Data.IndexOf(sample) * SampleInterval + OffsetX) > xmax);
+        //}
     }
 }

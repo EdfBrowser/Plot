@@ -18,6 +18,8 @@ namespace Plot.Core.Renderables.Axes
 
         public void Render(Bitmap bmp, PlotDimensions dims, bool lowQuality)
         {
+            if (!Visible)
+                return;
             // Draw axis line
             using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
             {
@@ -30,8 +32,6 @@ namespace Plot.Core.Renderables.Axes
 
         private void DrawLines(PlotDimensions dims, Graphics gfx, Color color, float lineWidth, Edge edge)
         {
-            if (!Visible)
-                return;
             using (var pen = GDI.Pen(color, lineWidth))
             {
                 float left = dims.m_plotOffsetX;

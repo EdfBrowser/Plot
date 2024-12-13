@@ -17,8 +17,8 @@ namespace Plot.Core.EventProcess
         {
 
             // 按住shift列缩放，按住control行缩放
-            float x = m_inputState.m_shiftPressed ? m_manager.OldestX : m_inputState.m_x;
-            float y = m_inputState.m_controlPressed ? m_manager.OldestY : m_inputState.m_y;
+            float x = m_inputState.m_shiftPressed ? m_inputState.m_x : m_manager.OldestX;
+            float y = m_inputState.m_controlPressed ? m_inputState.m_y : m_manager.OldestY;
 
             // 都按住行和列都进行缩放
             //if (m_inputState.m_shiftPressed && m_inputState.m_controlPressed)
@@ -33,7 +33,7 @@ namespace Plot.Core.EventProcess
             // TODO: 有两种情况，第一中情况是根据原图像的中心点进行缩放，第二种情况是根据鼠标的位置进行缩放
 
             // 现在只进行第二种情况
-            axisManager.ZoomByXY(x, y, m_manager.OldestX, m_manager.OldestY);
+            axisManager.ZoomByXY(x - m_manager.OldestX, y - m_manager.OldestY);
         }
     }
 }

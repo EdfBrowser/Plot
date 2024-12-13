@@ -119,11 +119,11 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-        public void ZoomByXY(float x, float y, float oldestX, float oldestY)
+        public void ZoomByXY(float xDeltaPx, float yDeltaPx)
         {
             foreach (var axis in m_axes)
             {
-                float deltaPx = axis.IsHorizontal ? x - oldestX : oldestY - y;
+                float deltaPx = axis.IsHorizontal ? xDeltaPx : yDeltaPx;
                 double delta = deltaPx * axis.Dims.UnitsPerPx;
 
                 double deltaFrac = delta / (Math.Abs(delta) + axis.Dims.Center);
@@ -146,21 +146,26 @@ namespace Plot.Core.Renderables.Axes
             // 先有鸡还是先有蛋
             // 假设pad为0，没得label，先计算出 tick label的大小
 
-            SizeF figureSizPx = new SizeF(width, height);
 
             {
+                SizeF figureSizPx = new SizeF(width, height);
+
                 foreach (Axis axis in m_axes)
                 {
+                    // 初始化min和max值
+                    (double min, double max) = axis.Dims.GetLimits();
+                    axis.Dims.SetLimits(min, max);
+
                     GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
                     PlotDimensions dimsFull = new PlotDimensions(figureSizPx, figureSizPx, figureSizPx,
                                                 new PointF(0, 0), new PointF(0, 0),
-                                                (xAxis.Dims.RationalLimits(), yAxis.Dims.RationalLimits()),
+                                                (xAxis.Dims.GetLimits(), yAxis.Dims.GetLimits()),
                                                 1f, xAxis.Dims.IsInverted, yAxis.Dims.IsInverted);
-                    CalculatePadding(dimsFull, axis);
+                    CalculateOffset(dimsFull, axis);
                 }
 
-                RecalculateDataPadding(width, height);
+                RecalculateDataOffset(width, height);
             }
 
             {
@@ -169,10 +174,10 @@ namespace Plot.Core.Renderables.Axes
                     GetPrimayAxis(axis, out Axis xAxis, out Axis yAxis);
 
                     PlotDimensions dims = xAxis.CreatePlotDimensions(yAxis, 1f);
-                    CalculatePadding(dims, axis);
+                    CalculateOffset(dims, axis);
                 }
 
-                RecalculateDataPadding(width, height);
+                RecalculateDataOffset(width, height);
             }
         }
 
@@ -194,34 +199,34 @@ namespace Plot.Core.Renderables.Axes
             }
         }
 
-        private void CalculatePadding(PlotDimensions dims, Axis axis)
+        private void CalculateOffset(PlotDimensions dims, Axis axis)
         {
             axis.RecalculateTickPositions(dims);
             axis.ReCalculateAxisSize();
         }
 
-        private void RecalculateDataPadding(float width, float height)
+        private void RecalculateDataOffset(float width, float height)
         {
             IEnumerable<Axis> left = LeftAxes();
             IEnumerable<Axis> right = RightAxes();
             IEnumerable<Axis> bottom = BottomAxes();
             IEnumerable<Axis> top = TopAxes();
 
-            float padLeft = 10f, padRight = 10f, padTop = 10f, padBottom = 10f;
+            float leftOffset = 10f, rightOffset = 10f, topOffset = 10f, bottomOffset = 10f;
 
             if (left.Any())
-                padLeft = left.Select(t => t.GetSize()).Max();
+                leftOffset = left.Select(t => t.GetSize()).Max();
             if (right.Any())
-                padRight = right.Select(t => t.GetSize()).Max();
+                rightOffset = right.Select(t => t.GetSize()).Max();
             if (bottom.Any())
-                padBottom = bottom.Select(t => t.GetSize()).Max();
+                bottomOffset = bottom.Select(t => t.GetSize()).Max();
             if (top.Any())
-                padTop = top.Select(t => t.GetSize()).Max();
+                topOffset = top.Select(t => t.GetSize()).Max();
 
-            ArrangeAxes(width, TopAxes(), padLeft, padRight);
-            ArrangeAxes(width, BottomAxes(), padLeft, padRight);
-            ArrangeAxes(height, LeftAxes(), padTop, padBottom);
-            ArrangeAxes(height, RightAxes(), padTop, padBottom);
+            ArrangeAxes(width, TopAxes(), leftOffset, rightOffset);
+            ArrangeAxes(width, BottomAxes(), leftOffset, rightOffset);
+            ArrangeAxes(height, LeftAxes(), topOffset, bottomOffset);
+            ArrangeAxes(height, RightAxes(), topOffset, bottomOffset);
         }
 
         private void ArrangeAxes(float px, IEnumerable<Axis> axes, float p1, float p2)
@@ -252,7 +257,8 @@ namespace Plot.Core.Renderables.Axes
         {
             foreach (Axis axis in m_axes)
             {
-                axis.AxisTick.GridVisible = enable;
+                axis.AxisTick.MajorGridVisible = enable;
+                axis.AxisTick.MinorGridVisible = enable;
             }
         }
     }

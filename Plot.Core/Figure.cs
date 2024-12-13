@@ -74,13 +74,12 @@ namespace Plot.Core
         public event EventHandler OnBitmapUpdated;
 
         private void OnMouseEventCompleted(object sender, EventArgs e) => Render();
-      
+
         private void RenderFigureArea(Bitmap bmp, bool lowQuality, float scale)
         {
-            PlotDimensions dims = CreateDefaultXYPlotDimensions(scale);
             Color figureColor = Color.White;
             // clear and set the background of figure
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
+            using (var gfx = GDI.Graphics(bmp, lowQuality, scale))
             {
                 gfx.Clear(figureColor);
             }
@@ -95,7 +94,7 @@ namespace Plot.Core
             // set the background of data area
             using (var brush = GDI.Brush(dataAreaColor))
             using (var pen = GDI.Pen(boundaryColor, boundaryWidth))
-            using (var gfx = GDI.Graphics(bmp, dims, lowQuality))
+            using (var gfx = GDI.Graphics(bmp, lowQuality, scale))
             {
                 gfx.FillRectangle(brush,
                     dims.m_plotOffsetX + 1,
@@ -122,9 +121,10 @@ namespace Plot.Core
 
             bool changed = m_bitmapManager.CreateBitmap((int)width, (int)height);
             if (changed)
+            {
                 OnBitmapChanged?.Invoke(null, null);
-
-            Render();
+                Render();
+            }
         }
 
         public void Render(bool lowQuality = false, float scale = 1.0f)
@@ -136,25 +136,54 @@ namespace Plot.Core
                 if (bmp == null) return;
             }
 
-            m_seriesManager.GetLimitFromSeries();
-            m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
+            Axis y = m_axisManager.GetDefaultYAxis();
+            Axis x = m_axisManager.GetDefaultXAxis();
+            double range = x.Dims.Span;
+            if (x.ScrollMode == XAxisScrollMode.Stepping)
+            {
+                if (x.ScrollPosition >= x.Dims.Max)
+                {
+                    double max = x.ScrollPosition + range * 0.5;
+                    double min = max - range;
+                    x.Dims.SetLimits(min, max);
+                }
+            }
+            else if (x.ScrollMode == XAxisScrollMode.Scrolling)
+            {
+                // scrollposition = max
+                if (x.ScrollPosition >= x.Dims.Max)
+                {
+                    double max = x.ScrollPosition;
+                    double min = max - range;
+                    x.Dims.SetLimits(min, max);
+                }
+            }
+            else if (x.ScrollMode == XAxisScrollMode.Sweeping)
+            {
+                if (x.ScrollPosition >= x.Dims.Max)
+                {
+                    x.Dims.SetLimits(x.ScrollPosition, x.ScrollPosition + range);
+                    x.AxisTick.Animation = true;
+                }
+            }
 
+            // TODO: AxisLayout
+            m_axisManager.Layout(bmp.Width / scale, bmp.Height / scale);
             RenderFigureArea(bmp, lowQuality, scale);
             RenderDataArea(bmp, lowQuality, scale);
             m_axisManager.RenderAxes(bmp, lowQuality, scale);
-            // TODO: 当连续绘制时，只需要绘制必要部分
             m_seriesManager.RenderSeries(bmp, lowQuality, scale);
 
-            // 如果此时最新的bitmap不是bmp所持有的，不进行更新
             // TODO: 采用一种机制来检测是不是最新的，不是最新的中断后重新渲染
+            // 如果此时最新的bitmap不是bmp所持有的，不进行更新
             if (bmp == m_bitmapManager.GetLatestBitmap)
                 OnBitmapUpdated?.Invoke(null, null);
         }
 
+        public float GetXDataSizePx() => m_axisManager.GetDefaultXAxis().Dims.DataSizePx;
+
         public AxisManager AxisManager => m_axisManager;
-
         public SeriesManager SeriesManager => m_seriesManager;
-
         public EventManager EventManager => m_eventManager;
     }
 }
