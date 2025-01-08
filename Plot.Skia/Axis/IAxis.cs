@@ -1,24 +1,24 @@
-using Plot.Skia.Enums;
-using Plot.Skia.Structs;
-
-namespace Plot.Skia.Axes
+namespace Plot.Skia
 {
     internal interface IAxis
     {
+        CoordinateRangeMutable Range { get; }
+        ITickGenerator TickGenerator { get; }
+        Edge Direction { get; }
+
         double Min { get; set; }
         double Max { get; set; }
 
-        Edge Direction { get; set; }
-
         LabelStyle Label { get; set; }
-
         TickStyle MajorTickStyle { get; set; }
         TickStyle MinorTickStyle { get; set; }
-
         LabelStyle TickLabelStyle { get; set; }
         LineStyle TickLineStyle { get; set; }
 
         float GetPixel(double position, PixelPanel dataPanel);
         double GetWorld(float pixel, PixelPanel dataPanel);
+
+        void GenerateTicks(float axisLength);
+        float Measure();
     }
 }

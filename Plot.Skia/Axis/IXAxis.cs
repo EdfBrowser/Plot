@@ -1,4 +1,4 @@
-namespace Plot.Skia.Axes
+namespace Plot.Skia
 {
     internal interface IXAxis : IAxis
     {

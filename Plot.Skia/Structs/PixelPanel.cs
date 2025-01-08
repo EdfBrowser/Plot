@@ -1,4 +1,6 @@
-namespace Plot.Skia.Structs
+using SkiaSharp;
+
+namespace Plot.Skia
 {
     internal readonly struct PixelPanel
     {
@@ -7,7 +9,7 @@ namespace Plot.Skia.Structs
         private readonly float m_top;
         private readonly float m_bottom;
 
-        public PixelPanel(float left, float right, float top, float bottom)
+        internal PixelPanel(float left, float right, float top, float bottom)
         {
             m_left = left;
             m_right = right;
@@ -16,17 +18,28 @@ namespace Plot.Skia.Structs
         }
 
 
-        public float Left => m_left;
-        public float Right => m_right;
-        public float Top => m_top;
-        public float Bottom => m_bottom;
+        internal float Horizontal => Left + Right;
+        internal float Vertical => Top + Bottom;
 
-        public float Width => m_right - m_left;
-        public float Height => m_bottom - m_top;
+        internal float Left => m_left;
+        internal float Right => m_right;
+        internal float Top => m_top;
+        internal float Bottom => m_bottom;
 
-        public Coordinate TopLeft => new Coordinate(m_left, m_top);
-        public Coordinate TopRight => new Coordinate(m_right, m_top);
-        public Coordinate BottomLeft => new Coordinate(m_left, m_bottom);
-        public Coordinate BottomRight => new Coordinate(m_right, m_bottom);
+        internal float Width => m_right - m_left;
+        internal float Height => m_bottom - m_top;
+
+        internal Coordinate TopLeft => new Coordinate(m_left, m_top);
+        internal Coordinate TopRight => new Coordinate(m_right, m_top);
+        internal Coordinate BottomLeft => new Coordinate(m_left, m_bottom);
+        internal Coordinate BottomRight => new Coordinate(m_right, m_bottom);
+    }
+
+    internal static class PixelPanelExtensions
+    {
+        internal static PixelPanel ToPixelPanel(this SKRect rect)
+        {
+            return new PixelPanel(rect.Left, rect.Right, rect.Bottom, rect.Top);
+        }
     }
 }

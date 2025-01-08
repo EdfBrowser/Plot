@@ -1,4 +1,4 @@
-namespace Plot.Skia.Enums
+namespace Plot.Skia
 {
     internal enum Edge : byte
     {

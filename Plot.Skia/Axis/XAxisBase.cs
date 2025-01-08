@@ -1,12 +1,13 @@
-using Plot.Skia.Enums;
-using Plot.Skia.Structs;
+using System.Linq;
 
-namespace Plot.Skia.Axes
+namespace Plot.Skia
 {
     internal abstract class XAxisBase : IXAxis
     {
         protected XAxisBase()
         {
+            Range = CoordinateRangeMutable.NotSet;
+
             MinorTickStyle = new TickStyle()
             {
                 AntiAlias = false,
@@ -29,14 +30,31 @@ namespace Plot.Skia.Axes
                 Color = Color.Black,
                 AntiAlias = false,
             };
+
+            TickLabelStyle = new LabelStyle()
+            {
+                AntiAlias = false,
+                Color = Color.Black,
+                FontSize = 12,
+            };
         }
 
-        public double Width => Max - Min;
+        public CoordinateRangeMutable Range { get; }
+        public abstract Edge Direction { get; }
+        public abstract ITickGenerator TickGenerator { get; }
 
-        public double Min { get; set; }
-        public double Max { get; set; }
+        public double Width => Range.Span;
 
-        public abstract Edge Direction { get; set; }
+        public double Min
+        {
+            get => Range.Min;
+            set => Range.Min = value;
+        }
+        public double Max
+        {
+            get => Range.Max;
+            set => Range.Max = value;
+        }
 
         public LabelStyle Label { get; set; }
         public TickStyle MajorTickStyle { get; set; }
@@ -49,7 +67,6 @@ namespace Plot.Skia.Axes
             double pxPerUnit = dataPanel.Width / Width;
             double unitsFromLeft = position - Min;
             float px = (float)(unitsFromLeft * pxPerUnit);
-
             return dataPanel.Left + px;
         }
 
@@ -57,8 +74,25 @@ namespace Plot.Skia.Axes
         {
             double unitPerpx = Width / dataPanel.Width;
             float pxFromLeft = pixel - dataPanel.Left;
-            double unitsFromLeft = pxFromLeft * unitPerpx;
+            double unitsFromLeft = pxFromLeft / unitPerpx;
             return Min + unitsFromLeft;
         }
+
+        public float Measure()
+        {
+            float tickHeight = MajorTickStyle.Length;
+
+            float maxTickLabelHeight = TickGenerator.Ticks.Length > 0
+                ? TickGenerator.Ticks.Select(x => TickLabelStyle.Measure(x.Label)).Max()
+                : 0;
+
+            float axisLabelHeight = string.IsNullOrEmpty(Label.Text)
+                ? 0 : Label.Measure(Label.Text);
+
+            return tickHeight + maxTickLabelHeight + axisLabelHeight;
+        }
+
+        public void GenerateTicks(float axisLength) => TickGenerator.Generate(
+            Range.ToCoordinateRange, Direction, axisLength, TickLabelStyle);
     }
 }

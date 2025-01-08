@@ -1,4 +1,4 @@
-namespace Plot.Skia.Structs
+namespace Plot.Skia
 {
     internal readonly struct Tick
     {
@@ -6,15 +6,19 @@ namespace Plot.Skia.Structs
         private readonly string m_label;
         private readonly bool m_major;
 
-        public Tick(double position, string label, bool major)
+        internal Tick(double position, string label, bool major)
         {
             m_position = position;
             m_label = label;
             m_major = major;
         }
 
-        public double Position => m_position;
-        public string Label => m_label;
-        public bool Major => m_major;
+        internal double Position => m_position;
+        internal string Label => m_label;
+        internal bool MajorPos => m_major;
+
+        internal static Tick Major(double pos, string label) => new Tick(pos, label, true);
+
+        internal static Tick Minor(double pos) => new Tick(pos, string.Empty, false);
     }
 }
