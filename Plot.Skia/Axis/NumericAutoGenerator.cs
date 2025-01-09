@@ -6,20 +6,26 @@ namespace Plot.Skia
 {
     internal class NumericAutoGenerator : ITickGenerator
     {
-        public Tick[] Ticks { get; set; }
-        internal int MinorDivCount { get; set; } = 5;
+        public NumericAutoGenerator()
+        {
+            MinorDivCount = 5;
+        }
 
-        public void Generate(CoordinateRange range, Edge edge, float axisLength, LabelStyle labelStyle)
+        public Tick[] Ticks { get; set; }
+        internal int MinorDivCount { get; set; }
+        public float LargestLabelLength { get; set; }
+
+        public void Generate(PixelRange range, Edge edge, float axisLength, LabelStyle labelStyle)
         {
             Ticks = GenerateTicks(range, edge, axisLength, 12f, labelStyle)
                  .Where(x => range.Contains(x.Position))
                  .ToArray();
         }
 
-        private IEnumerable<Tick> GenerateTicks(CoordinateRange range, Edge edge, float axisLength,
-            float maxLabelLength, LabelStyle labelStyle)
+        private IEnumerable<Tick> GenerateTicks(PixelRange range, Edge edge, float axisLength,
+            float largestLabelLength, LabelStyle labelStyle)
         {
-            float labelWidth = Math.Max(0, maxLabelLength);
+            float labelWidth = Math.Max(0, largestLabelLength);
 
             double[] majorTickPositions = TickSpacingCalculator
                 .GenerateTickPositions(range, axisLength, labelWidth)
@@ -33,13 +39,14 @@ namespace Plot.Skia
                 ? labelStyle.MeasureHighestString(majorTickLabels)
                 : labelStyle.MeasureWidestString(majorTickLabels);
 
+            LargestLabelLength = actualMaxLength;
 
-            return actualMaxLength > maxLabelLength
+            return actualMaxLength > largestLabelLength
                 ? GenerateTicks(range, edge, axisLength, actualMaxLength, labelStyle)
                 : GenerateFinalTicks(majorTickPositions, majorTickLabels, range);
         }
 
-        private IEnumerable<Tick> GenerateFinalTicks(double[] positions, string[] tickLabels, CoordinateRange range)
+        private IEnumerable<Tick> GenerateFinalTicks(double[] positions, string[] tickLabels, PixelRange range)
         {
             IEnumerable<Tick> majorTicks = positions
                 .Select((p, i) => Tick.Major(p, tickLabels[i]));
@@ -50,7 +57,7 @@ namespace Plot.Skia
             return majorTicks.Concat(minorTicks);
         }
 
-        private IEnumerable<double> GetMinorPositions(double[] majorTicks, CoordinateRange range)
+        private IEnumerable<double> GetMinorPositions(double[] majorTicks, PixelRange range)
         {
             if (majorTicks is null || majorTicks.Length < 2)
                 return Array.Empty<double>();

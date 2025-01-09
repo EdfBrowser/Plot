@@ -6,10 +6,10 @@ namespace Plot.Skia
         {
             AxisManager axisManager = rc.Figure.AxisManager;
             if (!axisManager.Bottom.Range.HasBeenSet)
-                AxisManager.SetLimitsX(CoordinateRange.Default, axisManager.Bottom);
+                AxisManager.SetLimitsX(PixelRange.Default, axisManager.Bottom);
 
             if (!axisManager.Left.Range.HasBeenSet)
-                AxisManager.SetLimitsY(CoordinateRange.Default, axisManager.Left);
+                AxisManager.SetLimitsY(PixelRange.Default, axisManager.Left);
         }
     }
 }

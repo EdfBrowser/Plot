@@ -32,7 +32,7 @@ namespace Plot.Skia
         internal byte Alpha => m_alpha;
 
         internal static Color White => new Color(255, 255, 255);
-        internal static Color Black => new Color(255, 255, 255);
+        internal static Color Black => new Color(0, 0, 0);
         internal static Color Gray => new Color(128, 128, 128);
 
         internal SKColor ToSkColor() => new SKColor(Red, Green, Blue, Alpha);

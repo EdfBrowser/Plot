@@ -1,11 +1,13 @@
+using SkiaSharp;
+
 namespace Plot.Skia
 {
-    internal readonly struct Coordinate
+    internal readonly struct PointF
     {
         private readonly float m_x;
         private readonly float m_y;
 
-        internal Coordinate(float x, float y)
+        internal PointF(float x, float y)
         {
             m_x = x;
             m_y = y;
@@ -13,5 +15,7 @@ namespace Plot.Skia
 
         internal float X => m_x;
         internal float Y => m_y;
+
+        internal SKPoint ToSKPoint() => new SKPoint(X, Y);
     }
 }

@@ -1,11 +1,11 @@
 namespace Plot.Skia
 {
-    internal readonly struct CoordinateRange
+    internal readonly struct PixelRange
     {
         private readonly double m_low;
         private readonly double m_high;
 
-        internal CoordinateRange(double low, double high)
+        internal PixelRange(double low, double high)
         {
             m_low = low;
             m_high = high;
@@ -16,8 +16,8 @@ namespace Plot.Skia
 
         internal double Span => m_high - m_low;
 
-        internal static CoordinateRange Default => new CoordinateRange(-10, 10);
+        internal static PixelRange Default => new PixelRange(-10, 10);
 
-        internal bool Contains(double value) => m_low <= value && m_high <= value;
+        internal bool Contains(double value) => m_low <= value && m_high >= value;
     }
 }

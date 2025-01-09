@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Plot.Skia
 {
     internal class TickSpacingCalculator
     {
-        internal static IEnumerable<double> GenerateTickPositions(CoordinateRange range, float axisLength, float labelWidth,
+        internal static IEnumerable<double> GenerateTickPositions(PixelRange range, float axisLength, float labelWidth,
             int radix = 10)
         {
             double idealSpacing = GetIdealTickSpacing(range, axisLength, labelWidth, radix);
@@ -34,7 +33,7 @@ namespace Plot.Skia
             return tickPositionsMajor;
         }
 
-        private static double GetIdealTickSpacing(CoordinateRange range, float axisLength, float labelWidth,
+        private static double GetIdealTickSpacing(PixelRange range, float axisLength, float labelWidth,
             int radix = 10)
         {
             int targetTickCount = (int)(axisLength / labelWidth);
@@ -54,7 +53,6 @@ namespace Plot.Skia
             {
                 tickSpacings.Add(tickSpacings.Last() / divBy[divisions++ % divBy.Length]);
                 tickCount = (int)(range.Span / tickSpacings.Last());
-                Debug.WriteLine(tickCount);
             }
 
             // choose the densest tick spacing that is still good

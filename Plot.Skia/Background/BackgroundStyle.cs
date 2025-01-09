@@ -2,29 +2,26 @@ using SkiaSharp;
 
 namespace Plot.Skia
 {
-    internal class LineStyle
+    internal class BackgroundStyle
     {
-        public LineStyle()
+        internal BackgroundStyle()
         {
-            Width = 1f;
-            Color = Color.Black;
+            Color = Color.White;
             AntiAlias = false;
         }
 
-        internal float Width { get; set; }
         internal Color Color { get; set; }
         internal bool AntiAlias { get; set; }
 
-        internal void Render(SKCanvas canvas, PointF p1, PointF p2)
+        internal void Render(SKCanvas canvas, PixelPanel rect)
         {
             using (SKPaint paint = new SKPaint())
             {
-                paint.Style = SKPaintStyle.Stroke;
-                paint.StrokeWidth = Width;
+                paint.Style = SKPaintStyle.Fill;
                 paint.Color = Color.ToSkColor();
                 paint.IsAntialias = AntiAlias;
 
-                canvas.DrawLine(p1.ToSKPoint(), p2.ToSKPoint(), paint);
+                canvas.DrawRect(rect.ToSKRect(), paint);
             }
         }
     }

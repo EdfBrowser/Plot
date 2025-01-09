@@ -15,6 +15,10 @@ namespace Plot.Skia
                 new ClearCanvas(),
                 new AutoScale(),
                 new CalculateLayout(),
+                new FigureBackground(),
+                new DataBackground(),
+                new GenerateTicks(),
+                new RenderAxis(),
             };
 
             ClearCanvasBeforeRendering = true;
@@ -31,7 +35,9 @@ namespace Plot.Skia
 
             foreach (IRenderAction action in RenderOrders)
             {
+                rc.Canvas.Save();
                 action.Render(rc);
+                rc.Canvas.Restore();
             }
         }
     }

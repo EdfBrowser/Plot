@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -47,10 +46,10 @@ namespace Plot.Skia
             return axis;
         }
 
-        internal static void SetLimitsX(CoordinateRange limit, IXAxis axis)
+        internal static void SetLimitsX(PixelRange limit, IXAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
-        internal static void SetLimitsY(CoordinateRange limit, IYAxis axis)
+        internal static void SetLimitsY(PixelRange limit, IYAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
     }
 }

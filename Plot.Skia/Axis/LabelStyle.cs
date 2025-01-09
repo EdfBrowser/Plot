@@ -6,30 +6,58 @@ namespace Plot.Skia
 {
     internal class LabelStyle
     {
+        public LabelStyle()
+        {
+            Color = Color.Black;
+            AntiAlias = false;
+            FontSize = 12f;
+            Text = string.Empty;
+            FontFamily = "Consolas";
+        }
+
         internal Color Color { get; set; }
         internal bool AntiAlias { get; set; }
-        internal float FontSize { get; set; } = 12f;
+        internal float FontSize { get; set; }
+        internal string Text { get; set; }
+        internal string FontFamily { get; set; }
 
-        internal string Text { get; set; } = string.Empty;
+        internal void Render(SKCanvas canvas, PointF p)
+        {
+            using (SKFont font = new SKFont())
+            using (SKPaint paint = new SKPaint())
+            {
+                font.Size = FontSize;
+                font.Typeface = SKTypeface.FromFamilyName(FontFamily);
 
-        internal float Measure(string text)
+                paint.Style = SKPaintStyle.Fill;
+                paint.Color = Color.ToSkColor();
+                paint.IsAntialias = AntiAlias;
+
+                canvas.DrawText(Text, p.ToSKPoint(), SKTextAlign.Center, font, paint);
+            }
+        }
+
+        internal (float width, float height) Measure(string text)
         {
             string[] lines = string.IsNullOrEmpty(text)
                 ? Array.Empty<string>() : text.Split('\n');
 
-            using (SKTypeface typeface = SKTypeface.FromFamilyName("Consolas"))
-            using (SKFont font = new SKFont(typeface, FontSize))
-            using (SKPaint brush = new SKPaint())
+            using (SKFont font = new SKFont())
+            using (SKPaint paint = new SKPaint())
             {
-                brush.IsAntialias = AntiAlias;
-                brush.Color = Color.ToSkColor();
+                font.Size = FontSize;
+                font.Typeface = SKTypeface.FromFamilyName(FontFamily);
+
+                paint.Style = SKPaintStyle.Fill;
+                paint.Color = Color.ToSkColor();
+                paint.IsAntialias = AntiAlias;
 
                 float lineHeight = font.GetFontMetrics(out SKFontMetrics metrics);
                 float[] lineWidths = lines
-                    .Select(x => font.MeasureText(x, brush))
+                    .Select(x => font.MeasureText(x, paint))
                     .ToArray();
 
-                return lineWidths.Length == 0 ? 0 : lineWidths.Max();
+                return (lineWidths.Length == 0 ? 0 : lineWidths.Max(), lineHeight);
             }
         }
 
@@ -43,7 +71,7 @@ namespace Plot.Skia
 
             for (int i = 0; i < tickLabels.Length; i++)
             {
-                float size = Measure(tickLabels[i]);
+                float size = Measure(tickLabels[i]).height;
                 if (size > maxHeight)
                 {
                     maxHeight = size;
@@ -54,8 +82,6 @@ namespace Plot.Skia
             return (maxText, maxHeight);
         }
 
-
-
         internal (string largestText, float actualMaxLength)
             MeasureWidestString(string[] tickLabels)
         {
@@ -64,7 +90,7 @@ namespace Plot.Skia
 
             for (int i = 0; i < tickLabels.Length; i++)
             {
-                float size = Measure(tickLabels[i]);
+                float size = Measure(tickLabels[i]).width;
                 if (size > maxWidth)
                 {
                     maxWidth = size;

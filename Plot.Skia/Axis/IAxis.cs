@@ -2,7 +2,7 @@ namespace Plot.Skia
 {
     internal interface IAxis
     {
-        CoordinateRangeMutable Range { get; }
+        PixelRangeMutable Range { get; }
         ITickGenerator TickGenerator { get; }
         Edge Direction { get; }
 
@@ -20,5 +20,6 @@ namespace Plot.Skia
 
         void GenerateTicks(float axisLength);
         float Measure();
+        void Render(RenderContext rc);
     }
 }
