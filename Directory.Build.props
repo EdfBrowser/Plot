@@ -3,10 +3,8 @@
     <PropertyGroup>
         <langVersion>7.3</langVersion>
         <OutputPath>$(SolutionDir)bin\$(Configuration)</OutputPath>
-        <PlatformTarget>x86</PlatformTarget>
+        <PlatformTarget>anycpu</PlatformTarget>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>disable</Nullable>
-        <!--<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>-->
 	</PropertyGroup>
  </Project>

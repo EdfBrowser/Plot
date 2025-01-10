@@ -21,6 +21,7 @@ namespace Plot.Skia
         public abstract float GetPixel(double position, PixelPanel dataPanel);
         public abstract double GetWorld(float pixel, PixelPanel dataPanel);
         public abstract void Render(RenderContext rc);
+        public abstract float Measure();
 
         public PixelRangeMutable Range { get; }
 
@@ -41,22 +42,7 @@ namespace Plot.Skia
         public LabelStyle TickLabelStyle { get; set; }
         public LineStyle TickLineStyle { get; set; }
 
-        public float Measure()
-        {
-            float tickHeight = MajorTickStyle.Length;
 
-            float maxTickLabelLength = TickGenerator.Ticks.Length > 0
-                ? TickGenerator.LargestLabelLength : 0;
-
-            float axisLabelLength = 0;
-            if (!string.IsNullOrEmpty(Label.Text))
-            {
-                (float w, float h) = Label.Measure(Label.Text);
-                axisLabelLength = Direction.Horizontal() ? h : w;
-            }
-
-            return tickHeight + maxTickLabelLength + axisLabelLength;
-        }
 
         public void GenerateTicks(float axisLength) => TickGenerator.Generate(
             Range.ToCoordinateRange, Direction, axisLength, TickLabelStyle);
@@ -98,10 +84,12 @@ namespace Plot.Skia
                     ? MajorTickStyle.Length : MinorTickStyle.Length;
                 float y1 = GetPixel(tick.Position, dataPanel);
                 float x1 = Direction == Edge.Left ? dataPanel.Left : dataPanel.Right;
-                float offset = Direction == Edge.Left ? -tickLength : tickLength;
+                tickLength = Direction == Edge.Left ? -tickLength : tickLength;
 
                 TickStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
-                tickStyle.Render(canvas, new PointF(x1, y1), new PointF(x1 + offset, y1));
+                PointF p1 = new PointF(x1, y1);
+                PointF p2 = new PointF(x1 + tickLength, y1);
+                tickStyle.Render(canvas, p1, p2);
 
                 // draw label
                 if (string.IsNullOrEmpty(tick.Label))
@@ -110,7 +98,9 @@ namespace Plot.Skia
                 TickLabelStyle.Text = tick.Label;
                 float labelLength = TickLabelStyle.Measure(tick.Label).width;
                 labelLength = Direction == Edge.Left ? -labelLength : labelLength;
-                TickLabelStyle.Render(canvas, new PointF(x1 + offset + labelLength, y1));
+                PointF p = new PointF(x1 + tickLength + labelLength, y1)
+                    .Translate(0, TickLabelStyle.Ascent() / 2);
+                TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
             }
         }
 
@@ -123,20 +113,31 @@ namespace Plot.Skia
                     ? MajorTickStyle.Length : MinorTickStyle.Length;
                 float x1 = GetPixel(tick.Position, dataPanel);
                 float y1 = Direction == Edge.Top ? dataPanel.Top : dataPanel.Bottom;
-                float offset = Direction == Edge.Top ? -tickLength : tickLength;
+                tickLength = Direction == Edge.Top ? -tickLength : tickLength;
 
                 TickStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
-                tickStyle.Render(canvas, new PointF(x1, y1), new PointF(x1, y1 + offset));
+                PointF p1 = new PointF(x1, y1);
+                PointF p2 = new PointF(x1, y1 + tickLength);
+                tickStyle.Render(canvas, p1, p2);
 
                 // draw label
                 if (string.IsNullOrEmpty(tick.Label))
                     continue;
 
                 TickLabelStyle.Text = tick.Label;
-                float labelLength = TickLabelStyle.Measure(tick.Label).height;
-                labelLength = Direction == Edge.Top ? -labelLength : labelLength;
-                TickLabelStyle.Render(canvas, new PointF(x1, y1 + offset + labelLength));
+                PointF p = new PointF(x1, y1 + tickLength)
+                    .Translate(0,TickLabelStyle.Ascent());
+                TickLabelStyle.Render(canvas, p, SKTextAlign.Center);
             }
+        }
+
+        public void Dispose()
+        {
+            TickLabelStyle.Dispose();
+            Label.Dispose();
+            MajorTickStyle.Dispose();
+            MinorTickStyle.Dispose();
+            TickLineStyle.Dispose();
         }
     }
 }

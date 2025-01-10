@@ -1,6 +1,6 @@
 namespace Plot.Skia
 {
-    internal class AutoScale : IRenderAction
+    internal class DefaultLimits : IRenderAction
     {
         public void Render(RenderContext rc)
         {

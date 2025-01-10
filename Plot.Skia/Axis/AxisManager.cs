@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Plot.Skia
 {
-    public class AxisManager
+    public class AxisManager : IDisposable
     {
         private readonly Figure m_figure;
 
@@ -51,5 +52,13 @@ namespace Plot.Skia
 
         internal static void SetLimitsY(PixelRange limit, IYAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
+
+        public void Dispose()
+        {
+            foreach (IAxis axis in Axes)
+            {
+                axis.Dispose();
+            }
+        }
     }
 }

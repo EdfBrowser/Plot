@@ -13,7 +13,7 @@ namespace Plot.Skia
             RenderOrders = new List<IRenderAction>()
             {
                 new ClearCanvas(),
-                new AutoScale(),
+                new DefaultLimits(),
                 new CalculateLayout(),
                 new FigureBackground(),
                 new DataBackground(),

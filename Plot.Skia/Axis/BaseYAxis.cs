@@ -1,6 +1,8 @@
+using System.Linq;
+
 namespace Plot.Skia
 {
-    internal abstract class YAxisBase : BaseAxis, IYAxis
+    internal abstract class BaseYAxis : BaseAxis, IYAxis
     {
         public double Height => Range.Span;
 
@@ -24,6 +26,23 @@ namespace Plot.Skia
         {
             DrawTicks(rc.Canvas, rc.AxisPanel);
             DrawLines(rc.Canvas, rc.AxisPanel);
+        }
+
+        public override float Measure()
+        {
+            float tickHeight = MajorTickStyle.Length;
+
+            float maxTickLabelLength = 0;
+            if (TickGenerator.Ticks.Length > 0)
+                maxTickLabelLength = TickGenerator.Ticks
+                      .Select(x => TickLabelStyle.Measure(x.Label).width)
+                      .Max();
+
+            float axisLabelLength = 0;
+            if (!string.IsNullOrEmpty(Label.Text))
+                axisLabelLength = Label.Measure(Label.Text).width;
+
+            return tickHeight + maxTickLabelLength + axisLabelLength + 10;
         }
     }
 }

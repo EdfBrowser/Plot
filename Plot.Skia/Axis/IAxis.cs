@@ -1,6 +1,8 @@
+using System;
+
 namespace Plot.Skia
 {
-    internal interface IAxis
+    internal interface IAxis : IDisposable
     {
         PixelRangeMutable Range { get; }
         ITickGenerator TickGenerator { get; }

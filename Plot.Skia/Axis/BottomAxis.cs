@@ -1,6 +1,6 @@
 namespace Plot.Skia
 {
-    internal class BottomAxis : XAxisBase
+    internal class BottomAxis : BaseXAxis
     {
         internal BottomAxis()
         {

@@ -1,4 +1,3 @@
-using Plot.Skia;
 using System;
 using System.Windows.Forms;
 
@@ -19,10 +18,7 @@ namespace Plot.App
             ApplicationConfiguration.Initialize();
 #endif
 
-            Figure figure = new Figure();
-            figure.Render();
-
-            Application.Run(new App());
+            Application.Run(new FigureFormDemo());
         }
     }
 }

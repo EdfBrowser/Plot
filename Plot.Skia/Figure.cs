@@ -1,9 +1,12 @@
 using SkiaSharp;
-using System.IO;
+using System;
+using System.Diagnostics;
+using System.Drawing;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Plot.Skia
 {
-    public class Figure
+    public class Figure : IDisposable
     {
         private readonly AxisManager m_axisManager;
         private readonly RenderManager m_renderManager;
@@ -28,23 +31,15 @@ namespace Plot.Skia
         public float ScaleFactor { get; set; }
         public float AxisSpace { get; set; }
 
+        public IFigureControl FigureControl { get; set; }
+
+        public void Dispose()
+        {
+            AxisManager.Dispose();
+            BackgroundManager.Dispose();
+        }
+
         public void Render(SKSurface s)
             => m_renderManager.Render(s.Canvas, s.Canvas.LocalClipBounds.ToPixelPanel());
-
-        public void Render()
-        {
-            using (SKBitmap bmp = new SKBitmap(600, 500))
-            using (SKSurface s = SKSurface.Create(bmp.Info))
-            {
-                Render(s);
-
-                using (SKImage image = s.Snapshot())
-                using (SKData data = image.Encode(SKEncodedImageFormat.Png, 100))
-                using (FileStream stream = File.OpenWrite("test.Png"))
-                {
-                    data.SaveTo(stream);
-                }
-            }
-        }
     }
 }

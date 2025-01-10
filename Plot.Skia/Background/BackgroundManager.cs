@@ -1,6 +1,9 @@
+
+using System;
+
 namespace Plot.Skia
 {
-    public class BackgroundManager
+    public class BackgroundManager : IDisposable
     {
         private readonly Figure m_figure;
 
@@ -12,7 +15,13 @@ namespace Plot.Skia
         }
 
 
-        internal BackgroundStyle FigureBackground { get; }
-        internal BackgroundStyle DataBackground { get; }
+        public BackgroundStyle FigureBackground { get; }
+        public BackgroundStyle DataBackground { get; }
+
+        public void Dispose()
+        {
+            FigureBackground.Dispose();
+            DataBackground.Dispose();
+        }
     }
 }

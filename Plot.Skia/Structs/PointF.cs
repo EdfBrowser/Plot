@@ -17,5 +17,7 @@ namespace Plot.Skia
         internal float Y => m_y;
 
         internal SKPoint ToSKPoint() => new SKPoint(X, Y);
+
+        internal PointF Translate(float x, float y) => new PointF(m_x + x, m_y + y);
     }
 }

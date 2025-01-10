@@ -2,7 +2,7 @@ using SkiaSharp;
 
 namespace Plot.Skia
 {
-    internal readonly struct Color
+    public readonly struct Color
     {
         private readonly byte m_red;
         private readonly byte m_green;
@@ -10,7 +10,7 @@ namespace Plot.Skia
         private readonly byte m_alpha;
 
 
-        internal Color(byte red, byte green, byte blue, byte alpha = 255)
+        public Color(byte red, byte green, byte blue, byte alpha = 255)
         {
             m_red = red;
             m_green = green;
@@ -18,7 +18,7 @@ namespace Plot.Skia
             m_alpha = alpha;
         }
 
-        internal Color(float red, float green, float blue, float alpha = 1f)
+        public Color(float red, float green, float blue, float alpha = 1f)
         {
             m_red = (byte)(red * 255);
             m_green = (byte)(green * 255);
@@ -31,9 +31,9 @@ namespace Plot.Skia
         internal byte Blue => m_blue;
         internal byte Alpha => m_alpha;
 
-        internal static Color White => new Color(255, 255, 255);
-        internal static Color Black => new Color(0, 0, 0);
-        internal static Color Gray => new Color(128, 128, 128);
+        public static Color White => new Color(255, 255, 255);
+        public static Color Black => new Color(0, 0, 0);
+        public static Color Gray => new Color(128, 128, 128);
 
         internal SKColor ToSkColor() => new SKColor(Red, Green, Blue, Alpha);
     }

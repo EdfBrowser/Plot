@@ -11,21 +11,20 @@ namespace Plot.Skia
             MinorDivCount = 5;
         }
 
-        public Tick[] Ticks { get; set; }
+        public Tick[] Ticks { get; private set; }
         internal int MinorDivCount { get; set; }
-        public float LargestLabelLength { get; set; }
 
-        public void Generate(PixelRange range, Edge edge, float axisLength, LabelStyle labelStyle)
+        public void Generate(PixelRange range, Edge edge, float axisLength, LabelStyle tickLabelStyle)
         {
-            Ticks = GenerateTicks(range, edge, axisLength, 12f, labelStyle)
+            Ticks = GenerateTicks(range, edge, axisLength, 12f, tickLabelStyle)
                  .Where(x => range.Contains(x.Position))
                  .ToArray();
         }
 
         private IEnumerable<Tick> GenerateTicks(PixelRange range, Edge edge, float axisLength,
-            float largestLabelLength, LabelStyle labelStyle)
+            float labelLength, LabelStyle tickLabelStyle)
         {
-            float labelWidth = Math.Max(0, largestLabelLength);
+            float labelWidth = Math.Max(0, labelLength);
 
             double[] majorTickPositions = TickSpacingCalculator
                 .GenerateTickPositions(range, axisLength, labelWidth)
@@ -36,13 +35,11 @@ namespace Plot.Skia
 
 
             (string largestText, float actualMaxLength) = edge.Vertical()
-                ? labelStyle.MeasureHighestString(majorTickLabels)
-                : labelStyle.MeasureWidestString(majorTickLabels);
+                ? MeasureHighestString(majorTickLabels, tickLabelStyle)
+                : MeasureWidestString(majorTickLabels, tickLabelStyle);
 
-            LargestLabelLength = actualMaxLength;
-
-            return actualMaxLength > largestLabelLength
-                ? GenerateTicks(range, edge, axisLength, actualMaxLength, labelStyle)
+            return actualMaxLength > labelLength
+                ? GenerateTicks(range, edge, axisLength, actualMaxLength, tickLabelStyle)
                 : GenerateFinalTicks(majorTickPositions, majorTickLabels, range);
         }
 
@@ -93,6 +90,44 @@ namespace Plot.Skia
 
             // otherwise the number is probably small or very precise to use the general format (with slight rounding)
             return Math.Round(value, 3).ToString("G");
+        }
+
+        private (string largestText, float actualMaxLength)
+           MeasureHighestString(string[] tickLabels, LabelStyle labelStyle)
+        {
+            float maxHeight = 0;
+            string maxText = string.Empty;
+
+            for (int i = 0; i < tickLabels.Length; i++)
+            {
+                float size = labelStyle.Measure(tickLabels[i]).height;
+                if (size > maxHeight)
+                {
+                    maxHeight = size;
+                    maxText = tickLabels[i];
+                }
+            }
+
+            return (maxText, maxHeight);
+        }
+
+        private (string largestText, float actualMaxLength)
+            MeasureWidestString(string[] tickLabels, LabelStyle labelStyle)
+        {
+            float maxWidth = 0;
+            string maxText = string.Empty;
+
+            for (int i = 0; i < tickLabels.Length; i++)
+            {
+                float size = labelStyle.Measure(tickLabels[i]).width;
+                if (size > maxWidth)
+                {
+                    maxWidth = size;
+                    maxText = tickLabels[i];
+                }
+            }
+
+            return (maxText, maxWidth);
         }
     }
 }

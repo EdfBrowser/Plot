@@ -9,11 +9,11 @@ namespace Plot.Skia
     {
         internal static bool Vertical(this Edge edge)
         {
-            return edge == Edge.Left || edge == Edge.Right;
+            return (edge == Edge.Left || edge == Edge.Right);
         }
         internal static bool Horizontal(this Edge edge)
         {
-            return edge == Edge.Top || edge == Edge.Bottom;
+            return (edge == Edge.Top || edge == Edge.Bottom);
         }
     }
 }
