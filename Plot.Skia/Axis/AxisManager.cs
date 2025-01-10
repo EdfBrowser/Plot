@@ -21,6 +21,9 @@ namespace Plot.Skia
             YAxes.Add(yPrimary);
 
 
+            AddBottomAxis();
+            AddLeftAxis();
+
             DefaultGrid = new DefaultGrid(xPrimary, yPrimary);
         }
 
@@ -47,11 +50,26 @@ namespace Plot.Skia
             return axis;
         }
 
-        internal static void SetLimitsX(PixelRange limit, IXAxis axis)
+        internal BottomAxis AddBottomAxis()
+        {
+            BottomAxis axis = new BottomAxis();
+            XAxes.Add(axis);
+            return axis;
+        }
+
+        private static void SetLimitsX(PixelRange limit, IXAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
-        internal static void SetLimitsY(PixelRange limit, IYAxis axis)
+        private static void SetLimitsY(PixelRange limit, IYAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
+
+        internal static void SetLimits(PixelRange limit, IAxis axis)
+        {
+            if (axis.Direction.Vertical())
+                SetLimitsY(limit, (IYAxis)axis);
+            else
+                SetLimitsX(limit, (IXAxis)axis);
+        }
 
         public void Dispose()
         {

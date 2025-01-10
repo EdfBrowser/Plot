@@ -6,12 +6,12 @@ namespace Plot.Skia
         {
             foreach (IXAxis axis in rc.Figure.AxisManager.XAxes)
             {
-                axis.GenerateTicks(rc.DataPanel.Width);
+                axis.GenerateTicks(rc.AxisPanel[axis].Width);
             }
 
             foreach (IYAxis axis in rc.Figure.AxisManager.YAxes)
             {
-                axis.GenerateTicks(rc.DataPanel.Height);
+                axis.GenerateTicks(rc.AxisPanel[axis].Height);
             }
         }
     }

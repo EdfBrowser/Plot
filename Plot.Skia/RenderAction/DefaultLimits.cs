@@ -5,11 +5,14 @@ namespace Plot.Skia
         public void Render(RenderContext rc)
         {
             AxisManager axisManager = rc.Figure.AxisManager;
-            if (!axisManager.Bottom.Range.HasBeenSet)
-                AxisManager.SetLimitsX(PixelRange.Default, axisManager.Bottom);
 
-            if (!axisManager.Left.Range.HasBeenSet)
-                AxisManager.SetLimitsY(PixelRange.Default, axisManager.Left);
+            foreach (IAxis axis in axisManager.Axes)
+            {
+                if (!axis.Range.HasBeenSet)
+                {
+                   AxisManager.SetLimits(PixelRange.Default, axis);
+                }
+            }
         }
     }
 }

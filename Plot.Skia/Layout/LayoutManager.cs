@@ -66,19 +66,19 @@ namespace Plot.Skia
                 {
                     availableSize = dataPanel.Width - totalSpacing;
                     plotSize = availableSize / axisCount;
-                    lastOffset += plotSize;
                     offsetedAxes[axis] =
-                        new PixelPanel(dataPanel.Left, dataPanel.Left + lastOffset,
-                        dataPanel.Top, dataPanel.Bottom);
+                        new PixelPanel(dataPanel.Left + lastOffset,
+                        dataPanel.Left + lastOffset + plotSize, dataPanel.Top, dataPanel.Bottom);
+                    lastOffset += plotSize;
                 }
                 else
                 {
                     availableSize = dataPanel.Height - totalSpacing;
                     plotSize = availableSize / axisCount;
-                    lastOffset += plotSize;
                     offsetedAxes[axis] =
                         new PixelPanel(dataPanel.Left, dataPanel.Right,
-                        dataPanel.Top, dataPanel.Top + lastOffset);
+                        dataPanel.Top + lastOffset, dataPanel.Top + lastOffset + plotSize);
+                    lastOffset += plotSize;
                 }
 
                 lastOffset += m_figure.AxisSpace;
