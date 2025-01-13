@@ -1,6 +1,6 @@
 namespace Plot.Skia
 {
-    internal interface IXAxis : IAxis
+    public interface IXAxis : IAxis
     {
         double Width { get; }
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Plot.Skia
 {
-    internal abstract class BaseAxis : IAxis
+    public abstract class BaseAxis : IAxis
     {
         protected BaseAxis()
         {
@@ -28,24 +28,24 @@ namespace Plot.Skia
         public double Min
         {
             get => Range.Min;
-            set => Range.Min = value;
+            private set => Range.Min = value;
         }
         public double Max
         {
             get => Range.Max;
-            set => Range.Max = value;
+            private set => Range.Max = value;
         }
 
-        public LabelStyle Label { get; set; }
-        public TickStyle MajorTickStyle { get; set; }
-        public TickStyle MinorTickStyle { get; set; }
-        public LabelStyle TickLabelStyle { get; set; }
-        public LineStyle TickLineStyle { get; set; }
+        public LabelStyle Label { get; }
+        public TickStyle MajorTickStyle { get; }
+        public TickStyle MinorTickStyle { get; }
+        public LabelStyle TickLabelStyle { get; }
+        public LineStyle TickLineStyle { get; }
 
 
 
         public void GenerateTicks(float axisLength) => TickGenerator.Generate(
-            Range.ToCoordinateRange, Direction, axisLength, TickLabelStyle);
+            Range.ToPixelRange, Direction, axisLength, TickLabelStyle);
 
 
         protected void DrawTicks(SKCanvas canvas, Dictionary<IAxis, PixelPanel> axisPanel)
@@ -96,7 +96,7 @@ namespace Plot.Skia
                     continue;
 
                 TickLabelStyle.Text = tick.Label;
-                float labelLength = TickLabelStyle.Measure(tick.Label).width;
+                float labelLength = TickLabelStyle.Measure(tick.Label).Width;
                 labelLength = Direction == Edge.Left ? -labelLength : labelLength;
                 PointF p = new PointF(x1 + tickLength + labelLength, y1)
                     .Translate(0, TickLabelStyle.Ascent() / 2);
@@ -126,7 +126,8 @@ namespace Plot.Skia
 
                 TickLabelStyle.Text = tick.Label;
                 PointF p = new PointF(x1, y1 + tickLength)
-                    .Translate(0,TickLabelStyle.Ascent());
+                    .Translate(0, TickLabelStyle.Ascent());
+
                 TickLabelStyle.Render(canvas, p, SKTextAlign.Center);
             }
         }

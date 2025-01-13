@@ -1,19 +1,19 @@
 namespace Plot.Skia
 {
-    internal enum Edge : byte
+    public enum Edge : byte
     {
         Left, Right, Top, Bottom
     }
 
     internal static class EdgeExt
     {
-        internal static bool Vertical(this Edge edge)
+        internal static bool Vertical(this Edge direction)
         {
-            return (edge == Edge.Left || edge == Edge.Right);
+            return (direction == Edge.Left || direction == Edge.Right);
         }
-        internal static bool Horizontal(this Edge edge)
+        internal static bool Horizontal(this Edge direction)
         {
-            return (edge == Edge.Top || edge == Edge.Bottom);
+            return (direction == Edge.Top || direction == Edge.Bottom);
         }
     }
 }

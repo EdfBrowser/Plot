@@ -1,11 +1,11 @@
 namespace Plot.Skia
 {
-    internal readonly struct PixelRange
+    public readonly struct PixelRange
     {
         private readonly double m_low;
         private readonly double m_high;
 
-        internal PixelRange(double low, double high)
+        public PixelRange(double low, double high)
         {
             m_low = low;
             m_high = high;

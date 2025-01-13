@@ -20,10 +20,6 @@ namespace Plot.Skia
             XAxes.Add(xPrimary);
             YAxes.Add(yPrimary);
 
-
-            AddBottomAxis();
-            AddLeftAxis();
-
             DefaultGrid = new DefaultGrid(xPrimary, yPrimary);
         }
 
@@ -43,19 +39,11 @@ namespace Plot.Skia
         internal void AddYAxis(IYAxis axis) => YAxes.Add(axis);
         internal void AddXAxis(IXAxis axis) => XAxes.Add(axis);
 
-        internal LeftAxis AddLeftAxis()
-        {
-            LeftAxis axis = new LeftAxis();
-            YAxes.Add(axis);
-            return axis;
-        }
+        internal IEnumerable<IAxis> GetAxes(Edge direction)
+            => Axes.Where(x => x.Direction == direction);
 
-        internal BottomAxis AddBottomAxis()
-        {
-            BottomAxis axis = new BottomAxis();
-            XAxes.Add(axis);
-            return axis;
-        }
+
+
 
         private static void SetLimitsX(PixelRange limit, IXAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
@@ -63,13 +51,6 @@ namespace Plot.Skia
         private static void SetLimitsY(PixelRange limit, IYAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
-        internal static void SetLimits(PixelRange limit, IAxis axis)
-        {
-            if (axis.Direction.Vertical())
-                SetLimitsY(limit, (IYAxis)axis);
-            else
-                SetLimitsX(limit, (IXAxis)axis);
-        }
 
         public void Dispose()
         {
@@ -78,5 +59,47 @@ namespace Plot.Skia
                 axis.Dispose();
             }
         }
+
+        #region PUBLIC METHODS
+        public void Remove(Edge direction)
+        {
+            foreach (IAxis axis in GetAxes(direction).ToArray())
+            {
+                if (axis is IXAxis xAxis)
+                    XAxes.Remove(xAxis);
+                if (axis is IYAxis yAxis)
+                    YAxes.Remove(yAxis);
+            }
+        }
+
+        public LeftAxis AddLeftAxis()
+        {
+            LeftAxis axis = new LeftAxis();
+            YAxes.Add(axis);
+            return axis;
+        }
+
+        public BottomAxis AddBottomAxis()
+        {
+            BottomAxis axis = new BottomAxis();
+            XAxes.Add(axis);
+            return axis;
+        }
+
+        public DateTimeBottomAxis AddDateTimeBottomAxis()
+        {
+            DateTimeBottomAxis axis = new DateTimeBottomAxis();
+            XAxes.Add(axis);
+            return axis;
+        }
+
+        public static void SetLimits(PixelRange limit, IAxis axis)
+        {
+            if (axis.Direction.Vertical())
+                SetLimitsY(limit, (IYAxis)axis);
+            else
+                SetLimitsX(limit, (IXAxis)axis);
+        }
+        #endregion
     }
 }

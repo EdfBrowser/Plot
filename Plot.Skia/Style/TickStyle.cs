@@ -3,7 +3,7 @@ using System;
 
 namespace Plot.Skia
 {
-    internal class TickStyle : IDisposable
+    public class TickStyle : IDisposable
     {
         private readonly SKPaint m_sKPaint;
         public TickStyle()

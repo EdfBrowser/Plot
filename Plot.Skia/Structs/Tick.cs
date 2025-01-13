@@ -1,6 +1,6 @@
 namespace Plot.Skia
 {
-    internal readonly struct Tick
+    public readonly struct Tick
     {
         private readonly double m_position;
         private readonly string m_label;

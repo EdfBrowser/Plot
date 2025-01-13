@@ -1,11 +1,11 @@
 namespace Plot.Skia
 {
-    internal class DefaultGrid
+    public class DefaultGrid
     {
         private readonly IXAxis m_xPrimary;
         private readonly IYAxis m_yPrimary;
 
-        internal DefaultGrid(IXAxis xPrimary, IYAxis yPrimary)
+        public DefaultGrid(IXAxis xPrimary, IYAxis yPrimary)
         {
             m_xPrimary = xPrimary;
             m_yPrimary = yPrimary;

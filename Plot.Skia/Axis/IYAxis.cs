@@ -1,6 +1,6 @@
 namespace Plot.Skia
 {
-    internal interface IYAxis : IAxis
+    public interface IYAxis : IAxis
     {
         double Height { get; }
     }

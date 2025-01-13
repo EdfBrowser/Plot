@@ -1,6 +1,6 @@
 namespace Plot.Skia
 {
-    internal class LeftAxis : BaseYAxis
+    public class LeftAxis : BaseYAxis
     {
         public LeftAxis()
         {

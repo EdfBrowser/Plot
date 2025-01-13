@@ -3,7 +3,7 @@ using System;
 
 namespace Plot.Skia
 {
-    internal class LineStyle : IDisposable
+    public class LineStyle : IDisposable
     {
         private readonly SKPaint m_sKPaint;
         public LineStyle()

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Plot.Skia
 {
-    internal class RenderContext
+    public class RenderContext
     {
         private readonly Figure m_figure;
         private readonly SKCanvas m_canvas;

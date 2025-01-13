@@ -1,11 +1,10 @@
 using SkiaSharp;
 using System;
-using System.Drawing;
 using System.Linq;
 
 namespace Plot.Skia
 {
-    internal class LabelStyle : IDisposable
+    public class LabelStyle : IDisposable
     {
         private readonly SKPaint m_sKPaint;
         private readonly SKFont m_sKFont;
@@ -53,11 +52,21 @@ namespace Plot.Skia
         internal void Render(SKCanvas canvas, PointF p, SKTextAlign textAlign)
         {
             Apply();
-
-            canvas.DrawText(Text, p.ToSKPoint(), textAlign, m_sKFont, m_sKPaint);
+            if (Text.Contains('\n'))
+            {
+                string[] lines = Text.Split('\n');
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    SKPoint skpoint = p.ToSKPoint();
+                    skpoint.Offset(0, i * m_sKFont.Spacing);
+                    canvas.DrawText(lines[i], skpoint, textAlign, m_sKFont, m_sKPaint);
+                }
+            }
+            else
+                canvas.DrawText(Text, p.ToSKPoint(), textAlign, m_sKFont, m_sKPaint);
         }
 
-        internal (float width, float height) Measure(string text)
+        internal PixelSize Measure(string text)
         {
             string[] lines = string.IsNullOrEmpty(text)
                 ? Array.Empty<string>() : text.Split('\n');
@@ -70,8 +79,8 @@ namespace Plot.Skia
                 .ToArray();
 
             float width = lineWidths.Length == 0 ? 0 : lineWidths.Max();
-            return (width, lineHeight);
+            float height = lineHeight * lines.Length;
+            return new PixelSize(width, height);
         }
-
     }
 }

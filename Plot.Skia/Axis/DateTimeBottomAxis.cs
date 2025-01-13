@@ -1,14 +1,15 @@
 namespace Plot.Skia
 {
-    public class BottomAxis : BaseXAxis
+    public class DateTimeBottomAxis : BaseXAxis
     {
-        public BottomAxis()
+        public DateTimeBottomAxis()
         {
             Direction = Edge.Bottom;
-            TickGenerator = new NumericAutoGenerator();
+            TickGenerator = new DateTimeAutoGenerator();
         }
 
         public override Edge Direction { get; }
+
         public override ITickGenerator TickGenerator { get; }
     }
 }

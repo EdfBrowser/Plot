@@ -16,8 +16,8 @@ namespace Plot.Skia
                 new DefaultLimits(),
                 new CalculateLayout(),
                 new FigureBackground(),
-                new DataBackground(),
                 new GenerateTicks(),
+                new DataBackground(),
                 new RenderAxis(),
             };
 

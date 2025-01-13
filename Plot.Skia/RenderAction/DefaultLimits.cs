@@ -10,7 +10,7 @@ namespace Plot.Skia
             {
                 if (!axis.Range.HasBeenSet)
                 {
-                   AxisManager.SetLimits(PixelRange.Default, axis);
+                    AxisManager.SetLimits(PixelRange.Default, axis);
                 }
             }
         }

@@ -2,7 +2,7 @@ using SkiaSharp;
 
 namespace Plot.Skia
 {
-    internal readonly struct PixelPanel
+    public readonly struct PixelPanel
     {
         private readonly float m_left;
         private readonly float m_right;

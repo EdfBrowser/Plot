@@ -14,14 +14,14 @@ namespace Plot.Skia
         public Tick[] Ticks { get; private set; }
         internal int MinorDivCount { get; set; }
 
-        public void Generate(PixelRange range, Edge edge, float axisLength, LabelStyle tickLabelStyle)
+        public void Generate(PixelRange range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
-            Ticks = GenerateTicks(range, edge, axisLength, 12f, tickLabelStyle)
+            Ticks = GenerateTicks(range, direction, axisLength, 12f, tickLabelStyle)
                  .Where(x => range.Contains(x.Position))
                  .ToArray();
         }
 
-        private IEnumerable<Tick> GenerateTicks(PixelRange range, Edge edge, float axisLength,
+        private IEnumerable<Tick> GenerateTicks(PixelRange range, Edge direction, float axisLength,
             float labelLength, LabelStyle tickLabelStyle)
         {
             float labelWidth = Math.Max(0, labelLength);
@@ -34,12 +34,12 @@ namespace Plot.Skia
                 .ToArray();
 
 
-            (string largestText, float actualMaxLength) = edge.Vertical()
+            (string largestText, float actualMaxLength) = direction.Vertical()
                 ? MeasureHighestString(majorTickLabels, tickLabelStyle)
                 : MeasureWidestString(majorTickLabels, tickLabelStyle);
 
             return actualMaxLength > labelLength
-                ? GenerateTicks(range, edge, axisLength, actualMaxLength, tickLabelStyle)
+                ? GenerateTicks(range, direction, axisLength, actualMaxLength, tickLabelStyle)
                 : GenerateFinalTicks(majorTickPositions, majorTickLabels, range);
         }
 
@@ -100,7 +100,7 @@ namespace Plot.Skia
 
             for (int i = 0; i < tickLabels.Length; i++)
             {
-                float size = labelStyle.Measure(tickLabels[i]).height;
+                float size = labelStyle.Measure(tickLabels[i]).Height;
                 if (size > maxHeight)
                 {
                     maxHeight = size;
@@ -119,7 +119,7 @@ namespace Plot.Skia
 
             for (int i = 0; i < tickLabels.Length; i++)
             {
-                float size = labelStyle.Measure(tickLabels[i]).width;
+                float size = labelStyle.Measure(tickLabels[i]).Width;
                 if (size > maxWidth)
                 {
                     maxWidth = size;

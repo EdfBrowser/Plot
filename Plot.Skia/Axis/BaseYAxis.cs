@@ -2,7 +2,7 @@ using System.Linq;
 
 namespace Plot.Skia
 {
-    internal abstract class BaseYAxis : BaseAxis, IYAxis
+    public abstract class BaseYAxis : BaseAxis, IYAxis
     {
         public double Height => Range.Span;
 
@@ -35,12 +35,12 @@ namespace Plot.Skia
             float maxTickLabelLength = 0;
             if (TickGenerator.Ticks.Length > 0)
                 maxTickLabelLength = TickGenerator.Ticks
-                      .Select(x => TickLabelStyle.Measure(x.Label).width)
+                      .Select(x => TickLabelStyle.Measure(x.Label).Width)
                       .Max();
 
             float axisLabelLength = 0;
             if (!string.IsNullOrEmpty(Label.Text))
-                axisLabelLength = Label.Measure(Label.Text).width;
+                axisLabelLength = Label.Measure(Label.Text).Width;
 
             return tickHeight + maxTickLabelLength + axisLabelLength + 10;
         }
