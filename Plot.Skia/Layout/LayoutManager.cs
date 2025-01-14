@@ -14,7 +14,7 @@ namespace Plot.Skia
         }
 
 
-        internal (PixelPanel dataPanel, Dictionary<IAxis, PixelPanel>) Layout(PixelPanel figurePanel)
+        internal Layout GetLayout(PixelPanel figurePanel)
         {
             foreach (IXAxis axis in m_figure.AxisManager.XAxes)
             {
@@ -28,80 +28,94 @@ namespace Plot.Skia
 
             Dictionary<IAxis, float> measuredAxes = Measure(m_figure.AxisManager.Axes);
 
-            IEnumerable<IAxis> leftAxes = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Left);
-            IEnumerable<IAxis> rightAxes = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Right);
-            IEnumerable<IAxis> bottomAxes = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Bottom);
-            IEnumerable<IAxis> topAxes = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Top);
+            (float l, float r, float t, float b) =
+                CalculateEdgeTickLabel(m_figure.AxisManager.Axes);
+
+            SetAxisSpacing(m_figure.AxisManager.Axes);
+
+            IEnumerable<IAxis> leftAxes
+                = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Left);
+            IEnumerable<IAxis> rightAxes
+                = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Right);
+            IEnumerable<IAxis> bottomAxes
+                = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Bottom);
+            IEnumerable<IAxis> topAxes
+                = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Top);
 
 
-            PixelPanel paddingNeeded = new PixelPanel(
-                left: leftAxes.Any() ? leftAxes.Select(x => measuredAxes[x]).Max() : 10f,
-                right: rightAxes.Any() ? rightAxes.Select(x => measuredAxes[x]).Max() : 10f,
-                bottom: bottomAxes.Any() ? bottomAxes.Select(x => measuredAxes[x]).Max() : 10f,
-                top: topAxes.Any() ? topAxes.Select(x => measuredAxes[x]).Max() : 10f);
+            float left = leftAxes.Any()
+                ? leftAxes.Select(x => measuredAxes[x]).Max() : l;
+            float right = rightAxes.Any()
+                ? rightAxes.Select(x => measuredAxes[x]).Max() : r;
+            float bottom = bottomAxes.Any()
+                ? bottomAxes.Select(x => measuredAxes[x]).Max() : b;
+            float top = topAxes.Any()
+                ? topAxes.Select(x => measuredAxes[x]).Max() : t;
 
-            float dataRectWidth = Math.Max(0, figurePanel.Width - paddingNeeded.Hoffset);
-            float dataRectHeight = Math.Max(0, figurePanel.Height - paddingNeeded.Voffset);
 
-            PointF location = new PointF(paddingNeeded.Left, paddingNeeded.Top);
-            PixelPanel dataPanel = new PixelPanel(location, dataRectWidth, dataRectHeight)
+            float dataRectWidth
+                = Math.Max(0, figurePanel.Width - (left + right));
+            float dataRectHeight
+                = Math.Max(0, figurePanel.Height - (bottom + top));
+
+            PanelSize dataSize = new PanelSize(dataRectWidth, dataRectHeight);
+            PointF location = new PointF(left, top);
+            PixelPanel dataPanel = new PixelPanel(location, dataSize)
                 .WithPan(figurePanel.Left, figurePanel.Top);
 
 
-            return (dataPanel, ArrangeAxes(m_figure.AxisManager.Axes, dataPanel));
+            Dictionary<IAxis, (float, float)> panelDeltas
+                = ArrangeAxes(m_figure.AxisManager.Axes, dataPanel);
+
+            return new Layout(figurePanel, dataPanel, panelDeltas, measuredAxes);
         }
 
         private void CalculateOffsets(IEnumerable<IAxis> axes,
-            PixelPanel dataPanel, Dictionary<IAxis, PixelPanel> offsetedAxes)
+            PixelPanel dataPanel, Dictionary<IAxis, (float, float)> panelDeltas)
         {
             int axisCount = axes.Count();
             if (axisCount == 0) return;
 
-            float totalSpacing = m_figure.AxisSpace * (axisCount - 1);
-            float availableSize, plotSize, lastOffset = 0;
+            float availableSize, plotSize, totalSpacing, lastOffset = 0;
 
-            foreach (var axis in axes)
+            foreach (IAxis axis in axes)
             {
+                totalSpacing = axis.AxisSpacing * (axisCount - 1);
+
                 if (axis.Direction.Horizontal())
                 {
                     availableSize = dataPanel.Width - totalSpacing;
                     plotSize = availableSize / axisCount;
-                    offsetedAxes[axis] =
-                        new PixelPanel(dataPanel.Left + lastOffset,
-                        dataPanel.Left + lastOffset + plotSize, dataPanel.Top, dataPanel.Bottom);
-                    lastOffset += plotSize;
                 }
                 else
                 {
                     availableSize = dataPanel.Height - totalSpacing;
                     plotSize = availableSize / axisCount;
-                    offsetedAxes[axis] =
-                        new PixelPanel(dataPanel.Left, dataPanel.Right,
-                        dataPanel.Top + lastOffset, dataPanel.Top + lastOffset + plotSize);
-                    lastOffset += plotSize;
                 }
 
-                lastOffset += m_figure.AxisSpace;
+                panelDeltas[axis] = (lastOffset, plotSize);
+                lastOffset += plotSize + axis.AxisSpacing;
             }
         }
 
-        private Dictionary<IAxis, PixelPanel> ArrangeAxes(IEnumerable<IAxis> axes, PixelPanel dataPanel)
+        private Dictionary<IAxis, (float, float)> ArrangeAxes(
+            IEnumerable<IAxis> axes, PixelPanel dataPanel)
         {
-            Dictionary<IAxis, PixelPanel> offsetedAxes = new Dictionary<IAxis, PixelPanel>();
+            Dictionary<IAxis, (float, float)> panelDeltas = new Dictionary<IAxis, (float, float)>();
 
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Left),
-                dataPanel, offsetedAxes);
+                dataPanel, panelDeltas);
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Right),
-                dataPanel, offsetedAxes);
+                dataPanel, panelDeltas);
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Bottom),
-                dataPanel, offsetedAxes);
+                dataPanel, panelDeltas);
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Top),
-                dataPanel, offsetedAxes);
+                dataPanel, panelDeltas);
 
-            return offsetedAxes;
+            return panelDeltas;
         }
 
-        internal static Dictionary<IAxis, float> Measure(IEnumerable<IAxis> axes)
+        private static Dictionary<IAxis, float> Measure(IEnumerable<IAxis> axes)
         {
             Dictionary<IAxis, float> measuredAxes = new Dictionary<IAxis, float>();
 
@@ -111,6 +125,49 @@ namespace Plot.Skia
             }
 
             return measuredAxes;
+        }
+
+        private static (float, float, float, float)
+            CalculateEdgeTickLabel(IEnumerable<IAxis> axes)
+        {
+
+            float left = 0f, right = 0f, top = 0f, bottom = 0f;
+            foreach (IAxis axis in axes)
+            {
+                Tick first = axis.TickGenerator.Ticks.First(t => t.MajorPos);
+                Tick last = axis.TickGenerator.Ticks.Last(t => t.MajorPos);
+
+                if (axis.Direction.Horizontal())
+                {
+                    left = Math.Max(left,
+                        axis.TickLabelStyle.Measure(first.Label).Width);
+                    right = Math.Max(right,
+                        axis.TickLabelStyle.Measure(last.Label).Width);
+                }
+                else
+                {
+                    bottom = Math.Max(bottom,
+                        axis.TickLabelStyle.Measure(first.Label).Height);
+                    top = Math.Max(top,
+                        axis.TickLabelStyle.Measure(last.Label).Height);
+                }
+            }
+
+            return (left, right, top, bottom);
+        }
+
+        private static void SetAxisSpacing(IEnumerable<IAxis> axes)
+        {
+            (float l, float r, float t, float b)
+                = CalculateEdgeTickLabel(axes);
+
+            foreach (IAxis axis in axes)
+            {
+                if (axis.Direction.Horizontal())
+                    axis.AxisSpacing = Math.Max(l, r);
+                else
+                    axis.AxisSpacing = Math.Max(t, b);
+            }
         }
     }
 }

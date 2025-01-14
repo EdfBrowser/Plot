@@ -1,10 +1,10 @@
 namespace Plot.Skia
 {
-    public class BottomAxis : BaseXAxis
+    public class NumericLeftAxis : BaseYAxis
     {
-        public BottomAxis()
+        public NumericLeftAxis()
         {
-            Direction = Edge.Bottom;
+            Direction = Edge.Left;
             TickGenerator = new NumericAutoGenerator();
         }
 

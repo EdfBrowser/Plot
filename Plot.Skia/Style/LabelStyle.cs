@@ -66,7 +66,7 @@ namespace Plot.Skia
                 canvas.DrawText(Text, p.ToSKPoint(), textAlign, m_sKFont, m_sKPaint);
         }
 
-        internal PixelSize Measure(string text)
+        internal PanelSize Measure(string text)
         {
             string[] lines = string.IsNullOrEmpty(text)
                 ? Array.Empty<string>() : text.Split('\n');
@@ -80,7 +80,7 @@ namespace Plot.Skia
 
             float width = lineWidths.Length == 0 ? 0 : lineWidths.Max();
             float height = lineHeight * lines.Length;
-            return new PixelSize(width, height);
+            return new PanelSize(width, height);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Plot.Skia
         internal float Width { get; set; }
         internal float Height { get; set; }
 
-        internal PixelSize ToPixelSize => new PixelSize(Width, Height);
+        internal PanelSize ToPixelSize => new PanelSize(Width, Height);
 
         internal void Set(float w, float h)
         {

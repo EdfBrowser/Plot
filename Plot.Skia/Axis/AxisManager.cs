@@ -15,8 +15,8 @@ namespace Plot.Skia
             XAxes = new List<IXAxis>();
             YAxes = new List<IYAxis>();
 
-            IXAxis xPrimary = new BottomAxis();
-            IYAxis yPrimary = new LeftAxis();
+            IXAxis xPrimary = new NumericBottomAxis();
+            IYAxis yPrimary = new NumericLeftAxis();
             XAxes.Add(xPrimary);
             YAxes.Add(yPrimary);
 
@@ -45,10 +45,10 @@ namespace Plot.Skia
 
 
 
-        private static void SetLimitsX(PixelRange limit, IXAxis axis)
+        private void SetLimitsX(PixelRange limit, IXAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
-        private static void SetLimitsY(PixelRange limit, IYAxis axis)
+        private void SetLimitsY(PixelRange limit, IYAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
 
@@ -60,7 +60,7 @@ namespace Plot.Skia
             }
         }
 
-        #region PUBLIC METHODS
+        #region PUBLIC
         public void Remove(Edge direction)
         {
             foreach (IAxis axis in GetAxes(direction).ToArray())
@@ -72,16 +72,16 @@ namespace Plot.Skia
             }
         }
 
-        public LeftAxis AddLeftAxis()
+        public NumericLeftAxis AddNumericLeftAxis()
         {
-            LeftAxis axis = new LeftAxis();
+            NumericLeftAxis axis = new NumericLeftAxis();
             YAxes.Add(axis);
             return axis;
         }
 
-        public BottomAxis AddBottomAxis()
+        public NumericBottomAxis AddNumericBottomAxis()
         {
-            BottomAxis axis = new BottomAxis();
+            NumericBottomAxis axis = new NumericBottomAxis();
             XAxes.Add(axis);
             return axis;
         }
@@ -93,7 +93,7 @@ namespace Plot.Skia
             return axis;
         }
 
-        public static void SetLimits(PixelRange limit, IAxis axis)
+        public void SetLimits(PixelRange limit, IAxis axis)
         {
             if (axis.Direction.Vertical())
                 SetLimitsY(limit, (IYAxis)axis);

@@ -4,14 +4,17 @@ namespace Plot.Skia
     {
         public void Render(RenderContext rc)
         {
+            PixelPanel dataPanel = rc.Layout.DataPanel;
             foreach (IXAxis axis in rc.Figure.AxisManager.XAxes)
             {
-                axis.GenerateTicks(rc.AxisPanel[axis].Width);
+                (float delta, float size) = rc.Layout.PanelDeltas[axis];
+                axis.GenerateTicks(axis.GetPanel(dataPanel, delta, size).Width);
             }
 
             foreach (IYAxis axis in rc.Figure.AxisManager.YAxes)
             {
-                axis.GenerateTicks(rc.AxisPanel[axis].Height);
+                (float delta, float size) = rc.Layout.PanelDeltas[axis];
+                axis.GenerateTicks(axis.GetPanel(dataPanel, delta, size).Height);
             }
         }
     }

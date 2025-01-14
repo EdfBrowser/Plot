@@ -8,7 +8,7 @@ namespace Plot.Skia
     {
         private readonly IReadOnlyList<ITimeUnit> m_theseTimeUnits;
 
-        public DateTimeAutoGenerator()
+        internal DateTimeAutoGenerator()
         {
             m_theseTimeUnits = new List<ITimeUnit>()
             {
@@ -30,7 +30,7 @@ namespace Plot.Skia
 
             while (true)
             {
-                (IList<Tick> ticks, PixelSize? largestTickLabelSize) =
+                (IList<Tick> ticks, PanelSize? largestTickLabelSize) =
                     GenerateDateTimeTicks(range, direction, axisLength,
                                 tickLabelBound.ToPixelSize, tickLabelStyle);
 
@@ -56,9 +56,9 @@ namespace Plot.Skia
             }
         }
 
-        private (IList<Tick> ticks, PixelSize? labelSize)
+        private (IList<Tick> ticks, PanelSize? labelSize)
             GenerateDateTimeTicks(PixelRange range, Edge direction, float axisLength,
-            PixelSize tickLabelBound, LabelStyle tickLabelStyle)
+            PanelSize tickLabelBound, LabelStyle tickLabelStyle)
         {
             float labelLength = direction.Vertical()
                 ? tickLabelBound.Height : tickLabelBound.Width;
@@ -80,7 +80,7 @@ namespace Plot.Skia
             {
                 string tickLabel = dt.ToString(niceTimeUnit.GetFormatString());
 
-                PixelSize tickLabelSize = tickLabelStyle.Measure(tickLabel);
+                PanelSize tickLabelSize = tickLabelStyle.Measure(tickLabel);
 
                 if (!tickLabelBound.Contains(tickLabelSize))
                     return (null, tickLabelSize);

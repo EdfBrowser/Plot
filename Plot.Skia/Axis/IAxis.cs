@@ -4,6 +4,7 @@ namespace Plot.Skia
 {
     public interface IAxis : IDisposable
     {
+        float AxisSpacing { get; set; }
         PixelRangeMutable Range { get; }
         ITickGenerator TickGenerator { get; }
         Edge Direction { get; }
@@ -22,6 +23,8 @@ namespace Plot.Skia
 
         void GenerateTicks(float axisLength);
         float Measure();
-        void Render(RenderContext rc);
+        void Render(RenderContext rc, float delta, float size);
+
+        PixelPanel GetPanel(PixelPanel panelSize, float delta, float size);
     }
 }

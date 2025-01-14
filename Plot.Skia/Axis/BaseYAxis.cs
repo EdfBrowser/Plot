@@ -6,6 +6,10 @@ namespace Plot.Skia
     {
         public double Height => Range.Span;
 
+        public override PixelPanel GetPanel(
+            PixelPanel panelSize, float delta, float size)
+          => GetVerticalPanel(panelSize, delta, size);
+
         public override float GetPixel(double position, PixelPanel dataPanel)
         {
             double pxPerUnit = dataPanel.Height / Height;
@@ -22,10 +26,11 @@ namespace Plot.Skia
             return Min - unitsFromLeft;
         }
 
-        public override void Render(RenderContext rc)
+        public override void Render(RenderContext rc, float delta, float size)
         {
-            DrawTicks(rc.Canvas, rc.AxisPanel);
-            DrawLines(rc.Canvas, rc.AxisPanel);
+            PixelPanel panel = GetPanel(rc.Layout.DataPanel, delta, size);
+            DrawTicks(rc.Canvas, panel);
+            DrawLines(rc.Canvas, panel);
         }
 
         public override float Measure()

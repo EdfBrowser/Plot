@@ -16,17 +16,12 @@ namespace Plot.Skia
             m_renderManager = new RenderManager(this);
             m_layoutManager = new LayoutManager(this);
             m_backgroundManager = new BackgroundManager(this);
-            ScaleFactor = 1f;
-            AxisSpace = 10f;
         }
 
         public RenderManager RenderManager => m_renderManager;
         public LayoutManager LayoutManager => m_layoutManager;
         public AxisManager AxisManager => m_axisManager;
         public BackgroundManager BackgroundManager => m_backgroundManager;
-
-        public float ScaleFactor { get; set; }
-        public float AxisSpace { get; set; }
 
         public IFigureControl FigureControl { get; set; }
 

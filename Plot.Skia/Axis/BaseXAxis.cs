@@ -4,7 +4,26 @@ namespace Plot.Skia
 {
     public abstract class BaseXAxis : BaseAxis, IXAxis
     {
+        protected BaseXAxis()
+        {
+            ScrollMode = AxisScrollMode.Scrolling;
+            ScrollPosition = 0f;
+            Animate = false;
+        }
+
+        public AxisScrollMode ScrollMode { get; set; }
+        public double ScrollPosition { get; set; }
+        public bool Animate { get; set; }
+
+        public abstract TickLabelFormat LabelFormat { get; set; }
+
+
         public double Width => Range.Span;
+
+
+        public override PixelPanel GetPanel(
+            PixelPanel panelSize, float delta, float size)
+            => GetHorizontalPanel(panelSize, delta, size);
 
         public override float GetPixel(double position, PixelPanel dataPanel)
         {
@@ -22,10 +41,11 @@ namespace Plot.Skia
             return Min + unitsFromLeft;
         }
 
-        public override void Render(RenderContext rc)
+        public override void Render(RenderContext rc, float delta, float size)
         {
-            DrawTicks(rc.Canvas, rc.AxisPanel);
-            DrawLines(rc.Canvas, rc.AxisPanel);
+            PixelPanel panel = GetPanel(rc.Layout.DataPanel, delta, size);
+            DrawTicks(rc.Canvas, panel);
+            DrawLines(rc.Canvas, panel);
         }
 
         public override float Measure()

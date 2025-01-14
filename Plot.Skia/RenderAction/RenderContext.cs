@@ -1,5 +1,4 @@
 using SkiaSharp;
-using System.Collections.Generic;
 
 namespace Plot.Skia
 {
@@ -19,19 +18,17 @@ namespace Plot.Skia
         internal Figure Figure => m_figure;
         internal SKCanvas Canvas => m_canvas;
         internal PixelPanel FigurePanel => m_figurePanel;
-        internal PixelPanel DataPanel { get; private set; }
-        internal PixelPanel ScaledFigurePanel { get; private set; }
-        internal Dictionary<IAxis, PixelPanel> AxisPanel { get; private set; }
+        public Layout Layout { get; private set; }
 
-        internal void Layout()
+        internal void CalculateLayout()
         {
-            ScaledFigurePanel = new PixelPanel(
-                left: FigurePanel.Left / Figure.ScaleFactor,
-                right: FigurePanel.Right / Figure.ScaleFactor,
-                top: FigurePanel.Top / Figure.ScaleFactor,
-                bottom: FigurePanel.Bottom / Figure.ScaleFactor);
+            PixelPanel ScaledFigurePanel = new PixelPanel(
+                left: FigurePanel.Left / Figure.FigureControl.DisplayScale,
+                right: FigurePanel.Right / Figure.FigureControl.DisplayScale,
+                top: FigurePanel.Top / Figure.FigureControl.DisplayScale,
+                bottom: FigurePanel.Bottom / Figure.FigureControl.DisplayScale);
 
-            (DataPanel, AxisPanel) = Figure.LayoutManager.Layout(ScaledFigurePanel);
+            Layout = Figure.LayoutManager.GetLayout(ScaledFigurePanel);
         }
     }
 }

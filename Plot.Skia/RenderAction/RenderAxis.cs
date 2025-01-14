@@ -6,7 +6,8 @@ namespace Plot.Skia
         {
             foreach (IAxis axis in rc.Figure.AxisManager.Axes)
             {
-                axis.Render(rc);
+                (float delta, float size) = rc.Layout.PanelDeltas[axis];
+                axis.Render(rc, delta, size);
             }
         }
     }

@@ -1,8 +1,9 @@
 using SkiaSharp;
+using System;
 
 namespace Plot.Skia
 {
-    public readonly struct PixelPanel
+    public readonly struct PixelPanel : IEquatable<PixelPanel>
     {
         private readonly float m_left;
         private readonly float m_right;
@@ -18,12 +19,10 @@ namespace Plot.Skia
         }
 
 
-        internal PixelPanel(PointF location, float width, float height)
-            : this(location.X, location.X + width, location.Y, location.Y + height)
-        {
-
-        }
-
+        internal PixelPanel(PointF location, PanelSize panelSize)
+            : this(location.X, location.X + panelSize.Width,
+                  location.Y, location.Y + panelSize.Height)
+        { }
 
         internal float Hoffset => Left + Right;
         internal float Voffset => Top + Bottom;
@@ -33,8 +32,8 @@ namespace Plot.Skia
         internal float Top => m_top;
         internal float Bottom => m_bottom;
 
-        internal float Width => m_right - m_left;
-        internal float Height => m_bottom - m_top;
+        public float Width => m_right - m_left;
+        public float Height => m_bottom - m_top;
 
         internal PointF TopLeft => new PointF(m_left, m_top);
         internal PointF TopRight => new PointF(m_right, m_top);
@@ -45,6 +44,12 @@ namespace Plot.Skia
             => new PixelPanel(Left + x, Right + x, Top + y, Bottom + y);
 
         internal SKRect ToSKRect() => new SKRect(Left, Top, Right, Bottom);
+
+        public bool Equals(PixelPanel other)
+            => Equals(Left, other.Left) &&
+               Equals(Right, other.Right) &&
+               Equals(Top, other.Top) &&
+               Equals(Bottom, other.Bottom);
     }
 
     internal static class PixelPanelExtensions
