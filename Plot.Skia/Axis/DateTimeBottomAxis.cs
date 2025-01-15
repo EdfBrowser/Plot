@@ -2,7 +2,7 @@ namespace Plot.Skia
 {
     public class DateTimeBottomAxis : BaseXAxis
     {
-        public DateTimeBottomAxis()
+        internal DateTimeBottomAxis()
         {
             Direction = Edge.Bottom;
             TickGenerator = new DateTimeAutoGenerator();
@@ -10,8 +10,7 @@ namespace Plot.Skia
         }
 
         public override Edge Direction { get; }
-
         public override ITickGenerator TickGenerator { get; }
-        public override TickLabelFormat LabelFormat { get; set; }
+        public override TickLabelFormat LabelFormat { get; }
     }
 }

@@ -4,7 +4,7 @@ namespace Plot.Skia
     {
         Tick[] Ticks { get; }
 
-        void Generate(PixelRange range, Edge direction, float axisLength,
+        void Generate(Range range, Edge direction, float axisLength,
             LabelStyle tickLabelStyle);
     }
 }

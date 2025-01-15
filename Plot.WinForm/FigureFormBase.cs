@@ -24,20 +24,15 @@ namespace Plot.WinForm
                 Figure = new Figure() { FigureControl = this };
                 DisplayScale = DetectDisplayScale();
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                for (Exception ex = exception; ex != null; ex = ex.InnerException)
+                if (isDesignMode)
                 {
-                    if (ex is DllNotFoundException dllNotFound
-                        && dllNotFound.Message.Contains("libSkiaSharp")
-                        && isDesignMode)
-                    {
-                        IsDesignerAlternative = true;
-                        FormsPlotDesignerAlternative altControl =
-                            new FormsPlotDesignerAlternative() { Dock = DockStyle.Fill };
-                        Controls.Add(altControl);
-                        return;
-                    }
+                    IsDesignerAlternative = true;
+                    FormsPlotDesignerAlternative altControl =
+                        new FormsPlotDesignerAlternative() { Dock = DockStyle.Fill };
+                    Controls.Add(altControl);
+                    return;
                 }
 
                 throw;
@@ -83,6 +78,12 @@ namespace Plot.WinForm
         {
             using (System.Drawing.Graphics g = CreateGraphics())
                 return g.DpiX / m_defaultDpi;
+        }
+
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
         }
 
         private static Color ConvertColor(System.Drawing.Color color)

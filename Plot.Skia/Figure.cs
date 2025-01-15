@@ -32,6 +32,6 @@ namespace Plot.Skia
         }
 
         public void Render(SKSurface s)
-            => m_renderManager.Render(s.Canvas, s.Canvas.LocalClipBounds.ToPixelPanel());
+            => m_renderManager.Render(s.Canvas, s.Canvas.LocalClipBounds.ToRect());
     }
 }

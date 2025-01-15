@@ -28,7 +28,7 @@ namespace Plot.Skia
             m_sKPaint?.Dispose();
         }
 
-        internal void Render(SKCanvas canvas, PixelPanel rect)
+        internal void Render(SKCanvas canvas, Rect rect)
         {
             Apply();
             canvas.DrawRect(rect.ToSKRect(), m_sKPaint);

@@ -18,12 +18,12 @@ namespace Plot.Skia
 
         public abstract Edge Direction { get; }
         public abstract ITickGenerator TickGenerator { get; }
-        public abstract float GetPixel(double position, PixelPanel dataPanel);
-        public abstract double GetWorld(float pixel, PixelPanel dataPanel);
+        public abstract float GetPixel(double position, Rect dataRect);
+        public abstract double GetWorld(float pixel, Rect dataRect);
         public abstract void Render(RenderContext rc, float delta, float size);
         public abstract float Measure();
-        public abstract PixelPanel GetPanel(
-            PixelPanel panelSize, float delta, float size);
+        public abstract Rect GetDataRect(
+            Rect dataRect, float delta, float size);
 
         public float AxisSpacing { get; set; }
         public PixelRangeMutable Range { get; }
@@ -52,52 +52,52 @@ namespace Plot.Skia
 
 
 
-        protected PixelPanel GetHorizontalPanel(PixelPanel panelSize, float delta, float size)
-            => new PixelPanel(
-                panelSize.Left + delta,
-                panelSize.Left + delta + size,
-                panelSize.Top,
-                panelSize.Bottom);
+        protected Rect GetHorizontalRect(Rect dataRect, float delta, float size)
+            => new Rect(
+                dataRect.Left + delta,
+                dataRect.Left + delta + size,
+                dataRect.Top,
+                dataRect.Bottom);
 
-        protected PixelPanel GetVerticalPanel(PixelPanel panelSize, float delta, float size)
-            => new PixelPanel(
-                panelSize.Left,
-                panelSize.Right,
-                panelSize.Top + delta,
-                panelSize.Top + delta + size);
+        protected Rect GetVerticalRect(Rect dataRect, float delta, float size)
+            => new Rect(
+                dataRect.Left,
+                dataRect.Right,
+                dataRect.Top + delta,
+                dataRect.Top + delta + size);
 
-        protected void DrawTicks(SKCanvas canvas, PixelPanel panel)
+        protected void DrawTicks(SKCanvas canvas, Rect dataRect)
         {
             if (Direction.Horizontal())
-                DrawTicksForHorizontal(canvas, panel);
+                DrawTicksForHorizontal(canvas, dataRect);
             else
-                DrawTicksForVertical(canvas, panel);
+                DrawTicksForVertical(canvas, dataRect);
         }
 
-        protected void DrawLines(SKCanvas canvas, PixelPanel panel)
+        protected void DrawLines(SKCanvas canvas, Rect dataRect)
         {
             if (Direction.Vertical())
             {
-                PointF p1 = Direction == Edge.Left ? panel.TopLeft : panel.TopRight;
-                PointF p2 = Direction == Edge.Left ? panel.BottomLeft : panel.BottomRight;
+                PointF p1 = Direction == Edge.Left ? dataRect.TopLeft : dataRect.TopRight;
+                PointF p2 = Direction == Edge.Left ? dataRect.BottomLeft : dataRect.BottomRight;
                 TickLineStyle.Render(canvas, p1, p2);
             }
             else
             {
-                PointF p1 = Direction == Edge.Top ? panel.TopLeft : panel.BottomLeft;
-                PointF p2 = Direction == Edge.Top ? panel.TopRight : panel.BottomRight;
+                PointF p1 = Direction == Edge.Top ? dataRect.TopLeft : dataRect.BottomLeft;
+                PointF p2 = Direction == Edge.Top ? dataRect.TopRight : dataRect.BottomRight;
                 TickLineStyle.Render(canvas, p1, p2);
             }
         }
 
-        private void DrawTicksForVertical(SKCanvas canvas, PixelPanel panel)
+        private void DrawTicksForVertical(SKCanvas canvas, Rect dataRect)
         {
             foreach (var tick in TickGenerator.Ticks)
             {
                 float tickLength = tick.MajorPos
                     ? MajorTickStyle.Length : MinorTickStyle.Length;
-                float y1 = GetPixel(tick.Position, panel);
-                float x1 = Direction == Edge.Left ? panel.Left : panel.Right;
+                float y1 = GetPixel(tick.Position, dataRect);
+                float x1 = Direction == Edge.Left ? dataRect.Left : dataRect.Right;
                 tickLength = Direction == Edge.Left ? -tickLength : tickLength;
 
                 TickStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
@@ -118,7 +118,7 @@ namespace Plot.Skia
             }
         }
 
-        private void DrawTicksForHorizontal(SKCanvas canvas, PixelPanel panel)
+        private void DrawTicksForHorizontal(SKCanvas canvas, Rect dataRect)
         {
             IXAxis axis = this as IXAxis;
             foreach (var tick in TickGenerator.Ticks)
@@ -128,8 +128,8 @@ namespace Plot.Skia
 
                 float tickLength = tick.MajorPos
                     ? MajorTickStyle.Length : MinorTickStyle.Length;
-                float x1 = GetPixel(tick.Position, panel);
-                float y1 = Direction == Edge.Top ? panel.Top : panel.Bottom;
+                float x1 = GetPixel(tick.Position, dataRect);
+                float y1 = Direction == Edge.Top ? dataRect.Top : dataRect.Bottom;
                 tickLength = Direction == Edge.Top ? -tickLength : tickLength;
 
                 TickStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;

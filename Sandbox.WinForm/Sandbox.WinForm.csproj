@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net4.8</TargetFramework>
+        <OutputType>WinExe</OutputType>
+        <UseWindowsForms>true</UseWindowsForms>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Plot.Skia\Plot.Skia.csproj" />
+        <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
+    </ItemGroup>
+
+</Project>

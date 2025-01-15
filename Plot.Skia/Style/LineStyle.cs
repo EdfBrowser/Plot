@@ -15,9 +15,9 @@ namespace Plot.Skia
         }
 
 
-        internal float Width { get; set; }
-        internal Color Color { get; set; }
-        internal bool AntiAlias { get; set; }
+        public float Width { get; set; }
+        public Color Color { get; set; }
+        public bool AntiAlias { get; set; }
 
         public void Dispose()
         {

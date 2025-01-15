@@ -2,7 +2,7 @@ namespace Plot.Skia
 {
     public class NumericBottomAxis : BaseXAxis
     {
-        public NumericBottomAxis()
+        internal NumericBottomAxis()
         {
             Direction = Edge.Bottom;
             TickGenerator = new NumericAutoGenerator();
@@ -11,6 +11,6 @@ namespace Plot.Skia
 
         public override Edge Direction { get; }
         public override ITickGenerator TickGenerator { get; }
-        public override TickLabelFormat LabelFormat { get; set; }
+        public override TickLabelFormat LabelFormat { get; }
     }
 }

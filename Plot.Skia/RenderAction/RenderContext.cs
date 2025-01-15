@@ -1,4 +1,5 @@
 using SkiaSharp;
+using System.Collections.Generic;
 
 namespace Plot.Skia
 {
@@ -6,29 +7,32 @@ namespace Plot.Skia
     {
         private readonly Figure m_figure;
         private readonly SKCanvas m_canvas;
-        private readonly PixelPanel m_figurePanel;
+        private readonly Rect m_figureRect;
 
-        internal RenderContext(Figure figure, SKCanvas canvas, PixelPanel figurePanel)
+        internal RenderContext(Figure figure, SKCanvas canvas, Rect figureRect)
         {
             m_figure = figure;
             m_canvas = canvas;
-            m_figurePanel = figurePanel;
+            m_figureRect = figureRect;
         }
 
         internal Figure Figure => m_figure;
         internal SKCanvas Canvas => m_canvas;
-        internal PixelPanel FigurePanel => m_figurePanel;
-        public Layout Layout { get; private set; }
+
+        internal Rect ScaledFigureRect { get; private set; }
+        public Rect DataRect { get; private set; }
+        public Dictionary<IAxis, (float, float)> AxesInfo { get; private set; }
 
         internal void CalculateLayout()
         {
-            PixelPanel ScaledFigurePanel = new PixelPanel(
-                left: FigurePanel.Left / Figure.FigureControl.DisplayScale,
-                right: FigurePanel.Right / Figure.FigureControl.DisplayScale,
-                top: FigurePanel.Top / Figure.FigureControl.DisplayScale,
-                bottom: FigurePanel.Bottom / Figure.FigureControl.DisplayScale);
+            ScaledFigureRect = new Rect(
+                left: m_figureRect.Left / Figure.FigureControl.DisplayScale,
+                right: m_figureRect.Right / Figure.FigureControl.DisplayScale,
+                top: m_figureRect.Top / Figure.FigureControl.DisplayScale,
+                bottom: m_figureRect.Bottom / Figure.FigureControl.DisplayScale);
 
-            Layout = Figure.LayoutManager.GetLayout(ScaledFigurePanel);
+            (DataRect, AxesInfo)
+                = Figure.LayoutManager.GetLayout(ScaledFigureRect);
         }
     }
 }

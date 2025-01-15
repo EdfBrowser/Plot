@@ -6,7 +6,7 @@ namespace Plot.Skia
 {
     internal class TickSpacingCalculator
     {
-        internal static IEnumerable<double> GenerateTickPositions(PixelRange range, float axisLength, float labelWidth,
+        internal static IEnumerable<double> GenerateTickPositions(Range range, float axisLength, float labelWidth,
             int radix = 10)
         {
             double idealSpacing = GetIdealTickSpacing(range, axisLength, labelWidth, radix);
@@ -33,7 +33,7 @@ namespace Plot.Skia
             return tickPositionsMajor;
         }
 
-        private static double GetIdealTickSpacing(PixelRange range, float axisLength, float labelWidth,
+        private static double GetIdealTickSpacing(Range range, float axisLength, float labelWidth,
             int radix = 10)
         {
             int targetTickCount = (int)(axisLength / labelWidth);

@@ -3,14 +3,14 @@ using System;
 
 namespace Plot.Skia
 {
-    public readonly struct PixelPanel : IEquatable<PixelPanel>
+    public readonly struct Rect : IEquatable<Rect>
     {
         private readonly float m_left;
         private readonly float m_right;
         private readonly float m_top;
         private readonly float m_bottom;
 
-        internal PixelPanel(float left, float right, float top, float bottom)
+        internal Rect(float left, float right, float top, float bottom)
         {
             m_left = left;
             m_right = right;
@@ -19,9 +19,9 @@ namespace Plot.Skia
         }
 
 
-        internal PixelPanel(PointF location, PanelSize panelSize)
-            : this(location.X, location.X + panelSize.Width,
-                  location.Y, location.Y + panelSize.Height)
+        internal Rect(PointF location, SizeF dataRect)
+            : this(location.X, location.X + dataRect.Width,
+                  location.Y, location.Y + dataRect.Height)
         { }
 
         internal float Hoffset => Left + Right;
@@ -40,23 +40,23 @@ namespace Plot.Skia
         internal PointF BottomLeft => new PointF(m_left, m_bottom);
         internal PointF BottomRight => new PointF(m_right, m_bottom);
 
-        internal PixelPanel WithPan(float x, float y)
-            => new PixelPanel(Left + x, Right + x, Top + y, Bottom + y);
+        internal Rect WithPan(float x, float y)
+            => new Rect(Left + x, Right + x, Top + y, Bottom + y);
 
         internal SKRect ToSKRect() => new SKRect(Left, Top, Right, Bottom);
 
-        public bool Equals(PixelPanel other)
+        public bool Equals(Rect other)
             => Equals(Left, other.Left) &&
                Equals(Right, other.Right) &&
                Equals(Top, other.Top) &&
                Equals(Bottom, other.Bottom);
     }
 
-    internal static class PixelPanelExtensions
+    internal static class RectExtensions
     {
-        internal static PixelPanel ToPixelPanel(this SKRect rect)
+        internal static Rect ToRect(this SKRect rect)
         {
-            return new PixelPanel(rect.Left, rect.Right, rect.Top, rect.Bottom);
+            return new Rect(rect.Left, rect.Right, rect.Top, rect.Bottom);
         }
     }
 }

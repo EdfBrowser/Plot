@@ -1,7 +1,5 @@
 using SkiaSharp.Views.Desktop;
-using System;
 using System.ComponentModel;
-using System.Windows.Forms;
 
 namespace Plot.WinForm
 {
@@ -13,19 +11,7 @@ namespace Plot.WinForm
         {
             if (IsDesignerAlternative) return;
 
-            try
-            {
-                SetupSKControl();
-            }
-            catch (Exception)
-            {
-
-                FormsPlotDesignerAlternative altControl =
-                    new FormsPlotDesignerAlternative() { Dock = DockStyle.Fill };
-                Controls.Add(altControl);
-                return;
-            }
-
+            SetupSKControl();
 
             //HandleCreated += (s, e) => SetupSKControl();
             //HandleDestroyed += (s, e) => TearDownSKControl();

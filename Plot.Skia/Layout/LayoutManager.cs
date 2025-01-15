@@ -14,24 +14,19 @@ namespace Plot.Skia
         }
 
 
-        internal Layout GetLayout(PixelPanel figurePanel)
+        internal (Rect, Dictionary<IAxis, (float, float)>)
+            GetLayout(Rect figureRect)
         {
-            foreach (IXAxis axis in m_figure.AxisManager.XAxes)
-            {
-                axis.GenerateTicks(figurePanel.Width);
-            }
-
-            foreach (IYAxis axis in m_figure.AxisManager.YAxes)
-            {
-                axis.GenerateTicks(figurePanel.Height);
-            }
+            AxisManager axisManager = m_figure.AxisManager;
+            axisManager.GenerateTicks(figureRect.Width, figureRect.Height);
 
             Dictionary<IAxis, float> measuredAxes = Measure(m_figure.AxisManager.Axes);
 
             (float l, float r, float t, float b) =
                 CalculateEdgeTickLabel(m_figure.AxisManager.Axes);
 
-            SetAxisSpacing(m_figure.AxisManager.Axes);
+            SetAxisSpacing(m_figure.AxisManager.Axes,
+                l, r, t, b);
 
             IEnumerable<IAxis> leftAxes
                 = m_figure.AxisManager.Axes.Where(x => x.Direction == Edge.Left);
@@ -54,24 +49,24 @@ namespace Plot.Skia
 
 
             float dataRectWidth
-                = Math.Max(0, figurePanel.Width - (left + right));
+                = Math.Max(0, figureRect.Width - (left + right));
             float dataRectHeight
-                = Math.Max(0, figurePanel.Height - (bottom + top));
+                = Math.Max(0, figureRect.Height - (bottom + top));
 
-            PanelSize dataSize = new PanelSize(dataRectWidth, dataRectHeight);
+            SizeF dataSize = new SizeF(dataRectWidth, dataRectHeight);
             PointF location = new PointF(left, top);
-            PixelPanel dataPanel = new PixelPanel(location, dataSize)
-                .WithPan(figurePanel.Left, figurePanel.Top);
+            Rect dataRect = new Rect(location, dataSize)
+                .WithPan(figureRect.Left, figureRect.Top);
 
 
-            Dictionary<IAxis, (float, float)> panelDeltas
-                = ArrangeAxes(m_figure.AxisManager.Axes, dataPanel);
+            Dictionary<IAxis, (float, float)> axesInfo
+                = ArrangeAxes(m_figure.AxisManager.Axes, dataRect);
 
-            return new Layout(figurePanel, dataPanel, panelDeltas, measuredAxes);
+            return (dataRect, axesInfo);
         }
 
-        private void CalculateOffsets(IEnumerable<IAxis> axes,
-            PixelPanel dataPanel, Dictionary<IAxis, (float, float)> panelDeltas)
+        private static void CalculateOffsets(IEnumerable<IAxis> axes,
+            Rect dataRect, Dictionary<IAxis, (float, float)> axesInfo)
         {
             int axisCount = axes.Count();
             if (axisCount == 0) return;
@@ -84,35 +79,35 @@ namespace Plot.Skia
 
                 if (axis.Direction.Horizontal())
                 {
-                    availableSize = dataPanel.Width - totalSpacing;
+                    availableSize = dataRect.Width - totalSpacing;
                     plotSize = availableSize / axisCount;
                 }
                 else
                 {
-                    availableSize = dataPanel.Height - totalSpacing;
+                    availableSize = dataRect.Height - totalSpacing;
                     plotSize = availableSize / axisCount;
                 }
 
-                panelDeltas[axis] = (lastOffset, plotSize);
+                axesInfo[axis] = (lastOffset, plotSize);
                 lastOffset += plotSize + axis.AxisSpacing;
             }
         }
 
-        private Dictionary<IAxis, (float, float)> ArrangeAxes(
-            IEnumerable<IAxis> axes, PixelPanel dataPanel)
+        private static Dictionary<IAxis, (float, float)> ArrangeAxes(
+            IEnumerable<IAxis> axes, Rect dataRect)
         {
-            Dictionary<IAxis, (float, float)> panelDeltas = new Dictionary<IAxis, (float, float)>();
+            Dictionary<IAxis, (float, float)> axesInfo = new Dictionary<IAxis, (float, float)>();
 
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Left),
-                dataPanel, panelDeltas);
+                dataRect, axesInfo);
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Right),
-                dataPanel, panelDeltas);
+                dataRect, axesInfo);
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Bottom),
-                dataPanel, panelDeltas);
+                dataRect, axesInfo);
             CalculateOffsets(axes.Where(x => x.Direction == Edge.Top),
-                dataPanel, panelDeltas);
+                dataRect, axesInfo);
 
-            return panelDeltas;
+            return axesInfo;
         }
 
         private static Dictionary<IAxis, float> Measure(IEnumerable<IAxis> axes)
@@ -137,30 +132,27 @@ namespace Plot.Skia
                 Tick first = axis.TickGenerator.Ticks.First(t => t.MajorPos);
                 Tick last = axis.TickGenerator.Ticks.Last(t => t.MajorPos);
 
+                SizeF firstLabelSize = axis.TickLabelStyle.Measure(first.Label);
+                SizeF LastLabelSize = axis.TickLabelStyle.Measure(last.Label);
+
                 if (axis.Direction.Horizontal())
                 {
-                    left = Math.Max(left,
-                        axis.TickLabelStyle.Measure(first.Label).Width);
-                    right = Math.Max(right,
-                        axis.TickLabelStyle.Measure(last.Label).Width);
+                    left = Math.Max(left, firstLabelSize.Width);
+                    right = Math.Max(right, LastLabelSize.Width);
                 }
                 else
                 {
-                    bottom = Math.Max(bottom,
-                        axis.TickLabelStyle.Measure(first.Label).Height);
-                    top = Math.Max(top,
-                        axis.TickLabelStyle.Measure(last.Label).Height);
+                    bottom = Math.Max(bottom, firstLabelSize.Height);
+                    top = Math.Max(top, LastLabelSize.Height);
                 }
             }
 
             return (left, right, top, bottom);
         }
 
-        private static void SetAxisSpacing(IEnumerable<IAxis> axes)
+        private static void SetAxisSpacing(IEnumerable<IAxis> axes,
+            float l, float r, float t, float b)
         {
-            (float l, float r, float t, float b)
-                = CalculateEdgeTickLabel(axes);
-
             foreach (IAxis axis in axes)
             {
                 if (axis.Direction.Horizontal())

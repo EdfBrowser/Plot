@@ -18,13 +18,13 @@ namespace Plot.Skia
         LabelStyle TickLabelStyle { get; }
         LineStyle TickLineStyle { get; }
 
-        float GetPixel(double position, PixelPanel dataPanel);
-        double GetWorld(float pixel, PixelPanel dataPanel);
+        float GetPixel(double position, Rect dataRect);
+        double GetWorld(float pixel, Rect dataRect);
 
         void GenerateTicks(float axisLength);
         float Measure();
         void Render(RenderContext rc, float delta, float size);
 
-        PixelPanel GetPanel(PixelPanel panelSize, float delta, float size);
+        Rect GetDataRect(Rect dataRect, float delta, float size);
     }
 }

@@ -1,6 +1,5 @@
 using Plot.Skia;
 using System;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -21,23 +20,22 @@ namespace Plot.App
             m_dt = DateTime.Now;
             m_random = new Random(new Random().Next());
 
-            // TODO：和AxisLimit赋值合并优化
             figureForm1.Figure.RenderManager.SizeChangedEventHandler += delegate (object send, RenderContext rc)
             {
-                using (Graphics g = CreateGraphics())
-                {
-                    // 每1英寸=2.54厘米=g.DpiX
-                    double m_xPxPerCM = g.DpiX / 2.54;
-                    // 总共多少厘米
-                    PixelPanel dataPanel = rc.Layout.DataPanel;
-                    (float delta, float size) = rc.Layout.PanelDeltas[m_x];
-                    double m_xDataAreaTotalCM =
-                    m_x.GetPanel(dataPanel, delta, size).Width / m_xPxPerCM;
-                    double m_xTotalUnit = m_xDataAreaTotalCM / 3.0;
+                //using (Graphics g = CreateGraphics())
+                //{
+                //    // 每1英寸=2.54厘米=g.DpiX
+                //    double m_xPxPerCM = g.DpiX / 2.54;
+                //    // 总共多少厘米
+                //    Rect dataRect = rc.DataRect;
+                //    (float delta, float size) = rc.AxesInfo[m_x];
+                //    double m_xDataAreaTotalCM =
+                //    m_x.GetDataRect(dataRect, delta, size).Width / m_xPxPerCM;
+                //    double m_xTotalUnit = m_xDataAreaTotalCM / 3.0;
 
-                    axisManager.SetLimits(
-                        PixelRange.SpecifyDateTime(DateTime.Now, m_xTotalUnit), m_x);
-                }
+                //    axisManager.SetLimits(
+                //        Range.DefaultDateTime(DateTime.Now, m_xTotalUnit), m_x);
+                //}
             };
 
             m_timer = new Timer();

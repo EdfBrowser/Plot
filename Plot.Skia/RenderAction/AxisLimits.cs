@@ -12,19 +12,17 @@ namespace Plot.Skia
             {
                 if (!axis.Range.HasBeenSet)
                 {
-                    if (axis is IXAxis xAxis
-                        && xAxis.LabelFormat == TickLabelFormat.DateTime)
+                    if (axis is IXAxis
+                        && ((IXAxis)axis).LabelFormat == TickLabelFormat.DateTime)
 
                         axisManager.SetLimits(
-                            PixelRange.DefaultDateTime(DateTime.Now), axis);
+                            Range.DefaultDateTime(DateTime.Now, 10), axis);
                     else
-                        axisManager.SetLimits(PixelRange.DefaultNumeric, axis);
+                        axisManager.SetLimits(Range.DefaultNumeric, axis);
                 }
 
-                if (axis is IXAxis)
-                {
-                    ScrollMode((IXAxis)axis, rc.Figure.AxisManager);
-                }
+                if (axis is IXAxis && ((IXAxis)axis).ScrollPosition > axis.Max)
+                    ScrollMode(((IXAxis)axis), rc.Figure.AxisManager);
             }
         }
 
@@ -45,17 +43,12 @@ namespace Plot.Skia
                 case AxisScrollMode.Sweeping:
                     max = axis.ScrollPosition + axis.Width;
                     min = axis.ScrollPosition;
+                    axis.Animate = true;
                     break;
             }
 
-            if (axis.ScrollPosition > axis.Max)
-            {
-                PixelRange pixelRange = new PixelRange(min, max);
-                axisManager.SetLimits(pixelRange, axis);
-
-                if (axis.ScrollMode == AxisScrollMode.Sweeping)
-                    axis.Animate = true;
-            }
+            Range pixelRange = new Range(min, max);
+            axisManager.SetLimits(pixelRange, axis);
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Plot.Skia
     public class RenderManager
     {
         private readonly Figure m_figure;
-        private PixelPanel? m_oldFigurePanel;
+        private Rect? m_oldFigureRect;
 
         internal RenderManager(Figure figure)
         {
@@ -22,17 +22,14 @@ namespace Plot.Skia
                 new DataBackground(),
                 new RenderAxis(),
             };
-
-            ClearCanvasBeforeRendering = true;
         }
 
-        internal bool ClearCanvasBeforeRendering { get; set; }
         internal IEnumerable<IRenderAction> RenderOrders { get; }
 
-        internal void Render(SKCanvas canvas, PixelPanel pixelPanel)
+        internal void Render(SKCanvas canvas, Rect figureRect)
         {
             //canvas.Scale(m_figure.ScaleFactor);
-            RenderContext rc = new RenderContext(m_figure, canvas, pixelPanel);
+            RenderContext rc = new RenderContext(m_figure, canvas, figureRect);
 
             foreach (IRenderAction action in RenderOrders)
             {
@@ -42,10 +39,10 @@ namespace Plot.Skia
 
                 if (action is CalculateLayout)
                 {
-                    if (m_oldFigurePanel == null || !m_oldFigurePanel.Equals(pixelPanel))
+                    if (m_oldFigureRect == null || !m_oldFigureRect.Equals(figureRect))
                     {
                         SizeChangedEventHandler?.Invoke(this, rc);
-                        m_oldFigurePanel = pixelPanel;
+                        m_oldFigureRect = figureRect;
                     }
                 }
             }

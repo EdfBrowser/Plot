@@ -42,13 +42,40 @@ namespace Plot.Skia
         internal IEnumerable<IAxis> GetAxes(Edge direction)
             => Axes.Where(x => x.Direction == direction);
 
+        internal void GenerateTicks(Rect dataRect,
+            Dictionary<IAxis, (float, float)> axesInfo)
+        {
+            foreach (IAxis axis in Axes)
+            {
+                (float delta, float size) = axesInfo[axis];
+                Rect rect = axis.GetDataRect(dataRect, delta, size);
+
+                if (axis.Direction.Horizontal())
+                    GenerateTicks(rect.Width, axis);
+                else
+                    GenerateTicks(rect.Height, axis);
+            }
+        }
+
+        internal void GenerateTicks(float xAxisLength, float yAxisLength)
+        {
+            foreach (IAxis axis in Axes)
+            {
+                if (axis.Direction.Horizontal())
+                    GenerateTicks(xAxisLength, axis);
+                else
+                    GenerateTicks(yAxisLength, axis);
+            }
+        }
+
+        private void GenerateTicks(float axisLength, IAxis axis)
+            => axis.GenerateTicks(axisLength);
 
 
-
-        private void SetLimitsX(PixelRange limit, IXAxis axis)
+        private void SetLimitsX(Range limit, IXAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
-        private void SetLimitsY(PixelRange limit, IYAxis axis)
+        private void SetLimitsY(Range limit, IYAxis axis)
             => axis.Range.Set(limit.Low, limit.High);
 
 
@@ -93,7 +120,7 @@ namespace Plot.Skia
             return axis;
         }
 
-        public void SetLimits(PixelRange limit, IAxis axis)
+        public void SetLimits(Range limit, IAxis axis)
         {
             if (axis.Direction.Vertical())
                 SetLimitsY(limit, (IYAxis)axis);

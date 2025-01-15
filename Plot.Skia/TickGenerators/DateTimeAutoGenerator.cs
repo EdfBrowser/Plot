@@ -24,13 +24,13 @@ namespace Plot.Skia
         public Tick[] Ticks { get; private set; }
 
         // TODO: 重新设计
-        public void Generate(PixelRange range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
+        public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
             PixelSizeMutable tickLabelBound = new PixelSizeMutable(16, 12);
 
             while (true)
             {
-                (IList<Tick> ticks, PanelSize? largestTickLabelSize) =
+                (IList<Tick> ticks, SizeF? largestTickLabelSize) =
                     GenerateDateTimeTicks(range, direction, axisLength,
                                 tickLabelBound.ToPixelSize, tickLabelStyle);
 
@@ -56,9 +56,9 @@ namespace Plot.Skia
             }
         }
 
-        private (IList<Tick> ticks, PanelSize? labelSize)
-            GenerateDateTimeTicks(PixelRange range, Edge direction, float axisLength,
-            PanelSize tickLabelBound, LabelStyle tickLabelStyle)
+        private (IList<Tick> ticks, SizeF? labelSize)
+            GenerateDateTimeTicks(Range range, Edge direction, float axisLength,
+            SizeF tickLabelBound, LabelStyle tickLabelStyle)
         {
             float labelLength = direction.Vertical()
                 ? tickLabelBound.Height : tickLabelBound.Width;
@@ -80,7 +80,7 @@ namespace Plot.Skia
             {
                 string tickLabel = dt.ToString(niceTimeUnit.GetFormatString());
 
-                PanelSize tickLabelSize = tickLabelStyle.Measure(tickLabel);
+                SizeF tickLabelSize = tickLabelStyle.Measure(tickLabel);
 
                 if (!tickLabelBound.Contains(tickLabelSize))
                     return (null, tickLabelSize);

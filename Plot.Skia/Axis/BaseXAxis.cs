@@ -15,37 +15,37 @@ namespace Plot.Skia
         public double ScrollPosition { get; set; }
         public bool Animate { get; set; }
 
-        public abstract TickLabelFormat LabelFormat { get; set; }
+        public abstract TickLabelFormat LabelFormat { get; }
 
 
         public double Width => Range.Span;
 
 
-        public override PixelPanel GetPanel(
-            PixelPanel panelSize, float delta, float size)
-            => GetHorizontalPanel(panelSize, delta, size);
+        public override Rect GetDataRect(
+            Rect dataRect, float delta, float size)
+            => GetHorizontalRect(dataRect, delta, size);
 
-        public override float GetPixel(double position, PixelPanel dataPanel)
+        public override float GetPixel(double position, Rect dataRect)
         {
-            double pxPerUnit = dataPanel.Width / Width;
+            double pxPerUnit = dataRect.Width / Width;
             double unitsFromLeft = position - Min;
             float px = (float)(unitsFromLeft * pxPerUnit);
-            return dataPanel.Left + px;
+            return dataRect.Left + px;
         }
 
-        public override double GetWorld(float pixel, PixelPanel dataPanel)
+        public override double GetWorld(float pixel, Rect dataRect)
         {
-            double unitPerpx = Width / dataPanel.Width;
-            float pxFromLeft = pixel - dataPanel.Left;
+            double unitPerpx = Width / dataRect.Width;
+            float pxFromLeft = pixel - dataRect.Left;
             double unitsFromLeft = pxFromLeft / unitPerpx;
             return Min + unitsFromLeft;
         }
 
         public override void Render(RenderContext rc, float delta, float size)
         {
-            PixelPanel panel = GetPanel(rc.Layout.DataPanel, delta, size);
-            DrawTicks(rc.Canvas, panel);
-            DrawLines(rc.Canvas, panel);
+            Rect dataRect = GetDataRect(rc.DataRect, delta, size);
+            DrawTicks(rc.Canvas, dataRect);
+            DrawLines(rc.Canvas, dataRect);
         }
 
         public override float Measure()

@@ -21,11 +21,11 @@ namespace Plot.Skia
             FontFamily = "Consolas";
         }
 
-        internal Color Color { get; set; }
-        internal bool AntiAlias { get; set; }
-        internal float FontSize { get; set; }
-        internal string Text { get; set; }
-        internal string FontFamily { get; set; }
+        public Color Color { get; set; }
+        public bool AntiAlias { get; set; }
+        public float FontSize { get; set; }
+        public string Text { get; set; }
+        public string FontFamily { get; set; }
 
         private void Apply()
         {
@@ -66,7 +66,7 @@ namespace Plot.Skia
                 canvas.DrawText(Text, p.ToSKPoint(), textAlign, m_sKFont, m_sKPaint);
         }
 
-        internal PanelSize Measure(string text)
+        internal SizeF Measure(string text)
         {
             string[] lines = string.IsNullOrEmpty(text)
                 ? Array.Empty<string>() : text.Split('\n');
@@ -80,7 +80,7 @@ namespace Plot.Skia
 
             float width = lineWidths.Length == 0 ? 0 : lineWidths.Max();
             float height = lineHeight * lines.Length;
-            return new PanelSize(width, height);
+            return new SizeF(width, height);
         }
     }
 }

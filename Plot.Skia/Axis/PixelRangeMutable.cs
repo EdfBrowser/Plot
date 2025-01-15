@@ -14,9 +14,9 @@ namespace Plot.Skia
         internal double Span => Max - Min;
 
         internal bool HasBeenSet
-            => (!double.IsNaN(Span) && !double.IsInfinity(Span)) && Span != 0;
+            => !(double.IsNaN(Span) || double.IsInfinity(Span)) && Span != 0;
 
-        internal PixelRange ToPixelRange => new PixelRange(Min, Max);
+        internal Range ToPixelRange => new Range(Min, Max);
 
         internal static PixelRangeMutable NotSet
             => new PixelRangeMutable(double.PositiveInfinity, double.NegativeInfinity);

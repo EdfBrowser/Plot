@@ -14,14 +14,14 @@ namespace Plot.Skia
         public Tick[] Ticks { get; private set; }
         internal int MinorDivCount { get; set; }
 
-        public void Generate(PixelRange range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
+        public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
             Ticks = GenerateTicks(range, direction, axisLength, 12f, tickLabelStyle)
                  .Where(x => range.Contains(x.Position))
                  .ToArray();
         }
 
-        private IEnumerable<Tick> GenerateTicks(PixelRange range, Edge direction, float axisLength,
+        private IEnumerable<Tick> GenerateTicks(Range range, Edge direction, float axisLength,
             float labelLength, LabelStyle tickLabelStyle)
         {
             float labelWidth = Math.Max(0, labelLength);
@@ -43,7 +43,7 @@ namespace Plot.Skia
                 : GenerateFinalTicks(majorTickPositions, majorTickLabels, range);
         }
 
-        private IEnumerable<Tick> GenerateFinalTicks(double[] positions, string[] tickLabels, PixelRange range)
+        private IEnumerable<Tick> GenerateFinalTicks(double[] positions, string[] tickLabels, Range range)
         {
             IEnumerable<Tick> majorTicks = positions
                 .Select((p, i) => Tick.Major(p, tickLabels[i]));
@@ -54,7 +54,7 @@ namespace Plot.Skia
             return majorTicks.Concat(minorTicks);
         }
 
-        private IEnumerable<double> GetMinorPositions(double[] majorTicks, PixelRange range)
+        private IEnumerable<double> GetMinorPositions(double[] majorTicks, Range range)
         {
             if (majorTicks is null || majorTicks.Length < 2)
                 return Array.Empty<double>();

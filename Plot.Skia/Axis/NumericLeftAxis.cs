@@ -2,7 +2,7 @@ namespace Plot.Skia
 {
     public class NumericLeftAxis : BaseYAxis
     {
-        public NumericLeftAxis()
+        internal NumericLeftAxis()
         {
             Direction = Edge.Left;
             TickGenerator = new NumericAutoGenerator();

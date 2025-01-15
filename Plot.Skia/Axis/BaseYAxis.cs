@@ -6,31 +6,31 @@ namespace Plot.Skia
     {
         public double Height => Range.Span;
 
-        public override PixelPanel GetPanel(
-            PixelPanel panelSize, float delta, float size)
-          => GetVerticalPanel(panelSize, delta, size);
+        public override Rect GetDataRect(
+            Rect dataRect, float delta, float size)
+          => GetVerticalRect(dataRect, delta, size);
 
-        public override float GetPixel(double position, PixelPanel dataPanel)
+        public override float GetPixel(double position, Rect dataRect)
         {
-            double pxPerUnit = dataPanel.Height / Height;
+            double pxPerUnit = dataRect.Height / Height;
             double unitsFromLeft = position - Min;
             float px = (float)(unitsFromLeft * pxPerUnit);
-            return dataPanel.Bottom - px;
+            return dataRect.Bottom - px;
         }
 
-        public override double GetWorld(float pixel, PixelPanel dataPanel)
+        public override double GetWorld(float pixel, Rect dataRect)
         {
-            double unitPerpx = Height / dataPanel.Height;
-            float pxFromLeft = pixel - dataPanel.Bottom;
+            double unitPerpx = Height / dataRect.Height;
+            float pxFromLeft = pixel - dataRect.Bottom;
             double unitsFromLeft = pxFromLeft / unitPerpx;
             return Min - unitsFromLeft;
         }
 
         public override void Render(RenderContext rc, float delta, float size)
         {
-            PixelPanel panel = GetPanel(rc.Layout.DataPanel, delta, size);
-            DrawTicks(rc.Canvas, panel);
-            DrawLines(rc.Canvas, panel);
+            Rect dataRect = GetDataRect(rc.DataRect, delta, size);
+            DrawTicks(rc.Canvas, dataRect);
+            DrawLines(rc.Canvas, dataRect);
         }
 
         public override float Measure()
