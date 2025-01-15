@@ -4,7 +4,7 @@ namespace Plot.Skia
 {
     public abstract class BaseYAxis : BaseAxis, IYAxis
     {
-        public double Height => Range.Span;
+        public double Height => RangeMutable.Span;
 
         public override Rect GetDataRect(
             Rect dataRect, float delta, float size)

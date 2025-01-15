@@ -34,7 +34,7 @@ namespace Plot.App
                 //    double m_xTotalUnit = m_xDataAreaTotalCM / 3.0;
 
                 //    axisManager.SetLimits(
-                //        Range.DefaultDateTime(DateTime.Now, m_xTotalUnit), m_x);
+                //        RangeMutable.DefaultDateTime(DateTime.Now, m_xTotalUnit), m_x);
                 //}
             };
 

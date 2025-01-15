@@ -18,7 +18,7 @@ namespace Plot.Skia
         public abstract TickLabelFormat LabelFormat { get; }
 
 
-        public double Width => Range.Span;
+        public double Width => RangeMutable.Span;
 
 
         public override Rect GetDataRect(

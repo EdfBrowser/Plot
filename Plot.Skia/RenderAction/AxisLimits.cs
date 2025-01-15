@@ -10,7 +10,7 @@ namespace Plot.Skia
 
             foreach (IAxis axis in axisManager.Axes)
             {
-                if (!axis.Range.HasBeenSet)
+                if (!axis.RangeMutable.HasBeenSet)
                 {
                     if (axis is IXAxis
                         && ((IXAxis)axis).LabelFormat == TickLabelFormat.DateTime)

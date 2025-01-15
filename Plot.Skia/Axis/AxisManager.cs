@@ -73,11 +73,29 @@ namespace Plot.Skia
 
 
         private void SetLimitsX(Range limit, IXAxis axis)
-            => axis.Range.Set(limit.Low, limit.High);
+            => axis.RangeMutable.Set(limit.Low, limit.High);
 
         private void SetLimitsY(Range limit, IYAxis axis)
-            => axis.Range.Set(limit.Low, limit.High);
+            => axis.RangeMutable.Set(limit.Low, limit.High);
 
+        internal void PanMouse(
+            float pixelDeltaX, float pixelDeltaY, Rect dataRect)
+        {
+            foreach (IAxis axis in Axes)
+            {
+                if (axis.Direction.Horizontal())
+                    PanMouse(axis, pixelDeltaX, dataRect.Width);
+                else
+                    PanMouse(axis, pixelDeltaY, dataRect.Height);
+            }
+        }
+
+        private void PanMouse(IAxis axis, float delta, float axisLength)
+        {
+            double pxPerUnit = axisLength / axis.RangeMutable.Span;
+            double units = delta / pxPerUnit;
+            axis.RangeMutable.Pan(units);
+        }
 
         public void Dispose()
         {
@@ -127,6 +145,7 @@ namespace Plot.Skia
             else
                 SetLimitsX(limit, (IXAxis)axis);
         }
+
         #endregion
     }
 }

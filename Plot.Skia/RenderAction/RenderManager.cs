@@ -25,6 +25,7 @@ namespace Plot.Skia
         }
 
         internal IEnumerable<IRenderAction> RenderOrders { get; }
+        internal RenderContext LastRC { get; private set; }
 
         internal void Render(SKCanvas canvas, Rect figureRect)
         {
@@ -37,6 +38,7 @@ namespace Plot.Skia
                 action.Render(rc);
                 rc.Canvas.Restore();
 
+                // TODO: 修改替换掉
                 if (action is CalculateLayout)
                 {
                     if (m_oldFigureRect == null || !m_oldFigureRect.Equals(figureRect))
@@ -46,6 +48,8 @@ namespace Plot.Skia
                     }
                 }
             }
+
+            LastRC = rc;
         }
 
         #region PUBLIC

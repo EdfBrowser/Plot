@@ -2,12 +2,12 @@ using SkiaSharp;
 
 namespace Plot.Skia
 {
-    internal readonly struct PointF
+    public readonly struct PointF
     {
         private readonly float m_x;
         private readonly float m_y;
 
-        internal PointF(float x, float y)
+        public PointF(float x, float y)
         {
             m_x = x;
             m_y = y;

@@ -17,11 +17,12 @@ namespace Plot.WinForm
 
         protected FigureFormBase()
         {
-            bool isDesignMode = DesignMode || LicenseManager.UsageMode == LicenseUsageMode.Designtime; ;
+            bool isDesignMode = DesignMode || LicenseManager.UsageMode == LicenseUsageMode.Designtime;
 
             try
             {
                 Figure = new Figure() { FigureControl = this };
+                UserInputProcessor = new UserInputProcessor(this);
                 DisplayScale = DetectDisplayScale();
             }
             catch (Exception)
@@ -53,8 +54,13 @@ namespace Plot.WinForm
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public Figure Figure { get; protected set; }
-        public float DisplayScale { get; protected set; }
-        public bool IsDesignerAlternative { get; }
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Browsable(false)]
+        protected UserInputProcessor UserInputProcessor { get; }
+
+        public float DisplayScale { get; }
+        protected bool IsDesignerAlternative { get; }
+
 
         public void Reset()
         {
@@ -80,13 +86,89 @@ namespace Plot.WinForm
                 return g.DpiX / m_defaultDpi;
         }
 
-
-        protected override void OnMouseDown(MouseEventArgs e)
+        protected void SKControl_KeyUp(object sender, KeyEventArgs e)
         {
-            base.OnMouseDown(e);
+
         }
+
+        protected void SKControl_KeyDown(object sender, KeyEventArgs e)
+        {
+        }
+
+        protected void SKControl_MouseWheel(object sender, MouseEventArgs e)
+            => UserInputProcessor.ProcessMouseWheel(e);
+
+        protected void SKControl_MouseMove(object sender, MouseEventArgs e)
+            => UserInputProcessor.ProcessMouseMove(e);
+
+        protected void SKControl_MouseUp(object sender, MouseEventArgs e)
+            => UserInputProcessor.ProcessMouseUp(e);
+
+        protected void SKControl_MouseDown(object sender, MouseEventArgs e)
+            => UserInputProcessor.ProcessMouseDown(e);
 
         private static Color ConvertColor(System.Drawing.Color color)
             => new Color(color.R, color.G, color.B, color.A);
+    }
+
+    public static class FigureFormExtensions
+    {
+        internal static void ProcessMouseDown(
+            this UserInputProcessor processor, MouseEventArgs e)
+        {
+            PointF p = new PointF(e.X, e.Y);
+
+            IUserAction action = null;
+            switch (e.Button)
+            {
+                case MouseButtons.Left:
+                    action = new LeftMouseDown(p);
+                    break;
+                case MouseButtons.Right:
+                    action = new RightMouseDown(p);
+                    break;
+            }
+
+            processor.Process(action);
+        }
+
+        internal static void ProcessMouseUp(
+            this UserInputProcessor processor, MouseEventArgs e)
+        {
+            PointF p = new PointF(e.X, e.Y);
+
+            IUserAction action = null;
+            switch (e.Button)
+            {
+                case MouseButtons.Left:
+                    action = new LeftMouseUp(p);
+                    break;
+                case MouseButtons.Right:
+                    action = new RightMouseUp(p);
+                    break;
+            }
+
+            processor.Process(action);
+        }
+
+        internal static void ProcessMouseMove(
+            this UserInputProcessor processor, MouseEventArgs e)
+        {
+            PointF p = new PointF(e.X, e.Y);
+            IUserAction action = new MouseMove(p);
+            processor.Process(action);
+        }
+
+        internal static void ProcessMouseWheel(
+            this UserInputProcessor processor, MouseEventArgs e)
+        {
+            PointF p = new PointF(e.X, e.Y);
+
+            IUserAction action = e.Delta > 0
+                ? (IUserAction)new MouseWheelUp(p)
+                : (IUserAction)new MouseWheelDown(p);
+
+            processor.Process(action);
+        }
     }
 }

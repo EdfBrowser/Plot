@@ -7,7 +7,7 @@ namespace Plot.Skia
         protected BaseAxis()
         {
             AxisSpacing = 10f;
-            Range = PixelRangeMutable.NotSet;
+            RangeMutable = PixelRangeMutable.NotSet;
 
             Label = new LabelStyle();
             TickLabelStyle = new LabelStyle();
@@ -26,17 +26,17 @@ namespace Plot.Skia
             Rect dataRect, float delta, float size);
 
         public float AxisSpacing { get; set; }
-        public PixelRangeMutable Range { get; }
+        public PixelRangeMutable RangeMutable { get; }
 
         public double Min
         {
-            get => Range.Min;
-            private set => Range.Min = value;
+            get => RangeMutable.Min;
+            private set => RangeMutable.Min = value;
         }
         public double Max
         {
-            get => Range.Max;
-            private set => Range.Max = value;
+            get => RangeMutable.Max;
+            private set => RangeMutable.Max = value;
         }
 
         public LabelStyle Label { get; }
@@ -48,7 +48,7 @@ namespace Plot.Skia
 
 
         public void GenerateTicks(float axisLength) => TickGenerator.Generate(
-            Range.ToPixelRange, Direction, axisLength, TickLabelStyle);
+            RangeMutable.ToRange, Direction, axisLength, TickLabelStyle);
 
 
 

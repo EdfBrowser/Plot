@@ -1,3 +1,5 @@
+using System;
+
 namespace Plot.Skia
 {
     public class PixelRangeMutable
@@ -16,7 +18,7 @@ namespace Plot.Skia
         internal bool HasBeenSet
             => !(double.IsNaN(Span) || double.IsInfinity(Span)) && Span != 0;
 
-        internal Range ToPixelRange => new Range(Min, Max);
+        internal Range ToRange => new Range(Min, Max);
 
         internal static PixelRangeMutable NotSet
             => new PixelRangeMutable(double.PositiveInfinity, double.NegativeInfinity);
@@ -25,6 +27,12 @@ namespace Plot.Skia
         {
             Min = min;
             Max = max;
+        }
+
+        internal void Pan(double units)
+        {
+            Min += units;
+            Max += units;
         }
     }
 }
