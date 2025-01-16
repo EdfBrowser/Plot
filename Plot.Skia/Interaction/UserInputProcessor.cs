@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace Plot.Skia
@@ -16,7 +15,9 @@ namespace Plot.Skia
 
             m_userActionResponses = new List<IUserActionResponse>()
             {
-                new MouseDragPan(StandardMouseButtons.m_left)
+                new MouseDragPan(StandardMouseButtons.m_left),
+                new MouseDragZoom(StandardMouseButtons.m_right),
+                new MouseWheelZoom()
             };
         }
 
@@ -27,6 +28,20 @@ namespace Plot.Skia
                 = ExecuteUserInput(m_figureControl.Figure, userInput);
             if (refreshNeeded)
                 m_figureControl.Refresh();
+        }
+
+        public void ProcessLostFocus()
+        {
+            ResetState(m_figureControl.Figure);
+            m_figureControl.Refresh();
+        }
+
+        private void ResetState(Figure figure)
+        {
+            foreach (IUserActionResponse response in m_userActionResponses)
+            {
+                response.Reset(figure);
+            }
         }
 
         private bool ExecuteUserInput(Figure figure, IUserAction userInput)

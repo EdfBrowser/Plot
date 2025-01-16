@@ -68,33 +68,77 @@ namespace Plot.Skia
             }
         }
 
-        private void GenerateTicks(float axisLength, IAxis axis)
+        internal void GenerateTicks(float axisLength, IAxis axis)
             => axis.GenerateTicks(axisLength);
 
 
-        private void SetLimitsX(Range limit, IXAxis axis)
+        internal void SetLimitsX(Range limit, IXAxis axis)
             => axis.RangeMutable.Set(limit.Low, limit.High);
 
-        private void SetLimitsY(Range limit, IYAxis axis)
+        internal void SetLimitsY(Range limit, IYAxis axis)
             => axis.RangeMutable.Set(limit.Low, limit.High);
 
-        internal void PanMouse(
-            float pixelDeltaX, float pixelDeltaY, Rect dataRect)
-        {
-            foreach (IAxis axis in Axes)
-            {
-                if (axis.Direction.Horizontal())
-                    PanMouse(axis, pixelDeltaX, dataRect.Width);
-                else
-                    PanMouse(axis, pixelDeltaY, dataRect.Height);
-            }
-        }
-
-        private void PanMouse(IAxis axis, float delta, float axisLength)
+        internal void PanMouse(IAxis axis, float delta, float axisLength)
         {
             double pxPerUnit = axisLength / axis.RangeMutable.Span;
             double units = delta / pxPerUnit;
             axis.RangeMutable.Pan(units);
+        }
+
+        internal void ZoomMouse(IAxis axis, float delta, float axisLength)
+        {
+            double frac = delta / (Math.Abs(delta) + axisLength);
+            double pow = Math.Pow(10, frac);
+            axis.RangeMutable.Zoom(pow, axis.RangeMutable.Center);
+        }
+
+        internal void ZoomMouse(
+            IAxis axis, double frac, float px, Rect dataRect)
+        {
+            double unit = axis.GetWorld(px, dataRect);
+            axis.RangeMutable.Zoom(frac, unit);
+        }
+
+        internal IAxis HitAxis(Rect dataRect,
+            Dictionary<IAxis, (float, float)> axesInfo, PointF p)
+        {
+            IAxis closestAxis = null;
+            float minDistance = float.MaxValue;
+
+            foreach (IAxis axis in Axes)
+            {
+                (float delta, float size) = axesInfo[axis];
+                Rect rect = axis.GetDataRect(dataRect, delta, size);
+
+                if (rect.Contains(p))
+                {
+                    float distance = 0;
+
+                    switch (axis.Direction)
+                    {
+                        case Edge.Bottom:
+                            distance = p.Y - rect.Bottom;
+                            break;
+                        case Edge.Top:
+                            distance = rect.Top - p.Y;
+                            break;
+                        case Edge.Left:
+                            distance = rect.Left - p.X;
+                            break;
+                        case Edge.Right:
+                            distance = p.X - rect.Right;
+                            break;
+                    }
+
+                    if (Math.Abs(distance) < minDistance)
+                    {
+                        minDistance = Math.Abs(distance);
+                        closestAxis = axis;
+                    }
+                }
+            }
+
+            return closestAxis;
         }
 
         public void Dispose()

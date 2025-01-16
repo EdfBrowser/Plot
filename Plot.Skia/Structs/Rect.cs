@@ -45,6 +45,11 @@ namespace Plot.Skia
 
         internal SKRect ToSKRect() => new SKRect(Left, Top, Right, Bottom);
 
+        internal bool Contains(PointF p) => Contains(p.X, p.Y);
+
+        internal bool Contains(float x, float y)
+            => (Left <= x && x <= Right) && (Top <= y && y <= Bottom);
+
         public bool Equals(Rect other)
             => Equals(Left, other.Left) &&
                Equals(Right, other.Right) &&

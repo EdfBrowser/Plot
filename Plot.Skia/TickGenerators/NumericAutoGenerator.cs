@@ -17,7 +17,6 @@ namespace Plot.Skia
         public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
             Ticks = GenerateTicks(range, direction, axisLength, 12f, tickLabelStyle)
-                 .Where(x => range.Contains(x.Position))
                  .ToArray();
         }
 
@@ -27,7 +26,7 @@ namespace Plot.Skia
             float labelWidth = Math.Max(0, labelLength);
 
             double[] majorTickPositions = TickSpacingCalculator
-                .GenerateTickPositions(range, axisLength, labelWidth)
+                .GenerateNumericTickPositions(range, axisLength, labelWidth)
                 .ToArray();
             string[] majorTickLabels = majorTickPositions
                 .Select(GetNumericLabel)
@@ -89,7 +88,7 @@ namespace Plot.Skia
                 return value.ToString("N0");
 
             // otherwise the number is probably small or very precise to use the general format (with slight rounding)
-            return Math.Round(value, 3).ToString("G");
+            return Math.Round(value, 10).ToString("G");
         }
 
         private (string largestText, float actualMaxLength)

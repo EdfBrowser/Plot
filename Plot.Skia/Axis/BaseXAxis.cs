@@ -4,21 +4,58 @@ namespace Plot.Skia
 {
     public abstract class BaseXAxis : BaseAxis, IXAxis
     {
+        private double m_scrollPosition;
         protected BaseXAxis()
         {
+            m_scrollPosition = 0;
             ScrollMode = AxisScrollMode.Scrolling;
             ScrollPosition = 0f;
             Animate = false;
         }
 
         public AxisScrollMode ScrollMode { get; set; }
-        public double ScrollPosition { get; set; }
+        public double ScrollPosition
+        {
+            get => m_scrollPosition;
+            set
+            {
+                m_scrollPosition = value;
+                if (value > Max)
+                    TriggerScrollMode();
+            }
+        }
+
         public bool Animate { get; set; }
 
         public abstract TickLabelFormat LabelFormat { get; }
 
 
         public double Width => RangeMutable.Span;
+
+        // TODO: 用户可以自定义（事件或者策略模式）
+        private void TriggerScrollMode()
+        {
+            double min = 0, max = 0;
+
+            switch (ScrollMode)
+            {
+                case AxisScrollMode.Stepping:
+                    max = ScrollPosition + Width * 0.15;
+                    min = max - Width;
+                    break;
+                case AxisScrollMode.Scrolling:
+                    max = ScrollPosition;
+                    min = max - Width;
+                    break;
+                case AxisScrollMode.Sweeping:
+                    max = ScrollPosition + Width;
+                    min = ScrollPosition;
+                    Animate = true;
+                    break;
+            }
+
+            RangeMutable.Set(min, max);
+        }
 
 
         public override Rect GetDataRect(
@@ -37,7 +74,7 @@ namespace Plot.Skia
         {
             double unitPerpx = Width / dataRect.Width;
             float pxFromLeft = pixel - dataRect.Left;
-            double unitsFromLeft = pxFromLeft / unitPerpx;
+            double unitsFromLeft = pxFromLeft * unitPerpx;
             return Min + unitsFromLeft;
         }
 

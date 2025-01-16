@@ -13,8 +13,13 @@ namespace Plot.Skia
             m_y = y;
         }
 
+
         internal float X => m_x;
         internal float Y => m_y;
+
+        internal static PointF NoSet
+            => new PointF(float.PositiveInfinity, float.NegativeInfinity);
+
 
         internal SKPoint ToSKPoint() => new SKPoint(X, Y);
 

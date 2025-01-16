@@ -1,5 +1,6 @@
 using Plot.Skia;
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -34,7 +35,7 @@ namespace Plot.App
                 //    double m_xTotalUnit = m_xDataAreaTotalCM / 3.0;
 
                 //    axisManager.SetLimits(
-                //        RangeMutable.DefaultDateTime(DateTime.Now, m_xTotalUnit), m_x);
+                //        Range.DefaultDateTime(DateTime.Now, m_xTotalUnit), m_x);
                 //}
             };
 
@@ -44,7 +45,7 @@ namespace Plot.App
 
             axisManager.Remove(Edge.Bottom);
             m_x = axisManager.AddDateTimeBottomAxis();
-            m_x.ScrollMode = AxisScrollMode.Sweeping;
+            m_x.ScrollMode = AxisScrollMode.Scrolling;
 
             m_timer.Start();
             //axisManager.AddNumericLeftAxis();

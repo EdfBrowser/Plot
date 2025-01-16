@@ -7,7 +7,7 @@ namespace Plot.Skia
         protected BaseAxis()
         {
             AxisSpacing = 10f;
-            RangeMutable = PixelRangeMutable.NotSet;
+            RangeMutable = RangeMutable.NotSet;
 
             Label = new LabelStyle();
             TickLabelStyle = new LabelStyle();
@@ -26,7 +26,7 @@ namespace Plot.Skia
             Rect dataRect, float delta, float size);
 
         public float AxisSpacing { get; set; }
-        public PixelRangeMutable RangeMutable { get; }
+        public RangeMutable RangeMutable { get; }
 
         public double Min
         {
@@ -124,7 +124,7 @@ namespace Plot.Skia
             foreach (var tick in TickGenerator.Ticks)
             {
                 if (axis.Animate && tick.Position > axis.ScrollPosition)
-                    break;
+                    continue;
 
                 float tickLength = tick.MajorPos
                     ? MajorTickStyle.Length : MinorTickStyle.Length;

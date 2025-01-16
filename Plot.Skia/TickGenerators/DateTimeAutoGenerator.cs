@@ -6,107 +6,87 @@ namespace Plot.Skia
 {
     internal class DateTimeAutoGenerator : ITickGenerator
     {
-        private readonly IReadOnlyList<ITimeUnit> m_theseTimeUnits;
-
-        internal DateTimeAutoGenerator()
-        {
-            m_theseTimeUnits = new List<ITimeUnit>()
-            {
-               new SecondTimeUnit(),
-               new MinuteTimeUnit(),
-               new HourTimeUnit(),
-               new DayTimeUnit(),
-               new MonthTimeUnit(),
-               new YearTimeUnit(),
-            };
-        }
-
         public Tick[] Ticks { get; private set; }
 
-        // TODO: 重新设计
         public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
-            PixelSizeMutable tickLabelBound = new PixelSizeMutable(16, 12);
-
-            while (true)
-            {
-                (IList<Tick> ticks, SizeF? largestTickLabelSize) =
-                    GenerateDateTimeTicks(range, direction, axisLength,
-                                tickLabelBound.ToPixelSize, tickLabelStyle);
-
-                if (ticks != null)
-                {
-                    Ticks = ticks.ToArray();
-                    return;
-                }
-
-                if (largestTickLabelSize.HasValue)
-                {
-                    float largestW =
-                        Math.Max(tickLabelBound.Width, largestTickLabelSize.Value.Width);
-                    float largestH =
-                        Math.Max(tickLabelBound.Height, largestTickLabelSize.Value.Height);
-
-                    tickLabelBound.Set(largestW, largestH);
-                    continue;
-                }
-
-                throw new InvalidOperationException(
-                    $"{nameof(ticks)} and {nameof(largestTickLabelSize)} are both null");
-            }
+            Ticks = GenerateTicks(range, direction, axisLength, 12f, tickLabelStyle)
+                 .ToArray();
         }
 
-        private (IList<Tick> ticks, SizeF? labelSize)
-            GenerateDateTimeTicks(Range range, Edge direction, float axisLength,
-            SizeF tickLabelBound, LabelStyle tickLabelStyle)
+        private IEnumerable<Tick> GenerateTicks(Range range, Edge direction,
+            float axisLength, float labelLength, LabelStyle tickLabelStyle)
         {
-            float labelLength = direction.Vertical()
-                ? tickLabelBound.Height : tickLabelBound.Width;
-            int targetTickCount = (int)(axisLength / labelLength);
+            float labelWidth = Math.Max(0, labelLength);
 
-            TimeSpan span = TimeSpan.FromDays(range.Span);
+            var res = TickSpacingCalculator.GenerateDateTimeTickPositions(range, axisLength, labelWidth);
 
-            (ITimeUnit niceTimeUnit, int niceIncrement)
-                = GetAppropriateTimeUnit(span, targetTickCount);
+            ITimeUnit timeUnit = res.Item1;
+            DateTime[] tickPositions = res.Item2.ToArray();
 
-            double min = Math.Max(range.Low, DateTime.MinValue.ToOADate());
-            double max = Math.Min(range.High, DateTime.MaxValue.ToOADate());
+            string[] tickLabels = tickPositions
+               .Select(x => GetDateTimeLabel(x, timeUnit))
+               .ToArray();
 
-            DateTime minDT = DateTime.FromOADate(min);
-            DateTime maxDt = DateTime.FromOADate(max);
 
-            IList<Tick> ticks = new List<Tick>();
-            for (DateTime dt = minDT; dt <= maxDt; dt = niceTimeUnit.Next(dt, niceIncrement))
-            {
-                string tickLabel = dt.ToString(niceTimeUnit.GetFormatString());
+            (string largestText, float actualMaxLength) = direction.Vertical()
+                ? MeasureHighestString(tickLabels, tickLabelStyle)
+                : MeasureWidestString(tickLabels, tickLabelStyle);
 
-                SizeF tickLabelSize = tickLabelStyle.Measure(tickLabel);
-
-                if (!tickLabelBound.Contains(tickLabelSize))
-                    return (null, tickLabelSize);
-
-                double tickPosition = dt.ToOADate();
-                ticks.Add(Tick.Major(tickPosition, tickLabel));
-            }
-
-            return (ticks, null);
+            return actualMaxLength > labelLength
+                ? GenerateTicks(range, direction, axisLength, actualMaxLength, tickLabelStyle)
+                : GenerateFinalTicks(tickPositions, tickLabels, range);
         }
 
-        private (ITimeUnit timeUnit, int increment)
-            GetAppropriateTimeUnit(TimeSpan timeSpan, int targetTickCount = 10)
+        private IEnumerable<Tick> GenerateFinalTicks(DateTime[] positions, string[] tickLabels, Range range)
         {
-            foreach (ITimeUnit timeUnit in m_theseTimeUnits)
+            IEnumerable<Tick> majorTicks = positions
+                .Select((p, i) => Tick.Major(p.ToOADate(), tickLabels[i]));
+
+            return majorTicks;
+        }
+
+        private string GetDateTimeLabel(DateTime dt, ITimeUnit timeUnit)
+        {
+            return dt.ToString(timeUnit.GetFormatString());
+        }
+
+        private (string largestText, float actualMaxLength)
+          MeasureHighestString(string[] tickLabels, LabelStyle labelStyle)
+        {
+            float maxHeight = 0;
+            string maxText = string.Empty;
+
+            for (int i = 0; i < tickLabels.Length; i++)
             {
-                long totalCount = timeSpan.Ticks / timeUnit.MinSize.Ticks;
-                foreach (int increment in timeUnit.Divisors)
+                float size = labelStyle.Measure(tickLabels[i]).Height;
+                if (size > maxHeight)
                 {
-                    long estimatedTickCount = totalCount / increment;
-                    if (estimatedTickCount < targetTickCount)
-                        return (timeUnit, increment);
+                    maxHeight = size;
+                    maxText = tickLabels[i];
                 }
             }
 
-            return (m_theseTimeUnits.Last(), m_theseTimeUnits.Last().Divisors[0]);
+            return (maxText, maxHeight);
+        }
+
+        private (string largestText, float actualMaxLength)
+            MeasureWidestString(string[] tickLabels, LabelStyle labelStyle)
+        {
+            float maxWidth = 0;
+            string maxText = string.Empty;
+
+            for (int i = 0; i < tickLabels.Length; i++)
+            {
+                float size = labelStyle.Measure(tickLabels[i]).Width;
+                if (size > maxWidth)
+                {
+                    maxWidth = size;
+                    maxText = tickLabels[i];
+                }
+            }
+
+            return (maxText, maxWidth);
         }
     }
 }

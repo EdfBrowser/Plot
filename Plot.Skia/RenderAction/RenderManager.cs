@@ -1,6 +1,7 @@
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Plot.Skia
 {
@@ -29,7 +30,6 @@ namespace Plot.Skia
 
         internal void Render(SKCanvas canvas, Rect figureRect)
         {
-            //canvas.Scale(m_figure.ScaleFactor);
             RenderContext rc = new RenderContext(m_figure, canvas, figureRect);
 
             foreach (IRenderAction action in RenderOrders)
@@ -37,19 +37,16 @@ namespace Plot.Skia
                 rc.Canvas.Save();
                 action.Render(rc);
                 rc.Canvas.Restore();
-
-                // TODO: 修改替换掉
-                if (action is CalculateLayout)
-                {
-                    if (m_oldFigureRect == null || !m_oldFigureRect.Equals(figureRect))
-                    {
-                        SizeChangedEventHandler?.Invoke(this, rc);
-                        m_oldFigureRect = figureRect;
-                    }
-                }
             }
 
             LastRC = rc;
+
+            if (m_oldFigureRect == null
+                || !m_oldFigureRect.Equals(figureRect))
+            {
+                SizeChangedEventHandler?.Invoke(this, rc);
+                m_oldFigureRect = figureRect;
+            }
         }
 
         #region PUBLIC

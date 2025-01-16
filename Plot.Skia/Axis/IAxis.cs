@@ -5,7 +5,7 @@ namespace Plot.Skia
     public interface IAxis : IDisposable
     {
         float AxisSpacing { get; set; }
-        PixelRangeMutable RangeMutable { get; }
+        RangeMutable RangeMutable { get; }
         ITickGenerator TickGenerator { get; }
         Edge Direction { get; }
 

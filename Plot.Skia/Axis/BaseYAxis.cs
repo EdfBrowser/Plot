@@ -22,7 +22,7 @@ namespace Plot.Skia
         {
             double unitPerpx = Height / dataRect.Height;
             float pxFromLeft = pixel - dataRect.Bottom;
-            double unitsFromLeft = pxFromLeft / unitPerpx;
+            double unitsFromLeft = pxFromLeft * unitPerpx;
             return Min - unitsFromLeft;
         }
 

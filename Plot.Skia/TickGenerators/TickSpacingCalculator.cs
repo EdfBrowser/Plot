@@ -4,9 +4,19 @@ using System.Linq;
 
 namespace Plot.Skia
 {
-    internal class TickSpacingCalculator
+    internal static class TickSpacingCalculator
     {
-        internal static IEnumerable<double> GenerateTickPositions(Range range, float axisLength, float labelWidth,
+        private static readonly IReadOnlyList<ITimeUnit> m_theseTimeUnits
+           = new List<ITimeUnit>() {
+               new SecondTimeUnit(),
+               new MinuteTimeUnit(),
+               new HourTimeUnit(),
+               new DayTimeUnit(),
+               new MonthTimeUnit(),
+               new YearTimeUnit(),
+           };
+
+        internal static IEnumerable<double> GenerateNumericTickPositions(Range range, float axisLength, float labelWidth,
             int radix = 10)
         {
             double idealSpacing = GetIdealTickSpacing(range, axisLength, labelWidth, radix);
@@ -31,6 +41,31 @@ namespace Plot.Skia
             }
 
             return tickPositionsMajor;
+        }
+
+        internal static (ITimeUnit, IEnumerable<DateTime>)
+            GenerateDateTimeTickPositions(Range range, float axisLength, float labelWidth)
+        {
+            int targetTickCount = (int)(axisLength / labelWidth);
+
+            TimeSpan ts = TimeSpan.FromDays(range.Span);
+            (ITimeUnit niceTimeUnit, int niceIncrement)
+                = GetAppropriateTimeUnit(ts, targetTickCount);
+
+
+            double min = Math.Max(range.Low, DateTime.MinValue.ToOADate());
+            double max = Math.Min(range.High, DateTime.MaxValue.ToOADate());
+
+            DateTime minDT = DateTime.FromOADate(min);
+            DateTime maxDT = DateTime.FromOADate(max);
+
+            int tickCount = niceTimeUnit.GetTickCount(minDT, maxDT, niceIncrement);
+
+            IEnumerable<DateTime> tickPositions = Enumerable.Range(0, tickCount)
+                .Select(x => niceTimeUnit.GetTick(minDT, x, niceIncrement))
+                .Where(x => range.Contains(x.ToOADate()));
+
+            return (niceTimeUnit, tickPositions);
         }
 
         private static double GetIdealTickSpacing(Range range, float axisLength, float labelWidth,
@@ -78,6 +113,26 @@ namespace Plot.Skia
             }
 
             return tickSpacings[0];
+        }
+
+
+        private static (ITimeUnit, int) GetAppropriateTimeUnit(
+            TimeSpan ts, int targetTickCount)
+        {
+            long totalTicks = ts.Ticks;
+            foreach (ITimeUnit timeUnit in m_theseTimeUnits)
+            {
+                long unitSizeTicks = timeUnit.MinSize.Ticks;
+                foreach (int increment in timeUnit.Divisors)
+                {
+                    long tickCount = totalTicks / (unitSizeTicks * increment);
+                    if (tickCount <= targetTickCount)
+                        return (timeUnit, increment);
+                }
+            }
+
+            ITimeUnit lastUnit = m_theseTimeUnits.Last();
+            return (lastUnit, lastUnit.Divisors.Last());
         }
     }
 }

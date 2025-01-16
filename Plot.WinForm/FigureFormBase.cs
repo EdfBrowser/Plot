@@ -107,6 +107,9 @@ namespace Plot.WinForm
         protected void SKControl_MouseDown(object sender, MouseEventArgs e)
             => UserInputProcessor.ProcessMouseDown(e);
 
+        protected void SKControl_LostFocus(object sender, EventArgs e)
+            => UserInputProcessor.ProcessLostFocus();
+
         private static Color ConvertColor(System.Drawing.Color color)
             => new Color(color.R, color.G, color.B, color.A);
     }
@@ -170,5 +173,8 @@ namespace Plot.WinForm
 
             processor.Process(action);
         }
+
+        internal static void ProcessLostFocus(this UserInputProcessor processor)
+            => processor.ProcessLostFocus();
     }
 }

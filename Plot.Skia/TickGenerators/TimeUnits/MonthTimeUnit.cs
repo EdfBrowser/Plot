@@ -12,12 +12,16 @@ namespace Plot.Skia
 
         public TimeSpan MinSize => TimeSpan.FromDays(28);
 
-        public string GetFormatString() => $"M";
+        public string GetFormatString() => $"d";
 
         public DateTime Snap(DateTime dateTime)
             => new DateTime(dateTime.Year, dateTime.Month, 1, 0, 0, 0);
 
         public DateTime Next(DateTime dateTime, int increment = 1)
             => dateTime.AddMonths(increment);
+        public int GetTickCount(DateTime minDT, DateTime maxDT, int inc)
+            => (int)((maxDT - minDT).TotalDays / inc) + 1;
+        public DateTime GetTick(DateTime minDT, int index, int inc)
+            => Next(minDT, inc * index);
     }
 }

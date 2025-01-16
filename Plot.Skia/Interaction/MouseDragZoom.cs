@@ -3,11 +3,11 @@ using System;
 
 namespace Plot.Skia
 {
-    internal class MouseDragPan : IUserActionResponse
+    internal class MouseDragZoom : IUserActionResponse
     {
         private readonly string m_buttonName;
 
-        internal MouseDragPan(string buttonName)
+        internal MouseDragZoom(string buttonName)
         {
             m_buttonName = buttonName;
         }
@@ -43,12 +43,6 @@ namespace Plot.Skia
             if (userInput is IMouseAction mouseAction
               && RememberedLimits != null)
             {
-                double dX = Math.Abs(mouseAction.Point.X - MouseDownPoint.X);
-                double dY = Math.Abs(mouseAction.Point.Y - MouseDownPoint.Y);
-                double maxDragDistance = Math.Max(dX, dY);
-                if (maxDragDistance < 5)
-                    return false;
-
                 RememberedLimits.Recall();
 
                 SetRules(figure, MouseDownPoint, mouseAction.Point);
@@ -61,15 +55,14 @@ namespace Plot.Skia
 
         private void SetRules(Figure figure, PointF down, PointF now)
         {
-            // TODO: 是否添加键位设置
-            DragPan(figure, down, now);
+            DragZoom(figure, down, now);
         }
 
-        private void DragPan(Figure figure, PointF down, PointF now)
+        private void DragZoom(Figure figure, PointF down, PointF now)
         {
             IFigureControl control = figure.FigureControl ?? throw new NullReferenceException();
 
-            float deltaX = -(now.X - down.X);
+            float deltaX = now.X - down.X;
             float deltaY = now.Y - down.Y;
 
             float scaledDeltaX = deltaX / control.DisplayScale;
@@ -84,7 +77,7 @@ namespace Plot.Skia
                      ? scaledDeltaX : scaledDeltaY;
                 float axisLength = axisUnderMouse.Direction.Horizontal()
                     ? dataRect.Width : dataRect.Height;
-                figure.AxisManager.PanMouse(axisUnderMouse, scaledDelta, axisLength);
+                figure.AxisManager.ZoomMouse(axisUnderMouse, scaledDelta, axisLength);
             }
         }
 
