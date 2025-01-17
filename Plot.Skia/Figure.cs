@@ -9,6 +9,7 @@ namespace Plot.Skia
         private readonly RenderManager m_renderManager;
         private readonly LayoutManager m_layoutManager;
         private readonly BackgroundManager m_backgroundManager;
+        private readonly SeriesManager m_seriesManager;
 
         public Figure()
         {
@@ -16,12 +17,14 @@ namespace Plot.Skia
             m_renderManager = new RenderManager(this);
             m_layoutManager = new LayoutManager(this);
             m_backgroundManager = new BackgroundManager(this);
+            m_seriesManager = new SeriesManager(this);
         }
 
         public RenderManager RenderManager => m_renderManager;
         public LayoutManager LayoutManager => m_layoutManager;
         public AxisManager AxisManager => m_axisManager;
         public BackgroundManager BackgroundManager => m_backgroundManager;
+        public SeriesManager SeriesManager => m_seriesManager;
 
         public IFigureControl FigureControl { get; set; }
 
@@ -29,6 +32,7 @@ namespace Plot.Skia
         {
             AxisManager.Dispose();
             BackgroundManager.Dispose();
+            SeriesManager.Dispose();
         }
 
         public void Render(SKSurface s)

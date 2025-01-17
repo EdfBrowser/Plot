@@ -78,9 +78,9 @@ namespace Plot.Skia
             return Min + unitsFromLeft;
         }
 
-        public override void Render(RenderContext rc, float delta, float size)
+        public override void Render(RenderContext rc)
         {
-            Rect dataRect = GetDataRect(rc.DataRect, delta, size);
+            Rect dataRect = rc.GetDataRect(this);
             DrawTicks(rc.Canvas, dataRect);
             DrawLines(rc.Canvas, dataRect);
         }

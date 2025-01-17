@@ -44,11 +44,10 @@ namespace Plot.Skia
         {
             IFigureControl control = figure.FigureControl ?? throw new NullReferenceException();
 
-            Rect dataRect = figure.RenderManager.LastRC.DataRect;
-            IAxis axisUnderMouse = figure.AxisManager.HitAxis(dataRect,
-                figure.RenderManager.LastRC.AxesInfo, down);
+            IAxis axisUnderMouse = figure.AxisManager.HitAxis(down);
             if (axisUnderMouse != null)
             {
+                Rect dataRect = figure.RenderManager.LastRC.GetDataRect(axisUnderMouse);
                 double frac = axisUnderMouse.Direction.Horizontal()
                      ? xFrac : yFrac;
                 float px = axisUnderMouse.Direction.Horizontal()

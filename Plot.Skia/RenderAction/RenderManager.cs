@@ -1,7 +1,6 @@
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Plot.Skia
 {
@@ -16,11 +15,12 @@ namespace Plot.Skia
             RenderOrders = new List<IRenderAction>()
             {
                 new ClearCanvas(),
-                new AxisLimits(),
+                new ScaleAxis(),
                 new CalculateLayout(),
                 new FigureBackground(),
-                new GenerateTicks(),
+                new GenerateTick(),
                 new DataBackground(),
+                new RenderSeries(),
                 new RenderAxis(),
             };
         }

@@ -20,7 +20,7 @@ namespace Plot.Skia
         public abstract ITickGenerator TickGenerator { get; }
         public abstract float GetPixel(double position, Rect dataRect);
         public abstract double GetWorld(float pixel, Rect dataRect);
-        public abstract void Render(RenderContext rc, float delta, float size);
+        public abstract void Render(RenderContext rc);
         public abstract float Measure();
         public abstract Rect GetDataRect(
             Rect dataRect, float delta, float size);
@@ -30,13 +30,13 @@ namespace Plot.Skia
 
         public double Min
         {
-            get => RangeMutable.Min;
-            private set => RangeMutable.Min = value;
+            get => RangeMutable.Low;
+            private set => RangeMutable.Low = value;
         }
         public double Max
         {
-            get => RangeMutable.Max;
-            private set => RangeMutable.Max = value;
+            get => RangeMutable.High;
+            private set => RangeMutable.High = value;
         }
 
         public LabelStyle Label { get; }

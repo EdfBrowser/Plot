@@ -2,44 +2,44 @@ namespace Plot.Skia
 {
     public class RangeMutable
     {
-        internal RangeMutable(double min, double max)
+        internal RangeMutable(double low, double high)
         {
-            Min = min;
-            Max = max;
+            Low = low;
+            High = high;
         }
 
-        internal double Min { get; set; }
-        internal double Max { get; set; }
+        internal double Low { get; set; }
+        internal double High { get; set; }
 
-        internal double Span => Max - Min;
-        internal double Center => (Max + Min) / 2;
+        internal double Span => High - Low;
+        internal double Center => (High + Low) / 2;
 
         internal bool HasBeenSet
-            => !(double.IsNaN(Span) || double.IsInfinity(Span)) && Span != 0;
+            => !(double.IsNaN(Span) || double.IsInfinity(Span));
 
-        internal Range ToRange => new Range(Min, Max);
+        internal Range ToRange => new Range(Low, High);
 
         internal static RangeMutable NotSet
             => new RangeMutable(double.PositiveInfinity, double.NegativeInfinity);
 
-        internal void Set(double min, double max)
+        internal void Set(double low, double high)
         {
-            Min = min;
-            Max = max;
+            Low = low;
+            High = high;
         }
 
         internal void Pan(double units)
         {
-            Min += units;
-            Max += units;
+            Low += units;
+            High += units;
         }
 
         internal void Zoom(double frac, double from)
         {
-            double leftSpan = from - Min;
-            double rightSpan = Max - from;
-            Min = from - leftSpan / frac;
-            Max = from + rightSpan / frac;
+            double leftSpan = from - Low;
+            double rightSpan = High - from;
+            Low = from - leftSpan / frac;
+            High = from + rightSpan / frac;
         }
     }
 }

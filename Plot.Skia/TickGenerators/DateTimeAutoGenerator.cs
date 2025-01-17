@@ -6,6 +6,7 @@ namespace Plot.Skia
 {
     internal class DateTimeAutoGenerator : ITickGenerator
     {
+        public ITimeUnit TimeUnit { get; private set; }
         public Tick[] Ticks { get; private set; }
 
         public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
@@ -24,10 +25,11 @@ namespace Plot.Skia
             ITimeUnit timeUnit = res.Item1;
             DateTime[] tickPositions = res.Item2.ToArray();
 
+            TimeUnit = timeUnit;
+
             string[] tickLabels = tickPositions
                .Select(x => GetDateTimeLabel(x, timeUnit))
                .ToArray();
-
 
             (string largestText, float actualMaxLength) = direction.Vertical()
                 ? MeasureHighestString(tickLabels, tickLabelStyle)

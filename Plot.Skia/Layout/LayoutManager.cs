@@ -18,7 +18,14 @@ namespace Plot.Skia
             GetLayout(Rect figureRect)
         {
             AxisManager axisManager = m_figure.AxisManager;
-            axisManager.GenerateTicks(figureRect.Width, figureRect.Height);
+            foreach (IAxis axis in axisManager.Axes)
+            {
+                if (axis.Direction.Horizontal())
+                    axisManager.GenerateTicks(figureRect.Width, axis);
+                else
+                    axisManager.GenerateTicks(figureRect.Height, axis);
+            }
+
 
             Dictionary<IAxis, float> measuredAxes = Measure(m_figure.AxisManager.Axes);
 

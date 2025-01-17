@@ -28,10 +28,6 @@ namespace Plot.Skia
 
         internal IEnumerable<IAxis> Axes => XAxes.Cast<IAxis>().Concat(YAxes);
 
-        internal IXAxis Top => XAxes.First(x => x.Direction == Edge.Top);
-        internal IXAxis Bottom => XAxes.First(x => x.Direction == Edge.Bottom);
-        internal IYAxis Left => YAxes.First(y => y.Direction == Edge.Left);
-        internal IYAxis Right => YAxes.First(z => z.Direction == Edge.Right);
 
         internal DefaultGrid DefaultGrid { get; }
 
@@ -42,35 +38,8 @@ namespace Plot.Skia
         internal IEnumerable<IAxis> GetAxes(Edge direction)
             => Axes.Where(x => x.Direction == direction);
 
-        internal void GenerateTicks(Rect dataRect,
-            Dictionary<IAxis, (float, float)> axesInfo)
-        {
-            foreach (IAxis axis in Axes)
-            {
-                (float delta, float size) = axesInfo[axis];
-                Rect rect = axis.GetDataRect(dataRect, delta, size);
-
-                if (axis.Direction.Horizontal())
-                    GenerateTicks(rect.Width, axis);
-                else
-                    GenerateTicks(rect.Height, axis);
-            }
-        }
-
-        internal void GenerateTicks(float xAxisLength, float yAxisLength)
-        {
-            foreach (IAxis axis in Axes)
-            {
-                if (axis.Direction.Horizontal())
-                    GenerateTicks(xAxisLength, axis);
-                else
-                    GenerateTicks(yAxisLength, axis);
-            }
-        }
-
         internal void GenerateTicks(float axisLength, IAxis axis)
             => axis.GenerateTicks(axisLength);
-
 
         internal void SetLimitsX(Range limit, IXAxis axis)
             => axis.RangeMutable.Set(limit.Low, limit.High);
@@ -99,16 +68,16 @@ namespace Plot.Skia
             axis.RangeMutable.Zoom(frac, unit);
         }
 
-        internal IAxis HitAxis(Rect dataRect,
-            Dictionary<IAxis, (float, float)> axesInfo, PointF p)
+        internal IAxis HitAxis(PointF p)
         {
+            RenderContext rc = m_figure.RenderManager.LastRC;
+
             IAxis closestAxis = null;
             float minDistance = float.MaxValue;
 
             foreach (IAxis axis in Axes)
             {
-                (float delta, float size) = axesInfo[axis];
-                Rect rect = axis.GetDataRect(dataRect, delta, size);
+                Rect rect = rc.GetDataRect(axis);
 
                 if (rect.Contains(p))
                 {
@@ -189,6 +158,15 @@ namespace Plot.Skia
             else
                 SetLimitsX(limit, (IXAxis)axis);
         }
+
+        public IXAxis DefaultTop
+            => XAxes.FirstOrDefault(x => x.Direction == Edge.Top);
+        public IXAxis DefaultBottom
+            => XAxes.FirstOrDefault(x => x.Direction == Edge.Bottom);
+        public IYAxis DefaultLeft
+            => YAxes.FirstOrDefault(y => y.Direction == Edge.Left);
+        public IYAxis DefaultRight
+            => YAxes.FirstOrDefault(z => z.Direction == Edge.Right);
 
         #endregion
     }

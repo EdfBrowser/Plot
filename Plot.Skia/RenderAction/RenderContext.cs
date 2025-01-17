@@ -16,12 +16,13 @@ namespace Plot.Skia
             m_figureRect = figureRect;
         }
 
+        private Dictionary<IAxis, (float, float)> AxesInfo { get; set; }
+
         internal Figure Figure => m_figure;
         internal SKCanvas Canvas => m_canvas;
 
         internal Rect ScaledFigureRect { get; private set; }
-        public Rect DataRect { get; private set; }
-        public Dictionary<IAxis, (float, float)> AxesInfo { get; private set; }
+        internal Rect DataRect { get; private set; }
 
         internal void CalculateLayout()
         {
@@ -33,6 +34,12 @@ namespace Plot.Skia
 
             (DataRect, AxesInfo)
                 = Figure.LayoutManager.GetLayout(ScaledFigureRect);
+        }
+
+        public Rect GetDataRect(IAxis axis)
+        {
+            (float delta, float size) = AxesInfo[axis];
+            return axis.GetDataRect(DataRect, delta, size);
         }
     }
 }

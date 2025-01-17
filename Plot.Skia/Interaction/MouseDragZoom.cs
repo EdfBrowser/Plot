@@ -34,8 +34,8 @@ namespace Plot.Skia
             {
                 RememberedLimits.Recall();
 
-                Reset(figure);
                 SetRules(figure, MouseDownPoint, mouseUpAction.Point);
+                Reset(figure);
 
                 return true;
             }
@@ -68,11 +68,10 @@ namespace Plot.Skia
             float scaledDeltaX = deltaX / control.DisplayScale;
             float scaledDeltaY = deltaY / control.DisplayScale;
 
-            Rect dataRect = figure.RenderManager.LastRC.DataRect;
-            IAxis axisUnderMouse = figure.AxisManager.HitAxis(dataRect,
-                figure.RenderManager.LastRC.AxesInfo, down);
+            IAxis axisUnderMouse = figure.AxisManager.HitAxis(down);
             if (axisUnderMouse != null)
             {
+                Rect dataRect = figure.RenderManager.LastRC.GetDataRect(axisUnderMouse);
                 float scaledDelta = axisUnderMouse.Direction.Horizontal()
                      ? scaledDeltaX : scaledDeltaY;
                 float axisLength = axisUnderMouse.Direction.Horizontal()

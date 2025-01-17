@@ -26,15 +26,20 @@ namespace Plot.Skia
             m_alpha = (byte)(alpha * 255);
         }
 
-        internal byte Red => m_red;
-        internal byte Green => m_green;
-        internal byte Blue => m_blue;
-        internal byte Alpha => m_alpha;
+        internal byte R => m_red;
+        internal byte G => m_green;
+        internal byte B => m_blue;
+        internal byte A => m_alpha;
 
         public static Color White => new Color(255, 255, 255);
         public static Color Black => new Color(0, 0, 0);
         public static Color Gray => new Color(128, 128, 128);
+        public static Color Red => new Color(255, 0, 0);
+    }
 
-        internal SKColor ToSkColor() => new SKColor(Red, Green, Blue, Alpha);
+    internal static class ColorExtensions
+    {
+        internal static SKColor ToSkColor(this Color color)
+            => new SKColor(color.R, color.G, color.B, color.A);
     }
 }

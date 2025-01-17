@@ -6,14 +6,14 @@ namespace Plot.Skia
     {
         private readonly IFigureControl m_figureControl;
         private readonly object m_lock;
-        private readonly IReadOnlyList<IUserActionResponse> m_userActionResponses;
+        private readonly IReadOnlyList<IUserActionResponse> m_responses;
 
         public UserInputProcessor(IFigureControl figureControl)
         {
             m_figureControl = figureControl;
             m_lock = new object();
 
-            m_userActionResponses = new List<IUserActionResponse>()
+            m_responses = new List<IUserActionResponse>()
             {
                 new MouseDragPan(StandardMouseButtons.m_left),
                 new MouseDragZoom(StandardMouseButtons.m_right),
@@ -21,24 +21,24 @@ namespace Plot.Skia
             };
         }
 
+        private Figure Figure => m_figureControl.Figure;
 
         public void Process(IUserAction userInput)
         {
-            bool refreshNeeded
-                = ExecuteUserInput(m_figureControl.Figure, userInput);
+            bool refreshNeeded = ExecuteUserInput(Figure, userInput);
             if (refreshNeeded)
                 m_figureControl.Refresh();
         }
 
         public void ProcessLostFocus()
         {
-            ResetState(m_figureControl.Figure);
+            ResetState(Figure);
             m_figureControl.Refresh();
         }
 
         private void ResetState(Figure figure)
         {
-            foreach (IUserActionResponse response in m_userActionResponses)
+            foreach (IUserActionResponse response in m_responses)
             {
                 response.Reset(figure);
             }
@@ -50,9 +50,11 @@ namespace Plot.Skia
 
             lock (m_lock)
             {
-                foreach (IUserActionResponse response in m_userActionResponses)
+                foreach (IUserActionResponse response in m_responses)
                 {
-                    refreshNeeded = response.Execute(figure, userInput);
+                    bool refresh = response.Execute(figure, userInput);
+                    if (refresh)
+                        refreshNeeded = true;
                 }
             }
 

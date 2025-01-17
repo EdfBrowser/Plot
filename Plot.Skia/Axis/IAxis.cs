@@ -23,7 +23,7 @@ namespace Plot.Skia
 
         void GenerateTicks(float axisLength);
         float Measure();
-        void Render(RenderContext rc, float delta, float size);
+        void Render(RenderContext rc);
 
         Rect GetDataRect(Rect dataRect, float delta, float size);
     }

@@ -1,6 +1,5 @@
 using Plot.Skia;
 using System;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -47,7 +46,15 @@ namespace Plot.App
             m_x = axisManager.AddDateTimeBottomAxis();
             m_x.ScrollMode = AxisScrollMode.Scrolling;
 
-            m_timer.Start();
+            var seriesManager = figureForm1.Figure.SeriesManager;
+            IYAxis y = axisManager.DefaultLeft;
+            SignalSeries sig = seriesManager.AddSignalSeries(m_x, y);
+            sig.Data = Generate.Sin(count: 10);
+            sig.XOffset = m_dt.ToOADate();
+            //axisManager.SetLimits(
+            //    Range.DefaultDateTime(DateTime.Now, 10), m_x);
+            //m_timer.Start();
+
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
