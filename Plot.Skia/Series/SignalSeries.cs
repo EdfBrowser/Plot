@@ -17,7 +17,6 @@ namespace Plot.Skia
             SeriesLineStyle = new LineStyle();
             MarkerStyle = new MarkerStyle() { Shape = MarkerShape.OpenCircle };
             LowDensityMode = false;
-            XOffset = 0;
         }
 
         public IXAxis X => m_x;
@@ -30,7 +29,6 @@ namespace Plot.Skia
         public MarkerStyle MarkerStyle { get; set; }
 
         public bool LowDensityMode { get; set; }
-        public double XOffset { get; set; }
 
         public void Render(RenderContext rc)
         {
@@ -43,25 +41,12 @@ namespace Plot.Skia
         }
 
         public RangeMutable GetXLimit()
-        {
-            double min, max;
-            min = 0;
-            max = (Data.Length - 1) * SampleInterval;
-
-            if (m_x.LabelFormat == TickLabelFormat.DateTime)
-            {
-                DateTimeAutoGenerator generate = m_x.TickGenerator as DateTimeAutoGenerator;
-                DateTime dt = DateTime.FromOADate(XOffset);
-                dt = generate.TimeUnit.Next(dt, (int)(max - min));
-                return new RangeMutable(min + XOffset, dt.ToOADate());
-            }
-            else
-                return new RangeMutable(min + XOffset, max + XOffset);
-        }
+            => new RangeMutable(0, (Data.Length - 1) * SampleInterval);
 
         public RangeMutable GetYLimit()
             => GetYLimit(0, Data.Length - 1);
 
+        // TODO: 优化速度
         private RangeMutable GetYLimit(int startIndex, int endIndex)
         {
             double min = double.PositiveInfinity, max = double.NegativeInfinity;
@@ -80,6 +65,8 @@ namespace Plot.Skia
             int i1 = GetIndex(range.Low);
             int i2 = GetIndex(range.High + SampleInterval);
 
+            if (i1 == i2) return;
+
             Rect dataRect = rc.GetDataRect(m_x);
 
             List<PointF> points = new List<PointF>();
@@ -91,6 +78,8 @@ namespace Plot.Skia
                 PointF p = new PointF(x, y);
                 points.Add(p);
             }
+
+            if (!points.Any()) return;
 
             SeriesLineStyle.Render(rc.Canvas, points.ToArray());
 
@@ -109,7 +98,6 @@ namespace Plot.Skia
             double unitPerPx = m_x.Width / dataRect.Width;
 
             IList<PointF> points = new List<PointF>();
-            //IList<PixelColumn> pxCols = new List<PixelColumn>();
 
             for (int i = 0; i < dataRect.Width; i++)
             {
@@ -120,8 +108,12 @@ namespace Plot.Skia
                 int i1 = GetIndex(min);
                 int i2 = GetIndex(max);
 
+                // 跳过超出索引范围的
+                if (i2 == i1) continue;
+
+                // TODO: 判断i2-i1是否大于1
                 float y1 = m_y.GetPixel(GetY(i1), dataRect);
-                float y4 = m_y.GetPixel(GetY(i1), dataRect);
+                float y4 = m_y.GetPixel(GetY(i2), dataRect);
 
                 RangeMutable yLimit = GetYLimit(i1, i2);
                 float y2 = m_y.GetPixel(yLimit.Low, dataRect);
@@ -130,18 +122,16 @@ namespace Plot.Skia
                 float y = Enumerable.Max(new float[] { y1, y4, y2, y3 });
 
                 points.Add(new PointF(px, y));
-                //pxCols.Add(new PixelColumn(px, y1, y2, y3, y4));
             }
 
             if (!points.Any()) return;
 
             SeriesLineStyle.Render(rc.Canvas, points.ToArray());
-            //SeriesLineStyle.Render(rc.Canvas, pxCols.ToArray());
         }
 
         private int GetIndex(double x)
         {
-            int i = (int)((x - XOffset) * SampleRate);
+            int i = (int)(x * SampleRate);
 
             {
                 i = Math.Max(i, 0);
@@ -151,17 +141,7 @@ namespace Plot.Skia
         }
 
         private double GetX(int index)
-        {
-            if (m_x.LabelFormat == TickLabelFormat.DateTime)
-            {
-                DateTimeAutoGenerator generate = m_x.TickGenerator as DateTimeAutoGenerator;
-                DateTime dt = DateTime.FromOADate(XOffset);
-                dt = generate.TimeUnit.Next(dt, (int)(index * SampleInterval));
-                return dt.ToOADate();
-            }
-            else
-                return index * SampleInterval + XOffset;
-        }
+            => index * SampleInterval;
 
         private double GetY(int index)
         {
@@ -171,7 +151,7 @@ namespace Plot.Skia
         private double PointsPerPixel(RenderContext rc)
         {
             Rect dataRect = rc.GetDataRect(m_x);
-            return (m_x.RangeMutable.Span * SampleRate) / dataRect.Width;
+            return (m_x.Width * SampleRate) / dataRect.Width;
         }
 
         public void Dispose()

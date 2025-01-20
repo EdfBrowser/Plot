@@ -1,5 +1,6 @@
 using Plot.Skia;
 using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace Plot.App
@@ -10,6 +11,8 @@ namespace Plot.App
         private readonly IXAxis m_x;
         private DateTime m_dt;
         private readonly Random m_random;
+        private readonly SignalSeries m_sig;
+        private List<double> m_data = new List<double>();
 
         public FigureFormDemo()
         {
@@ -48,12 +51,12 @@ namespace Plot.App
 
             var seriesManager = figureForm1.Figure.SeriesManager;
             IYAxis y = axisManager.DefaultLeft;
-            SignalSeries sig = seriesManager.AddSignalSeries(m_x, y);
-            sig.Data = Generate.Sin(count: 10);
-            sig.XOffset = m_dt.ToOADate();
-            //axisManager.SetLimits(
-            //    Range.DefaultDateTime(DateTime.Now, 10), m_x);
-            //m_timer.Start();
+            m_sig = seriesManager.AddSignalSeries(m_x, y);
+
+            m_data.AddRange(Generate.Sin(10));
+            m_sig.Data = m_data.ToArray();
+            ((DateTimeBottomAxis)(m_x)).SetOriginDateTime(DateTime.Now);
+            m_timer.Start();
 
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
@@ -67,8 +70,9 @@ namespace Plot.App
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            m_dt = m_dt.AddSeconds(m_random.NextDouble());
-            m_x.ScrollPosition = m_dt.ToOADate();
+            m_data.AddRange(Generate.Sin(10));
+            m_sig.Data = m_data.ToArray();
+            m_x.ScrollPosition += 1;
             figureForm1.Refresh();
         }
     }

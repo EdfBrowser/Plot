@@ -1,3 +1,5 @@
+using System;
+
 namespace Plot.Skia
 {
     public class DateTimeBottomAxis : BaseXAxis
@@ -6,11 +8,13 @@ namespace Plot.Skia
         {
             Direction = Edge.Bottom;
             TickGenerator = new DateTimeAutoGenerator();
-            LabelFormat = TickLabelFormat.DateTime;
         }
 
         public override Edge Direction { get; }
         public override ITickGenerator TickGenerator { get; }
-        public override TickLabelFormat LabelFormat { get; }
+
+        public void SetOriginDateTime(DateTime dateTime)
+            => (TickGenerator as DateTimeAutoGenerator).OriginDateTime = dateTime;
+
     }
 }

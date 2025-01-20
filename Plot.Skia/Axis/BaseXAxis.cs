@@ -27,9 +27,6 @@ namespace Plot.Skia
 
         public bool Animate { get; set; }
 
-        public abstract TickLabelFormat LabelFormat { get; }
-
-
         public double Width => RangeMutable.Span;
 
         // TODO: 用户可以自定义（事件或者策略模式）

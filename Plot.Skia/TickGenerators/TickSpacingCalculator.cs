@@ -43,27 +43,24 @@ namespace Plot.Skia
             return tickPositionsMajor;
         }
 
-        internal static (ITimeUnit, IEnumerable<DateTime>)
+        internal static (ITimeUnit, IEnumerable<double>)
             GenerateDateTimeTickPositions(Range range, float axisLength, float labelWidth)
         {
             int targetTickCount = (int)(axisLength / labelWidth);
 
-            TimeSpan ts = TimeSpan.FromDays(range.Span);
+            TimeSpan ts = TimeSpan.FromSeconds(range.Span);
+
             (ITimeUnit niceTimeUnit, int niceIncrement)
                 = GetAppropriateTimeUnit(ts, targetTickCount);
 
+            double inc = niceIncrement * niceTimeUnit.MinSize.TotalSeconds;
+            double firstTickOffset = range.Low % inc;
+            int tickCount = (int)(range.Span / inc) + 1;
 
-            double min = Math.Max(range.Low, DateTime.MinValue.ToOADate());
-            double max = Math.Min(range.High, DateTime.MaxValue.ToOADate());
-
-            DateTime minDT = DateTime.FromOADate(min);
-            DateTime maxDT = DateTime.FromOADate(max);
-
-            int tickCount = niceTimeUnit.GetTickCount(minDT, maxDT, niceIncrement);
-
-            IEnumerable<DateTime> tickPositions = Enumerable.Range(0, tickCount)
-                .Select(x => niceTimeUnit.GetTick(minDT, x, niceIncrement))
-                .Where(x => range.Contains(x.ToOADate()));
+            IEnumerable<double> tickPositions
+                = Enumerable.Range(0, tickCount)
+                .Select(x => x * inc + range.Low - firstTickOffset)
+                .Where(range.Contains);
 
             return (niceTimeUnit, tickPositions);
         }

@@ -44,31 +44,11 @@ namespace Plot.Skia
             using (SKPath path = new SKPath())
             {
                 path.MoveTo(points[0].ToSKPoint());
-                foreach (PointF p in points)
-                    path.LineTo(p.ToSKPoint());
+                for (int i = 1; i < points.Length; i++)
+                    path.LineTo(points[i].ToSKPoint());
 
                 canvas.DrawPath(path, m_sKPaint);
             }
         }
-
-        // DONE: 是否可以优化成PointF[]
-        //internal void Render(SKCanvas canvas, PixelColumn[] pxCols)
-        //{
-        //    Apply();
-        //    using (SKPath path = new SKPath())
-        //    {
-        //        path.MoveTo(pxCols[0].Position, pxCols[0].StartY);
-
-        //        foreach (PixelColumn col in pxCols)
-        //        {
-        //            path.LineTo(col.Position, col.StartY);
-        //            path.MoveTo(col.Position, col.MidMinY);
-        //            path.LineTo(col.Position, col.MidMaxY);
-        //            path.MoveTo(col.Position, col.EndY);
-        //        }
-
-        //        canvas.DrawPath(path, m_sKPaint);
-        //    }
-        //}
     }
 }

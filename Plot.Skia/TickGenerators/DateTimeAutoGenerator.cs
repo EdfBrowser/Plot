@@ -6,7 +6,8 @@ namespace Plot.Skia
 {
     internal class DateTimeAutoGenerator : ITickGenerator
     {
-        public ITimeUnit TimeUnit { get; private set; }
+        internal DateTime? OriginDateTime { get; set; }
+
         public Tick[] Ticks { get; private set; }
 
         public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
@@ -20,15 +21,13 @@ namespace Plot.Skia
         {
             float labelWidth = Math.Max(0, labelLength);
 
-            var res = TickSpacingCalculator.GenerateDateTimeTickPositions(range, axisLength, labelWidth);
+            DateTime minDT = OriginDateTime ?? new DateTime(1899, 12, 31, 0, 0, 0);
 
-            ITimeUnit timeUnit = res.Item1;
-            DateTime[] tickPositions = res.Item2.ToArray();
-
-            TimeUnit = timeUnit;
+            (ITimeUnit timeUnit, IEnumerable<double> tickPositions)
+                = TickSpacingCalculator.GenerateDateTimeTickPositions(range, axisLength, labelWidth);
 
             string[] tickLabels = tickPositions
-               .Select(x => GetDateTimeLabel(x, timeUnit))
+               .Select(x => GetDateTimeLabel(x, minDT, timeUnit))
                .ToArray();
 
             (string largestText, float actualMaxLength) = direction.Vertical()
@@ -37,20 +36,22 @@ namespace Plot.Skia
 
             return actualMaxLength > labelLength
                 ? GenerateTicks(range, direction, axisLength, actualMaxLength, tickLabelStyle)
-                : GenerateFinalTicks(tickPositions, tickLabels, range);
+                : GenerateFinalTicks(tickPositions.ToArray(), tickLabels, range);
         }
 
-        private IEnumerable<Tick> GenerateFinalTicks(DateTime[] positions, string[] tickLabels, Range range)
+        private IEnumerable<Tick> GenerateFinalTicks(double[] positions, string[] tickLabels, Range range)
         {
             IEnumerable<Tick> majorTicks = positions
-                .Select((p, i) => Tick.Major(p.ToOADate(), tickLabels[i]));
+                .Select((p, i) => Tick.Major(p, tickLabels[i]));
 
             return majorTicks;
         }
 
-        private string GetDateTimeLabel(DateTime dt, ITimeUnit timeUnit)
+        private string GetDateTimeLabel(double value, DateTime dt, ITimeUnit timeUnit)
         {
-            return dt.ToString(timeUnit.GetFormatString());
+            int increment = (int)(value / timeUnit.MinSize.TotalSeconds);
+            string fm = timeUnit.GetFormatString();
+            return timeUnit.Next(dt, increment).ToString(fm);
         }
 
         private (string largestText, float actualMaxLength)

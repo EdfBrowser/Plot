@@ -19,9 +19,5 @@ namespace Plot.Skia
 
         public DateTime Next(DateTime dateTime, int increment = 1)
             => dateTime.AddYears(increment);
-        public int GetTickCount(DateTime minDT, DateTime maxDT, int inc)
-            => (int)((maxDT - minDT).TotalDays / inc) + 1;
-        public DateTime GetTick(DateTime minDT, int index, int inc)
-            => Next(minDT, inc * index);
     }
 }

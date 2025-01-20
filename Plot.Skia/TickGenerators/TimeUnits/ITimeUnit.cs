@@ -12,7 +12,5 @@ namespace Plot.Skia
         string GetFormatString();
         DateTime Snap(DateTime dateTime);
         DateTime Next(DateTime dateTime, int increment = 1);
-        int GetTickCount(DateTime minDT, DateTime maxDT, int inc);
-        DateTime GetTick(DateTime minDT, int index, int inc);
     }
 }

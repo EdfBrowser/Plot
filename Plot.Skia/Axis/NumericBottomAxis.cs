@@ -6,11 +6,9 @@ namespace Plot.Skia
         {
             Direction = Edge.Bottom;
             TickGenerator = new NumericAutoGenerator();
-            LabelFormat = TickLabelFormat.Numeric;
         }
 
         public override Edge Direction { get; }
         public override ITickGenerator TickGenerator { get; }
-        public override TickLabelFormat LabelFormat { get; }
     }
 }
