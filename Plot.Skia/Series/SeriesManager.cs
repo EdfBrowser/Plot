@@ -15,13 +15,19 @@ namespace Plot.Skia
 
         internal IList<ISeries> Series { get; }
 
-
-        public SignalSeries AddSignalSeries(IXAxis x, IYAxis y)
+        public SignalSeries AddSignalSeries(IXAxis x, IYAxis y, ISignalSource signalSource)
         {
-            SignalSeries sig = new SignalSeries(x, y);
+            SignalSeries sig = new SignalSeries(x, y, signalSource);
             Series.Add(sig);
 
             return sig;
+        }
+
+        public SignalSeries AddSignalSeries(IXAxis x, IYAxis y,
+            IList<double> ys, double sampleInterval = 1.0)
+        {
+            ISignalSource source = new SignalSouceDouble(ys, sampleInterval);
+            return AddSignalSeries(x, y, source);
         }
 
         public void Dispose()

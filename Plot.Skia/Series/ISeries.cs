@@ -2,7 +2,6 @@ using System;
 
 namespace Plot.Skia
 {
-    // TODO: ISeries是否需要一个GetDataRect来限制？
     public interface ISeries : IDisposable
     {
         IXAxis X { get; }
@@ -11,5 +10,7 @@ namespace Plot.Skia
         RangeMutable GetXLimit();
         RangeMutable GetYLimit();
         void Render(RenderContext rc);
+
+        Rect GetDataRect(RenderContext rc, IXAxis x, IYAxis y);
     }
 }

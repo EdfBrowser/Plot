@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,41 +17,41 @@ namespace Plot.Skia
 
         }
 
+        private void AdjustLimit(RangeMutable limit, double defaultMin, double defaultMax)
+        {
+            if (!limit.HasBeenSet)
+                limit.Set(defaultMin, defaultMax);
+        }
+
+        private void ApplyPadding(RangeMutable limit, double paddingRatio)
+        {
+            double padding = limit.Span * paddingRatio / 2.0;
+            limit.Set(limit.Low - padding, limit.High + padding);
+        }
+
+        private void ProcessAxis(AxisManager axisManager,
+            IAxis axis, double paddingRatio, Func<RangeMutable> getLimit)
+        {
+            RangeMutable limit = getLimit();
+
+            AdjustLimit(limit, -10, 10);
+            ApplyPadding(limit, paddingRatio);
+            axisManager.SetLimits(limit.ToRange, axis);
+        }
+
         private void AutoScaleSeries(IEnumerable<ISeries> series,
             AxisManager axisManager)
         {
             foreach (ISeries item in series)
             {
-                if (!item.X.RangeMutable.HasBeenSet)
-                {
-                    RangeMutable xLimit = item.GetXLimit();
+                if (item.X.RangeMutable.HasBeenSet && item.Y.RangeMutable.HasBeenSet)
+                    continue;
 
-                    if (xLimit.Low == xLimit.High)
-                        xLimit.Set(xLimit.Low - 1, xLimit.High + 1);
-
-                    double left = xLimit.Low - (xLimit.Span * .1 / 2.0);
-                    double right = xLimit.High + (xLimit.Span * .1 / 2.0);
-
-                    xLimit.Set(left, right);
-
-                    axisManager.SetLimits(xLimit.ToRange, item.X);
-                }
-
-                if (!item.Y.RangeMutable.HasBeenSet)
-                {
-                    RangeMutable yLimit = item.GetYLimit();
-
-                    if (yLimit.Low == yLimit.High)
-                        yLimit.Set(yLimit.Low - 1, yLimit.High + 1);
-
-                    double bottom = yLimit.Low - (yLimit.Span * .15 / 2.0);
-                    double top = yLimit.High + (yLimit.Span * .15 / 2.0);
-
-                    yLimit.Set(bottom, top);
-
-                    axisManager.SetLimits(yLimit.ToRange, item.Y);
-                }
+                ProcessAxis(axisManager, item.X, 0.1, item.GetXLimit);
+                ProcessAxis(axisManager, item.Y, 0.15, item.GetYLimit);
             }
+
+            ApplyDefaultLimits(axisManager);
         }
 
         private void ApplyDefaultLimits(AxisManager axisManager)
@@ -58,7 +59,7 @@ namespace Plot.Skia
             foreach (IAxis axis in axisManager.Axes)
             {
                 if (!axis.RangeMutable.HasBeenSet)
-                    axisManager.SetLimits(Range.DefaultNumeric, axis);
+                    axisManager.SetLimits(Range.Default, axis);
             }
         }
     }

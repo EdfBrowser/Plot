@@ -4,15 +4,9 @@ using System.Linq;
 
 namespace Plot.Skia
 {
-    internal class NumericAutoGenerator : ITickGenerator
+    internal class NumericAutoGenerator : BaseTickGenerator, ITickGenerator
     {
-        public NumericAutoGenerator()
-        {
-            MinorDivCount = 5;
-        }
-
         public Tick[] Ticks { get; private set; }
-        internal int MinorDivCount { get; set; }
 
         public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
@@ -25,61 +19,21 @@ namespace Plot.Skia
         {
             float labelWidth = Math.Max(0, labelLength);
 
-            double[] majorTickPositions = TickSpacingCalculator
-                .GenerateNumericTickPositions(range, axisLength, labelWidth)
-                .ToArray();
-            string[] majorTickLabels = majorTickPositions
-                .Select(GetNumericLabel)
-                .ToArray();
-
+            IEnumerable<double> tickPositions
+                = GenerateNumericTickPositions(range, axisLength, labelWidth);
+            IEnumerable<string> tickLabels = tickPositions
+                .Select(GetPositionLabel);
 
             (string largestText, float actualMaxLength) = direction.Vertical()
-                ? MeasureHighestString(majorTickLabels, tickLabelStyle)
-                : MeasureWidestString(majorTickLabels, tickLabelStyle);
+                ? MeasureString(tickLabels, x => tickLabelStyle.Measure(x).Height)
+                : MeasureString(tickLabels, x => tickLabelStyle.Measure(x).Width);
 
             return actualMaxLength > labelLength
                 ? GenerateTicks(range, direction, axisLength, actualMaxLength, tickLabelStyle)
-                : GenerateFinalTicks(majorTickPositions, majorTickLabels, range);
+                : GenerateFinalTicks(tickPositions, tickLabels, range);
         }
 
-        private IEnumerable<Tick> GenerateFinalTicks(double[] positions, string[] tickLabels, Range range)
-        {
-            IEnumerable<Tick> majorTicks = positions
-                .Select((p, i) => Tick.Major(p, tickLabels[i]));
-
-            IEnumerable<Tick> minorTicks = GetMinorPositions(positions, range)
-                .Select(Tick.Minor);
-
-            return majorTicks.Concat(minorTicks);
-        }
-
-        private IEnumerable<double> GetMinorPositions(double[] majorTicks, Range range)
-        {
-            if (majorTicks is null || majorTicks.Length < 2)
-                return Array.Empty<double>();
-
-            double majorTickSpacing = majorTicks[1] - majorTicks[0];
-            double minorTickSpacing = majorTickSpacing / MinorDivCount;
-
-            List<double> majorTicksOffsetOne = new List<double>() { majorTicks[0] - majorTickSpacing };
-            majorTicksOffsetOne.AddRange(majorTicks);
-
-            List<double> minorTicks = new List<double>();
-
-            foreach (var majorTickPosition in majorTicksOffsetOne)
-            {
-                for (int i = 1; i < MinorDivCount; i++)
-                {
-                    double minorTickPosition = majorTickPosition + minorTickSpacing * i;
-                    if (range.Contains(minorTickPosition))
-                        minorTicks.Add(minorTickPosition);
-                }
-            }
-
-            return minorTicks;
-        }
-
-        private string GetNumericLabel(double value)
+        protected override string GetPositionLabel(double value)
         {
             // if the number is round or large, use the numeric format
             bool isRounded = (int)value == value;
@@ -89,44 +43,6 @@ namespace Plot.Skia
 
             // otherwise the number is probably small or very precise to use the general format (with slight rounding)
             return Math.Round(value, 10).ToString("G");
-        }
-
-        private (string largestText, float actualMaxLength)
-           MeasureHighestString(string[] tickLabels, LabelStyle labelStyle)
-        {
-            float maxHeight = 0;
-            string maxText = string.Empty;
-
-            for (int i = 0; i < tickLabels.Length; i++)
-            {
-                float size = labelStyle.Measure(tickLabels[i]).Height;
-                if (size > maxHeight)
-                {
-                    maxHeight = size;
-                    maxText = tickLabels[i];
-                }
-            }
-
-            return (maxText, maxHeight);
-        }
-
-        private (string largestText, float actualMaxLength)
-            MeasureWidestString(string[] tickLabels, LabelStyle labelStyle)
-        {
-            float maxWidth = 0;
-            string maxText = string.Empty;
-
-            for (int i = 0; i < tickLabels.Length; i++)
-            {
-                float size = labelStyle.Measure(tickLabels[i]).Width;
-                if (size > maxWidth)
-                {
-                    maxWidth = size;
-                    maxText = tickLabels[i];
-                }
-            }
-
-            return (maxText, maxWidth);
         }
     }
 }

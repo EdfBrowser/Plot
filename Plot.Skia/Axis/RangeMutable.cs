@@ -15,7 +15,7 @@ namespace Plot.Skia
         internal double Center => (High + Low) / 2;
 
         internal bool HasBeenSet
-            => !(double.IsNaN(Span) || double.IsInfinity(Span));
+            => !(double.IsNaN(Span) || double.IsInfinity(Span) || Low > High || Low == High);
 
         internal Range ToRange => new Range(Low, High);
 

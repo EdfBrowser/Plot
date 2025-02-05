@@ -1,5 +1,4 @@
 using Plot.Skia;
-using System;
 using System.Windows.Forms;
 
 namespace Sandbox.WinForm
@@ -17,11 +16,24 @@ namespace Sandbox.WinForm
             IXAxis m_x = axisManager.AddDateTimeBottomAxis();
             m_x.ScrollMode = AxisScrollMode.Scrolling;
 
-            IXAxis x = axisManager.DefaultBottom;
-            IYAxis y = axisManager.DefaultLeft;
-            SignalSeries sig = seriesManager.AddSignalSeries(x, y);
-            sig.Data = Generate.Sin(count: 1_0);
-            //sig.SampleRate = 10;
+            IXAxis x1 = axisManager.DefaultBottom;
+            IYAxis y1 = axisManager.DefaultLeft;
+
+            IXAxis x2 = axisManager.AddNumericBottomAxis();
+            IXAxis x3 = axisManager.AddNumericBottomAxis();
+            IXAxis x4 = axisManager.AddNumericBottomAxis();
+            IXAxis x5 = axisManager.AddNumericBottomAxis();
+
+            IYAxis y2 = axisManager.AddNumericLeftAxis();
+            IYAxis y3 = axisManager.AddNumericLeftAxis();
+            IYAxis y4 = axisManager.AddNumericLeftAxis();
+            IYAxis y5 = axisManager.AddNumericLeftAxis();
+
+            seriesManager.AddSignalSeries(x1, y1, Generate.Sin(100), 1.0 / 1);
+            seriesManager.AddSignalSeries(x2, y2, Generate.Sin(100), 1.0 / 1);
+            seriesManager.AddSignalSeries(x3, y3, Generate.Sin(100), 1.0 / 1);
+            seriesManager.AddSignalSeries(x4, y4, Generate.Sin(100), 1.0 / 1);
+            seriesManager.AddSignalSeries(x5, y5, Generate.Sin(100), 1.0 / 1);
         }
     }
 }

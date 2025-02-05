@@ -36,6 +36,7 @@ namespace Plot.Skia
             {
                 rc.Canvas.Save();
                 action.Render(rc);
+                // 恢复画布的变化矩阵以及clip等绘制属性到上一个保存状态
                 rc.Canvas.Restore();
             }
 

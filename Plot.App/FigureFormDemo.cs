@@ -8,11 +8,16 @@ namespace Plot.App
     public partial class FigureFormDemo : Form
     {
         private readonly Timer m_timer;
+        private readonly Timer m_updateTimer;
         private readonly IXAxis m_x;
-        private DateTime m_dt;
+        private readonly DateTime m_dt;
         private readonly Random m_random;
-        private readonly SignalSeries m_sig;
-        private List<double> m_data = new List<double>();
+        private readonly SignalSeries m_sig1;
+        private readonly SignalSeries m_sig2;
+        private readonly SignalSeries m_sig3;
+        private readonly List<double> m_data = new List<double>();
+        private readonly List<double> m_data2 = new List<double>();
+        private readonly List<double> m_data3 = new List<double>();
 
         public FigureFormDemo()
         {
@@ -43,37 +48,53 @@ namespace Plot.App
 
             m_timer = new Timer();
             m_timer.Tick += Timer_Tick;
-            m_timer.Interval = 500;
+            m_timer.Interval = 100;
+
+            m_updateTimer = new Timer();
+            m_updateTimer.Tick += RefreshPlot;
+            m_updateTimer.Interval = 500;
 
             axisManager.Remove(Edge.Bottom);
-            m_x = axisManager.AddDateTimeBottomAxis();
+            axisManager.AddDateTimeBottomAxis();
+
+            m_x = axisManager.DefaultBottom;
+            IYAxis y = axisManager.DefaultLeft;
+
             m_x.ScrollMode = AxisScrollMode.Scrolling;
 
             var seriesManager = figureForm1.Figure.SeriesManager;
-            IYAxis y = axisManager.DefaultLeft;
-            m_sig = seriesManager.AddSignalSeries(m_x, y);
+            m_sig1 = seriesManager.AddSignalSeries(m_x, y, m_data, 1.0 / 1);
 
-            m_data.AddRange(Generate.Sin(10));
-            m_sig.Data = m_data.ToArray();
-            ((DateTimeBottomAxis)(m_x)).SetOriginDateTime(DateTime.Now);
-            m_timer.Start();
+            //((DateTimeBottomAxis)(m_x)).SetOriginDateTime(DateTime.Now);
 
-            //axisManager.AddNumericLeftAxis();
-            //axisManager.AddNumericLeftAxis();
+
+            IYAxis y2 = axisManager.AddNumericLeftAxis();
+            IYAxis y3 = axisManager.AddNumericLeftAxis();
+
+            m_sig2 = seriesManager.AddSignalSeries(m_x, y2, m_data2, 1.0 / 1);
+            m_sig3 = seriesManager.AddSignalSeries(m_x, y3, m_data3, 1.0 / 1);
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericBottomAxis();
+
+            m_timer.Start();
+            m_updateTimer.Start();
 #endif
+        }
+
+        private void RefreshPlot(object sender, EventArgs e)
+        {
+            m_x.ScrollPosition = m_data.Count;
+            figureForm1.Refresh();
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            m_data.AddRange(Generate.Sin(10));
-            m_sig.Data = m_data.ToArray();
-            m_x.ScrollPosition += 1;
-            figureForm1.Refresh();
+            m_data.Add(m_random.NextDouble());
+            m_data2.Add(m_random.NextDouble());
+            m_data3.Add(m_random.NextDouble());
         }
     }
 }

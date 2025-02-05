@@ -16,5 +16,8 @@ namespace Plot.Skia
         public void SetOriginDateTime(DateTime dateTime)
             => (TickGenerator as DateTimeAutoGenerator).OriginDateTime = dateTime;
 
+        public void SetDateTimeFormat(string format)
+            => (TickGenerator as DateTimeAutoGenerator).DateTimeFormat = format;
+
     }
 }

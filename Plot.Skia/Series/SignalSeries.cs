@@ -6,33 +6,26 @@ namespace Plot.Skia
 {
     public class SignalSeries : ISeries
     {
-        private readonly IXAxis m_x;
-        private readonly IYAxis m_y;
-
-        public SignalSeries(IXAxis x, IYAxis y)
+        public SignalSeries(IXAxis x, IYAxis y, ISignalSource signalSource)
         {
-            m_x = x;
-            m_y = y;
-            SampleRate = 1.0;
-            SeriesLineStyle = new LineStyle();
-            MarkerStyle = new MarkerStyle() { Shape = MarkerShape.OpenCircle };
+            X = x;
+            Y = y;
+            SignalSource = signalSource;
+            SeriesLineStyle = new LineStyle() { AntiAlias = true };
+            MarkerStyle = new MarkerStyle() { Shape = MarkerShape.OpenCircle, AntiAlias = true };
             LowDensityMode = false;
         }
 
-        public IXAxis X => m_x;
-        public IYAxis Y => m_y;
-        public double[] Data { get; set; }
-        public double SampleRate { get; set; }
-        public double SampleInterval => 1.0 / SampleRate;
-
+        public IXAxis X { get; }
+        public IYAxis Y { get; }
+        public ISignalSource SignalSource { get; }
         public LineStyle SeriesLineStyle { get; set; }
         public MarkerStyle MarkerStyle { get; set; }
-
         public bool LowDensityMode { get; set; }
 
         public void Render(RenderContext rc)
         {
-            if (Data == null) return;
+            if (!SignalSource.GetYs().Any()) return;
 
             if (PointsPerPixel(rc) < 1 || LowDensityMode)
                 RenderLowDensity(rc);
@@ -40,41 +33,26 @@ namespace Plot.Skia
                 RenderHighDensity(rc);
         }
 
-        public RangeMutable GetXLimit()
-            => new RangeMutable(0, (Data.Length - 1) * SampleInterval);
+        public RangeMutable GetXLimit() => SignalSource.GetXLimit();
 
-        public RangeMutable GetYLimit()
-            => GetYLimit(0, Data.Length - 1);
-
-        // TODO: 优化速度
-        private RangeMutable GetYLimit(int startIndex, int endIndex)
-        {
-            double min = double.PositiveInfinity, max = double.NegativeInfinity;
-            for (int i = startIndex; i <= endIndex; i++)
-            {
-                min = Math.Min(min, Data[i]);
-                max = Math.Max(max, Data[i]);
-            }
-
-            return new RangeMutable(min, max);
-        }
+        public RangeMutable GetYLimit() => SignalSource.GetYLimit();
 
         private void RenderLowDensity(RenderContext rc)
         {
-            RangeMutable range = m_x.RangeMutable;
-            int i1 = GetIndex(range.Low);
-            int i2 = GetIndex(range.High + SampleInterval);
+            RangeMutable range = X.RangeMutable;
+            int i1 = SignalSource.GetIndex(range.Low);
+            int i2 = SignalSource.GetIndex(range.High + SignalSource.SampleInterval);
 
             if (i1 == i2) return;
 
-            Rect dataRect = rc.GetDataRect(m_x);
+            Rect dataRect = GetDataRect(rc, X, Y);
 
             List<PointF> points = new List<PointF>();
 
             for (int i = i1; i <= i2; i++)
             {
-                float x = m_x.GetPixel(GetX(i), dataRect);
-                float y = m_y.GetPixel(GetY(i), dataRect);
+                float x = X.GetPixel(SignalSource.GetX(i), dataRect);
+                float y = Y.GetPixel(SignalSource.GetY(i), dataRect);
                 PointF p = new PointF(x, y);
                 points.Add(p);
             }
@@ -94,32 +72,38 @@ namespace Plot.Skia
 
         private void RenderHighDensity(RenderContext rc)
         {
-            Rect dataRect = rc.GetDataRect(m_x);
-            double unitPerPx = m_x.Width / dataRect.Width;
+            Rect dataRect = GetDataRect(rc, X, Y);
+            double unitPerPx = X.Width / dataRect.Width;
 
             IList<PointF> points = new List<PointF>();
 
             for (int i = 0; i < dataRect.Width; i++)
             {
                 float px = dataRect.Left + i;
-                double min = m_x.GetWorld(px, dataRect);
+                double min = X.GetWorld(px, dataRect);
                 double max = min + Math.Abs(unitPerPx);
 
-                int i1 = GetIndex(min);
-                int i2 = GetIndex(max);
+                // 获取该单位下的点数索引
+                int i1 = SignalSource.GetIndex(min);
+                int i2 = SignalSource.GetIndex(max);
 
                 // 跳过超出索引范围的
                 if (i2 == i1) continue;
 
-                // TODO: 判断i2-i1是否大于1
-                float y1 = m_y.GetPixel(GetY(i1), dataRect);
-                float y4 = m_y.GetPixel(GetY(i2), dataRect);
+                float y1 = Y.GetPixel(SignalSource.GetY(i1), dataRect);
+                float y4 = Y.GetPixel(SignalSource.GetY(i2), dataRect);
 
-                RangeMutable yLimit = GetYLimit(i1, i2);
-                float y2 = m_y.GetPixel(yLimit.Low, dataRect);
-                float y3 = m_y.GetPixel(yLimit.High, dataRect);
+                float y = Math.Max(y1, y4);
 
-                float y = Enumerable.Max(new float[] { y1, y4, y2, y3 });
+                // 若大于1个点，需要计算下面的
+                if ((i2 - i1) > 1)
+                {
+                    // i1-i2之间y轴最大值和最小值
+                    RangeMutable yLimit = SignalSource.GetYLimit(i1, i2);
+                    float y2 = Y.GetPixel(yLimit.Low, dataRect);
+                    float y3 = Y.GetPixel(yLimit.High, dataRect);
+                    y = Math.Max(y, Math.Max(y2, y3));
+                }
 
                 points.Add(new PointF(px, y));
             }
@@ -129,29 +113,28 @@ namespace Plot.Skia
             SeriesLineStyle.Render(rc.Canvas, points.ToArray());
         }
 
-        private int GetIndex(double x)
-        {
-            int i = (int)(x * SampleRate);
-
-            {
-                i = Math.Max(i, 0);
-                i = Math.Min(i, Data.Length - 1);
-            }
-            return i;
-        }
-
-        private double GetX(int index)
-            => index * SampleInterval;
-
-        private double GetY(int index)
-        {
-            return Data[index];
-        }
-
         private double PointsPerPixel(RenderContext rc)
         {
-            Rect dataRect = rc.GetDataRect(m_x);
-            return (m_x.Width * SampleRate) / dataRect.Width;
+            Rect dataRect = GetDataRect(rc, X, Y);
+            // 1个单位需要sampleRate个点，width个单位就需要width * sampleRate
+            return (X.Width / SignalSource.SampleInterval) / dataRect.Width;
+        }
+
+        // 通过X/Y轴的DataRect来取并集
+        public Rect GetDataRect(RenderContext rc, IXAxis x, IYAxis y)
+        {
+            Rect xRect = rc.GetDataRect(x);
+            Rect yRect = rc.GetDataRect(y);
+
+            float left = Math.Max(xRect.Left, yRect.Left);
+            float right = Math.Min(xRect.Right, yRect.Right);
+
+            float top = Math.Max(xRect.Top, yRect.Top);
+            float bottom = Math.Min(xRect.Bottom, yRect.Bottom);
+
+            Rect unionRect = new Rect(left, right, top, bottom);
+
+            return unionRect;
         }
 
         public void Dispose()

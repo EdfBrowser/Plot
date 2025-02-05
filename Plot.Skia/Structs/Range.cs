@@ -1,5 +1,3 @@
-using System;
-
 namespace Plot.Skia
 {
     public readonly struct Range
@@ -18,9 +16,7 @@ namespace Plot.Skia
 
         internal double Span => m_high - m_low;
 
-        public static Range DefaultNumeric => new Range(-10, 10);
-        public static Range DefaultDateTime(DateTime dt, double range)
-            => new Range(dt.ToOADate(), dt.AddSeconds(range).ToOADate());
+        public static Range Default => new Range(-10, 10);
 
         internal bool Contains(double value) => m_low <= value && m_high >= value;
     }
