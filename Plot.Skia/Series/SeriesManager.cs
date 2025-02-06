@@ -30,6 +30,15 @@ namespace Plot.Skia
             return AddSignalSeries(x, y, source);
         }
 
+        public HeatMapSeries AddHeatMapSeries(IXAxis x, IYAxis y,
+            double[,] intensity)
+        {
+            HeatMapSeries hms = new HeatMapSeries(x, y, intensity);
+            Series.Add(hms);
+
+            return hms;
+        }
+
         public void Dispose()
         {
             foreach (ISeries s in Series)
