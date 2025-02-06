@@ -1,4 +1,4 @@
-namespace Plot.Skia.Interaction
+namespace Plot.Skia
 {
     internal interface IMouseButtonAction : IMouseAction
     {

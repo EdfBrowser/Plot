@@ -1,4 +1,3 @@
-using Plot.Skia.Interaction;
 using System;
 
 namespace Plot.Skia

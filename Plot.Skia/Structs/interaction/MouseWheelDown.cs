@@ -1,17 +1,16 @@
-using Plot.Skia.Interaction;
 
 namespace Plot.Skia
 {
-    public readonly struct LeftMouseDown : IMouseButtonAction
+    public readonly struct MouseWheelDown : IMouseButtonAction
     {
         private readonly PointF m_point;
 
-        public LeftMouseDown(PointF point)
+        public MouseWheelDown(PointF point)
         {
             m_point = point;
         }
 
-        public string ButtonName => StandardMouseButtons.m_left;
+        public string ButtonName => StandardMouseButtons.m_wheel;
         public PointF Point => m_point;
         public bool Pressed => true;
     }
