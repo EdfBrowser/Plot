@@ -1,5 +1,6 @@
 using SkiaSharp;
 using System;
+using System.Collections.Generic;
 
 namespace Plot.Skia
 {
@@ -40,15 +41,13 @@ namespace Plot.Skia
             Shape.GetMarker().Render(canvas, m_sKPaint, p, Size);
         }
 
-        internal void Render(SKCanvas canvas, PointF[] points)
+        internal void Render(SKCanvas canvas, IEnumerable<PointF> points)
         {
             Apply();
             IMarkerShape shape = Shape.GetMarker();
 
             foreach (PointF p in points)
-            {
                 shape.Render(canvas, m_sKPaint, p, Size);
-            }
         }
     }
 }

@@ -1,5 +1,6 @@
 using SkiaSharp;
 using System;
+using System.Collections.Generic;
 
 namespace Plot.Skia
 {
@@ -38,14 +39,28 @@ namespace Plot.Skia
             canvas.DrawLine(p1.ToSKPoint(), p2.ToSKPoint(), m_sKPaint);
         }
 
-        internal void Render(SKCanvas canvas, PointF[] points)
+        internal void Render(SKCanvas canvas, IEnumerable<PointF> points)
         {
             Apply();
+            bool move = true;
             using (SKPath path = new SKPath())
             {
-                path.MoveTo(points[0].ToSKPoint());
-                for (int i = 1; i < points.Length; i++)
-                    path.LineTo(points[i].ToSKPoint());
+                foreach (PointF p in points)
+                {
+                    if (float.IsNaN(p.X) || float.IsNaN(p.Y))
+                    {
+                        move = true;
+                        continue;
+                    }
+
+                    if (move)
+                    {
+                        path.MoveTo(p.ToSKPoint());
+                        move = false;
+                    }
+                    else
+                        path.LineTo(p.ToSKPoint());
+                }
 
                 canvas.DrawPath(path, m_sKPaint);
             }

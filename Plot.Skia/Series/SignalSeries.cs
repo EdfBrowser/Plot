@@ -53,20 +53,28 @@ namespace Plot.Skia
             {
                 float x = X.GetPixel(SignalSource.GetX(i), dataRect);
                 float y = Y.GetPixel(SignalSource.GetY(i), dataRect);
+
+                // 超过画图区域设为NAN
+                if (!rc.DataRect.Contains(x, y))
+                {
+                    x = float.NaN;
+                    y = float.NaN;
+                }
+
                 PointF p = new PointF(x, y);
                 points.Add(p);
             }
 
             if (!points.Any()) return;
 
-            SeriesLineStyle.Render(rc.Canvas, points.ToArray());
+            SeriesLineStyle.Render(rc.Canvas, points);
 
             double pointsPerPx = PointsPerPixel(rc);
             if (pointsPerPx < 1)
             {
                 double radius = Math.Sqrt(.2 / pointsPerPx);
-                MarkerStyle.Size = (float)(radius * 2f);
-                MarkerStyle.Render(rc.Canvas, points.ToArray());
+                MarkerStyle.Size = (float)(radius * 4f);
+                MarkerStyle.Render(rc.Canvas, points);
             }
         }
 
@@ -110,7 +118,7 @@ namespace Plot.Skia
 
             if (!points.Any()) return;
 
-            SeriesLineStyle.Render(rc.Canvas, points.ToArray());
+            SeriesLineStyle.Render(rc.Canvas, points);
         }
 
         private double PointsPerPixel(RenderContext rc)
