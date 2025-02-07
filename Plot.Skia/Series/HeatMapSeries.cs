@@ -1,10 +1,6 @@
-using SkiaSharp;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Xml.Linq;
 
 namespace Plot.Skia
 {
@@ -17,20 +13,17 @@ namespace Plot.Skia
         private int Height => m_intensity.GetLength(0);
         private int Width => m_intensity.GetLength(1);
 
-        //private int MinimumIndex => 0;
-        //private int MaximumIndex => int.MaxValue;
-        //private int MinRenderringIndex => Math.Max(0, MinimumIndex);
-        //private int MaxRenderringIndex => Math.Min(Width - 1, MaximumIndex);
-
         public HeatMapSeries(IXAxis x, IYAxis y, double[,] intensity)
             : base(x, y)
         {
             m_intensity = intensity;
 
-            ColorMap = new JetCMP();
+            ColorMap = new ViridisCMP();
+            HeatmapStyle = new HeatmapStyle();
         }
 
         public IColorMap ColorMap { get; set; }
+        public HeatmapStyle HeatmapStyle { get; set; }
 
         public override RangeMutable GetXLimit()
             => new RangeMutable(0, Width - 1);
@@ -38,66 +31,81 @@ namespace Plot.Skia
         public override RangeMutable GetYLimit()
             => new RangeMutable(0, Height - 1);
 
-        public int GetXIndex(double x)
+        private Rect GetDestRect(RenderContext rc)
         {
-            // 第0个单位需要0个点
-            // 第1个单位需要1 * sampleRate个点....
-            int i = (int)(x);
+            Rect dataRect = GetDataRect(rc, X, Y);
 
-            {
-                i = Math.Max(i, 0);
-                i = Math.Min(i, Width - 1);
-            }
+            float left = X.GetPixel(0, dataRect);
+            float right = X.GetPixel(Width - 1, dataRect);
 
-            return i;
+            float top = Y.GetPixel(Height - 1, dataRect);
+            float bottom = Y.GetPixel(0, dataRect);
+
+            return new Rect(left, right, top, bottom);
         }
 
-        public int GetYIndex(double x)
-        {
-            // 第0个单位需要0个点
-            // 第1个单位需要1 * sampleRate个点....
-            int i = (int)(x);
-
-            {
-                i = Math.Max(i, 0);
-                i = Math.Min(i, Height - 1);
-            }
-
-            return i;
-        }
-
-        // 1. 遍历数组绘制矩形（设置paint的color）
-        // 2. 
         public override void Render(RenderContext rc)
         {
             // 从intensity中获取最值
             double min = m_intensity.Cast<double>().Min();
             double max = m_intensity.Cast<double>().Max();
 
+            Rect dataRect = rc.DataRect;
 
-            RangeMutable xLimit = X.RangeMutable;
-            RangeMutable yLimit = Y.RangeMutable;
+            int validPointCount = 0;
 
-            int i1 = GetXIndex(xLimit.Low);
-            int i2 = GetXIndex(xLimit.High + xLimit.Span / Width);
+            int validMinX = int.MaxValue, validMaxX = int.MinValue;
+            int validMinY = int.MaxValue, validMaxY = int.MinValue;
 
-            int i3 = GetYIndex(yLimit.Low);
-            int i4 = GetYIndex(yLimit.High + yLimit.Span / Height);
+            int invalidMinY = int.MaxValue, invalidMaxY = int.MinValue;
 
-            if (i1 == i2) return;
-            if (i3 == i4) return;
+            // 遍历整个数据，检查哪些点在 dataRect 区域内
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    float px = X.GetPixel(x, dataRect);
+                    float py = Y.GetPixel(y, dataRect);
 
-            //IList<uint> argbs = new List<uint>();
-            int width = i2 - i1;
-            int height = i4 - i3;
-            uint[] argbArray = new uint[(width + 1) * (height + 1)];
+                    if (rc.DataRect.Contains(px, py))
+                    {
+                        validPointCount++;
+
+                        validMinX = Math.Min(validMinX, x);
+                        validMaxX = Math.Max(validMaxX, x);
+                        validMinY = Math.Min(validMinY, y);
+                        validMaxY = Math.Max(validMaxY, y);
+                    }
+                    //else
+                    //{
+                    //    invalidMinY = Math.Min(invalidMinY, y);
+                    //    invalidMaxY = Math.Max(invalidMaxY, y);
+                    //}
+                }
+            }
+
+            if (validPointCount == 0)
+                return;
+
+            Debug.WriteLine($"validPointCount:{validPointCount}");
+            // 更新有效区域的宽度和高度
+            int validWidth = validMaxX - validMinX + 1;
+            int validHeight = validMaxY - validMinY + 1;
+
+            uint[] argbs = new uint[validWidth * validHeight];
 
             // 映射数值为color
-            for (int y = i3; y <= i4; y++)
+            for (int y = validMinY; y <= validMaxY; y++)
             {
-                for (int x = i1; x <= i2; x++)
+                for (int x = validMinX; x <= validMaxX; x++)
                 {
-                    double value = m_intensity[y, x];
+                    double value = 0;
+                    if (validMaxY < Height - 1)
+                        value = m_intensity[Height - 1 - (validMaxY - y), x];
+                    else if (validMinY > 0)
+                        value = m_intensity[y - validMinY, x];
+                    else
+                        value = m_intensity[y, x];
                     // 进行normalize，转换成(0-1)
                     double normalized = (value - min) / (max - min);
                     // 没啥作用其实
@@ -105,38 +113,21 @@ namespace Plot.Skia
 
                     Color color = ColorMap.GetColor(normalized);
 
-                    argbArray[y * width + x] = color.PremultipliedARGB;
+                    int index = (y - validMinY) * validWidth + (x - validMinX);
+                    argbs[index] = color.PremultipliedARGB;
                 }
             }
 
+            Size<int> size = new Size<int>(validWidth, validHeight);
+            Debug.WriteLine($"w/h:{validWidth}/{validHeight}");
+            float left = X.GetPixel(validMinX, dataRect);
+            float right = X.GetPixel(validMaxX, dataRect);
 
-            Rect dataRect = GetDataRect(rc, X, Y);
+            float top = Y.GetPixel(validMaxY, dataRect);
+            float bottom = Y.GetPixel(validMinY, dataRect);
 
-            xLimit = GetXLimit();
-            yLimit = GetYLimit();
-
-            float left = X.GetPixel(xLimit.Low, dataRect);
-            float right = X.GetPixel(xLimit.High, dataRect);
-
-            // TODO: 到底是top还是bottom
-            float bottom = Y.GetPixel(yLimit.Low, dataRect);
-            float top = Y.GetPixel(yLimit.High, dataRect);
-
-            Rect bmpRect = new Rect(left, right, top, bottom);
-
-            // 获取托管对象的句柄，并且钉住
-            GCHandle handle = GCHandle.Alloc(argbArray, GCHandleType.Pinned);
-
-            SKImageInfo imageInfo = new SKImageInfo(width, height);
-            using (SKBitmap bmp = new SKBitmap(imageInfo))
-            {
-                //bmp.SetPixels();
-                bmp.InstallPixels(imageInfo, handle.AddrOfPinnedObject(),
-                    imageInfo.RowBytes, (ptr, ctx) => handle.Free());
-
-                using (SKPaint paint = new SKPaint())
-                    rc.Canvas.DrawBitmap(bmp, bmpRect.ToSKRect(), paint);
-            }
+            Rect destRect = new Rect(left, right, top, bottom);
+            HeatmapStyle.Render(rc.Canvas, argbs, size, destRect);
         }
 
         public override void Dispose()

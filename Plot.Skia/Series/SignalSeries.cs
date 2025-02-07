@@ -49,6 +49,7 @@ namespace Plot.Skia
 
             List<PointF> points = new List<PointF>();
 
+            // TODO: 可以改成遍历整个数组
             for (int i = i1; i <= i2; i++)
             {
                 float x = X.GetPixel(SignalSource.GetX(i), dataRect);

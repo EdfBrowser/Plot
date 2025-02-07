@@ -40,6 +40,8 @@ namespace Plot.Skia
         internal PointF BottomLeft => new PointF(m_left, m_bottom);
         internal PointF BottomRight => new PointF(m_right, m_bottom);
 
+        internal Rect WithPan(PointF p) => WithPan(p.X, p.Y);
+
         internal Rect WithPan(float x, float y)
             => new Rect(Left + x, Right + x, Top + y, Bottom + y);
 
