@@ -13,6 +13,7 @@ namespace Plot.Skia
 
         private PointF MouseDownPoint { get; set; }
         private RememberedAxesLimit RememberedLimits { get; set; }
+        public CursorType CursorType { get; private set; }
 
         public bool Execute(Figure figure, IUserAction userInput)
         {
@@ -55,6 +56,7 @@ namespace Plot.Skia
         private void SetRules(Figure figure, PointF down, PointF now)
         {
             DragZoom(figure, down, now);
+            figure.FigureControl.SetCursor(CursorType);
         }
 
         private void DragZoom(Figure figure, PointF down, PointF now)
@@ -68,6 +70,12 @@ namespace Plot.Skia
             float scaledDeltaY = deltaY / control.DisplayScale;
 
             IAxis axisUnderMouse = figure.AxisManager.HitAxis(down);
+            // set cursor type
+            if (axisUnderMouse is IXAxis)
+                CursorType = CursorType.SizeWE;
+            if (axisUnderMouse is IYAxis)
+                CursorType = CursorType.SizeNS;
+
             if (axisUnderMouse != null)
             {
                 Rect dataRect = figure.RenderManager.LastRC.GetDataRect(axisUnderMouse);
@@ -81,6 +89,7 @@ namespace Plot.Skia
 
         public void Reset(Figure figure)
         {
+            figure.FigureControl.SetCursor(CursorType.Default);
             RememberedLimits = null;
             MouseDownPoint = PointF.NoSet;
         }

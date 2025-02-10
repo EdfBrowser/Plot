@@ -13,5 +13,7 @@ namespace Plot.Skia
 
         float DetectDisplayScale();
 
+        void SetCursor(CursorType cursorType);
+
     }
 }

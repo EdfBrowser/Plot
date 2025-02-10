@@ -13,7 +13,7 @@ namespace Plot.Skia
         private double ZoomOutFraction => 1 / ZoomInFraction;
 
         internal double ZoomFraction { get; set; }
-
+        public CursorType CursorType { get; private set; }
 
         public bool Execute(Figure figure, IUserAction userInput)
         {

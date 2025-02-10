@@ -112,6 +112,25 @@ namespace Plot.WinForm
 
         private static Color ConvertColor(System.Drawing.Color color)
             => new Color(color.R, color.G, color.B, color.A);
+
+        public void SetCursor(CursorType cursorType)
+        {
+            switch (cursorType)
+            {
+                case CursorType.Default:
+                    Cursor = Cursors.Arrow; // Cursors.Default
+                    break;
+                case CursorType.SizeAll:
+                    Cursor = Cursors.SizeAll;
+                    break;
+                case CursorType.SizeNS:
+                    Cursor = Cursors.SizeNS;
+                    break;
+                case CursorType.SizeWE:
+                    Cursor = Cursors.SizeWE;
+                    break;
+            }
+        }
     }
 
     public static class FigureFormExtensions
