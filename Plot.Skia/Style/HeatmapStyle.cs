@@ -10,7 +10,10 @@ namespace Plot.Skia
         public HeatmapStyle()
         {
             m_sKPaint = new SKPaint();
+            Smooth = false;
         }
+
+        public bool Smooth { get; set; }
 
         public void Dispose()
         {
@@ -19,7 +22,6 @@ namespace Plot.Skia
 
         private void Apply()
         {
-
         }
 
         internal void Render(SKCanvas canvas, uint[] argb, Size<int> size, Rect destRect)
@@ -29,15 +31,17 @@ namespace Plot.Skia
             // 获取托管对象的句柄，并且钉住
             GCHandle handle = GCHandle.Alloc(argb, GCHandleType.Pinned);
 
-            using (SKBitmap bmp = new SKBitmap(size.Width, size.Height))
+            SKImageInfo info = new SKImageInfo(
+                size.Width, size.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+            using (SKImage image = SKImage.FromPixels(info, handle.AddrOfPinnedObject()))
             {
-                SKImageInfo imageInfo = bmp.Info;
-                //bmp.SetPixels();
-                bmp.InstallPixels(imageInfo, handle.AddrOfPinnedObject(),
-                    imageInfo.RowBytes, (ptr, ctx) => handle.Free());
-
-                canvas.DrawBitmap(bmp, destRect.ToSKRect(), m_sKPaint);
+                SKFilterMode mode = Smooth ? SKFilterMode.Linear : SKFilterMode.Nearest;
+                SKSamplingOptions options = new SKSamplingOptions(mode);
+                canvas.DrawImage(image, destRect.ToSKRect(), options, m_sKPaint);
             }
+
+            if (handle.IsAllocated)
+                handle.Free();
         }
     }
 }

@@ -1,15 +1,11 @@
 using System;
-using System.Diagnostics;
-using System.Linq;
 
 namespace Plot.Skia
 {
-    // 1. 二维数组
-    // 2. 数组值转换成颜色
-    // 3. 填充
     public class HeatMapSeries : BaseSeries
     {
         private readonly double[,] m_intensity;
+
         private int Height => m_intensity.GetLength(0);
         private int Width => m_intensity.GetLength(1);
 
@@ -31,107 +27,117 @@ namespace Plot.Skia
         public override RangeMutable GetYLimit()
             => new RangeMutable(0, Height - 1);
 
-        private Rect GetDestRect(RenderContext rc)
-        {
-            Rect dataRect = GetDataRect(rc, X, Y);
-
-            float left = X.GetPixel(0, dataRect);
-            float right = X.GetPixel(Width - 1, dataRect);
-
-            float top = Y.GetPixel(Height - 1, dataRect);
-            float bottom = Y.GetPixel(0, dataRect);
-
-            return new Rect(left, right, top, bottom);
-        }
-
         public override void Render(RenderContext rc)
         {
-            // 从intensity中获取最值
-            double min = m_intensity.Cast<double>().Min();
-            double max = m_intensity.Cast<double>().Max();
+            (int validMinX, int validMaxX, int validMinY, int validMaxY)
+                = GetValidRegion(rc);
 
+            // 超过数据区域的部分不渲染
+            if (validMinX > validMaxX || validMinY > validMaxY) return;
+
+            (double min, double max) = CalculateIntensityRange();
+
+            uint[] argbs = GenerateColorMap(
+                validMinX, validMaxX, validMinY, validMaxY, min, max);
+
+            RenderToCanvas(rc, validMinX, validMaxX, validMinY, validMaxY, argbs);
+        }
+
+        private (int minX, int maxX, int minY, int maxY) GetValidRegion(RenderContext rc)
+        {
             Rect dataRect = rc.DataRect;
 
-            int validPointCount = 0;
+            int minX = int.MaxValue, maxX = int.MinValue;
+            int minY = int.MaxValue, maxY = int.MinValue;
 
-            int validMinX = int.MaxValue, validMaxX = int.MinValue;
-            int validMinY = int.MaxValue, validMaxY = int.MinValue;
-
-            int invalidMinY = int.MaxValue, invalidMaxY = int.MinValue;
-
-            // 遍历整个数据，检查哪些点在 dataRect 区域内
-            for (int y = 0; y < Height; y++)
+            // 确定有效区域
+            for (int j = 0; j < Height; j++)
             {
-                for (int x = 0; x < Width; x++)
-                {
-                    float px = X.GetPixel(x, dataRect);
-                    float py = Y.GetPixel(y, dataRect);
+                float y = Y.GetPixel(j, dataRect);
+                if (!dataRect.ContainsY(y)) continue;
 
-                    if (rc.DataRect.Contains(px, py))
+                for (int i = 0; i < Width; i++)
+                {
+                    float x = X.GetPixel(i, dataRect);
+                    if (dataRect.ContainsX(x))
                     {
-                        validPointCount++;
-
-                        validMinX = Math.Min(validMinX, x);
-                        validMaxX = Math.Max(validMaxX, x);
-                        validMinY = Math.Min(validMinY, y);
-                        validMaxY = Math.Max(validMaxY, y);
+                        minX = Math.Min(minX, i);
+                        maxX = Math.Max(maxX, i);
+                        minY = Math.Min(minY, j);
+                        maxY = Math.Max(maxY, j);
                     }
-                    //else
-                    //{
-                    //    invalidMinY = Math.Min(invalidMinY, y);
-                    //    invalidMaxY = Math.Max(invalidMaxY, y);
-                    //}
                 }
             }
 
-            if (validPointCount == 0)
-                return;
+            return (minX, maxX, minY, maxY);
+        }
 
-            Debug.WriteLine($"validPointCount:{validPointCount}");
-            // 更新有效区域的宽度和高度
-            int validWidth = validMaxX - validMinX + 1;
-            int validHeight = validMaxY - validMinY + 1;
+        private (double min, double max) CalculateIntensityRange()
+        {
+            double min = double.MaxValue;
+            double max = double.MinValue;
 
-            uint[] argbs = new uint[validWidth * validHeight];
-
-            // 映射数值为color
-            for (int y = validMinY; y <= validMaxY; y++)
+            foreach (double value in m_intensity)
             {
-                for (int x = validMinX; x <= validMaxX; x++)
+                if (value < min) min = value;
+                if (value > max) max = value;
+            }
+            return (min, max);
+        }
+
+        private uint[] GenerateColorMap(int minX, int maxX, int minY, int maxY,
+            double min, double max)
+        {
+            double range = max - min;
+            if (range == 0)
+                throw new ArgumentException("The value of the max-min is 0");
+            //range = 1; // 防止除以零
+
+            int width = maxX - minX + 1;
+            int height = maxY - minY + 1;
+            uint[] argbs = new uint[height * width];
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                // 从数组末尾开始填充
+                int offset = (maxY - y) * width;
+                for (int x = minX; x <= maxX; x++)
                 {
-                    double value = 0;
-                    if (validMaxY < Height - 1)
-                        value = m_intensity[Height - 1 - (validMaxY - y), x];
-                    else if (validMinY > 0)
-                        value = m_intensity[y - validMinY, x];
-                    else
-                        value = m_intensity[y, x];
+                    // 从height-1 增加到height - 1 - y
+                    double value = m_intensity[Height - 1 - y, x];
+
                     // 进行normalize，转换成(0-1)
-                    double normalized = (value - min) / (max - min);
-                    // 没啥作用其实
-                    normalized = normalized.Clamp(0, 1);
+                    double normalized = (value - min) / range;
+                    //normalized = normalized.Clamp(0, 1);
 
-                    Color color = ColorMap.GetColor(normalized);
-
-                    int index = (y - validMinY) * validWidth + (x - validMinX);
-                    argbs[index] = color.PremultipliedARGB;
+                    int index = offset + (x - minX);
+                    argbs[index] = ColorMap.GetColor(normalized).PremultipliedARGB;
                 }
             }
 
-            Size<int> size = new Size<int>(validWidth, validHeight);
-            Debug.WriteLine($"w/h:{validWidth}/{validHeight}");
-            float left = X.GetPixel(validMinX, dataRect);
-            float right = X.GetPixel(validMaxX, dataRect);
+            return argbs;
+        }
 
-            float top = Y.GetPixel(validMaxY, dataRect);
-            float bottom = Y.GetPixel(validMinY, dataRect);
+        private void RenderToCanvas(RenderContext rc, int minX, int maxX, int minY,
+            int maxY, uint[] argbs)
+        {
+            Rect dataRect = rc.DataRect;
+            float left = X.GetPixel(minX, dataRect);
+            float right = X.GetPixel(maxX, dataRect);
+            float top = Y.GetPixel(maxY, dataRect);
+            float bottom = Y.GetPixel(minY, dataRect);
 
-            Rect destRect = new Rect(left, right, top, bottom);
-            HeatmapStyle.Render(rc.Canvas, argbs, size, destRect);
+            HeatmapStyle.Render(
+                rc.Canvas,
+                argbs,
+                new Size<int>(maxX - minX + 1, maxY - minY + 1),
+                new Rect(left, right, top, bottom)
+            );
         }
 
         public override void Dispose()
         {
+            HeatmapStyle.Dispose();
         }
     }
 }
