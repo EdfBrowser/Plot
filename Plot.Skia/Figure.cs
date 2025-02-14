@@ -20,8 +20,9 @@ namespace Plot.Skia
             m_seriesManager = new SeriesManager(this);
         }
 
+        internal LayoutManager LayoutManager => m_layoutManager;
+
         public RenderManager RenderManager => m_renderManager;
-        public LayoutManager LayoutManager => m_layoutManager;
         public AxisManager AxisManager => m_axisManager;
         public BackgroundManager BackgroundManager => m_backgroundManager;
         public SeriesManager SeriesManager => m_seriesManager;

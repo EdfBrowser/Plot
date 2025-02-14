@@ -22,8 +22,8 @@ namespace Sandbox.WinForm
             //IXAxis m_x = axisManager.AddDateTimeBottomAxis();
             //m_x.ScrollMode = AxisScrollMode.Scrolling;
 
-            //IXAxis x1 = axisManager.DefaultBottom;
-            //IYAxis y1 = axisManager.DefaultLeft;
+            IXAxis x1 = axisManager.DefaultBottom;
+            IYAxis y1 = axisManager.DefaultLeft;
 
             //IXAxis x2 = axisManager.AddNumericBottomAxis();
             //IXAxis x3 = axisManager.AddNumericBottomAxis();
@@ -35,7 +35,7 @@ namespace Sandbox.WinForm
             //IYAxis y4 = axisManager.AddNumericLeftAxis();
             //IYAxis y5 = axisManager.AddNumericLeftAxis();
 
-            //seriesManager.AddHeatMapSeries(x1, y1, MonaLisa());
+            seriesManager.AddHeatMapSeries(x1, y1, MonaLisa());
             //seriesManager.AddSignalSeries(x1, y1, Generate.Sin(100), 1.0 / 1);
             //seriesManager.AddSignalSeries(x2, y2, Generate.Sin(100), 1.0 / 1);
             //seriesManager.AddSignalSeries(x3, y3, Generate.Sin(100), 1.0 / 1);

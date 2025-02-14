@@ -32,8 +32,8 @@ namespace Plot.Skia
                 top: m_figureRect.Top / Figure.FigureControl.DisplayScale,
                 bottom: m_figureRect.Bottom / Figure.FigureControl.DisplayScale);
 
-            (DataRect, AxesInfo)
-                = Figure.LayoutManager.GetLayout(ScaledFigureRect);
+            (DataRect, AxesInfo) = Figure.LayoutManager.Layout
+                .GetLayout(m_figure, ScaledFigureRect);
         }
 
         public Rect GetDataRect(IAxis axis)
