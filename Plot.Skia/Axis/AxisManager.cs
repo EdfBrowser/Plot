@@ -137,9 +137,23 @@ namespace Plot.Skia
             return axis;
         }
 
+        public NumericRightAxis AddNumericRightAxis()
+        {
+            NumericRightAxis axis = new NumericRightAxis();
+            YAxes.Add(axis);
+            return axis;
+        }
+
         public NumericBottomAxis AddNumericBottomAxis()
         {
             NumericBottomAxis axis = new NumericBottomAxis();
+            XAxes.Add(axis);
+            return axis;
+        }
+
+        public NumericTopAxis AddNumericTopAxis()
+        {
+            NumericTopAxis axis = new NumericTopAxis();
             XAxes.Add(axis);
             return axis;
         }

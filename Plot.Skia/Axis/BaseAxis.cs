@@ -111,9 +111,10 @@ namespace Plot.Skia
 
                 TickLabelStyle.Text = tick.Label;
                 float labelLength = TickLabelStyle.Measure(tick.Label).Width;
-                labelLength = Direction == Edge.Left ? -labelLength : labelLength;
-                PointF p = new PointF(x1 + tickLength + labelLength, y1)
-                    .Translate(0, TickLabelStyle.Ascent() / 2);
+                labelLength = Direction == Edge.Left ? -labelLength : 0;
+                PointF p = new PointF(
+                    x1 + tickLength + labelLength,
+                    y1 + TickLabelStyle.Ascent() / 2);
                 TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
             }
         }
@@ -142,8 +143,12 @@ namespace Plot.Skia
                     continue;
 
                 TickLabelStyle.Text = tick.Label;
-                PointF p = new PointF(x1, y1 + tickLength)
-                    .Translate(0, TickLabelStyle.Ascent());
+                float ascent = Direction == Edge.Top
+                    ? -TickLabelStyle.Descent()
+                    : TickLabelStyle.Ascent();
+                PointF p = new PointF(
+                    x1,
+                    y1 + tickLength + ascent);
 
                 TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
             }

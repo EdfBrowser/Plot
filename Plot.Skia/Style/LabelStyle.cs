@@ -46,7 +46,13 @@ namespace Plot.Skia
         internal float Ascent()
         {
             Apply();
-            return -m_sKFont.Metrics.Ascent;
+            return Math.Abs(m_sKFont.Metrics.Ascent);
+        }
+
+        internal float Descent()
+        {
+            Apply();
+            return m_sKFont.Metrics.Descent;
         }
 
         internal void Render(SKCanvas canvas, PointF p, SKTextAlign textAlign)
