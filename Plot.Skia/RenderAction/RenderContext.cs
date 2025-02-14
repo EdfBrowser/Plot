@@ -17,6 +17,7 @@ namespace Plot.Skia
         }
 
         private Dictionary<IAxis, (float, float)> AxesInfo { get; set; }
+        private Dictionary<IPanel, (float, float)> PanelsInfo { get; set; }
 
         internal Figure Figure => m_figure;
         internal SKCanvas Canvas => m_canvas;
@@ -32,14 +33,22 @@ namespace Plot.Skia
                 top: m_figureRect.Top / Figure.FigureControl.DisplayScale,
                 bottom: m_figureRect.Bottom / Figure.FigureControl.DisplayScale);
 
-            (DataRect, AxesInfo) = Figure.LayoutManager.Layout
+            (DataRect, AxesInfo, PanelsInfo) = Figure.LayoutManager.Layout
                 .GetLayout(m_figure, ScaledFigureRect);
         }
 
-        public Rect GetDataRect(IAxis axis)
+        internal Rect GetDataRect(IAxis axis)
         {
             (float delta, float size) = AxesInfo[axis];
             return axis.GetDataRect(DataRect, delta, size);
         }
+
+        internal Rect GetDataRect(IPanel panel)
+        {
+            (float delta, float size) = PanelsInfo[panel];
+            return panel.GetDataRect(DataRect, delta, size);
+        }
+
+        internal (float, float) GetInfo(IPanel panel) => PanelsInfo[panel];
     }
 }

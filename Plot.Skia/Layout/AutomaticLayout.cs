@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace Plot.Skia
 {
     internal class AutomaticLayout : ILayout
     {
-        public (Rect, Dictionary<IAxis, (float, float)>)
+        public (Rect,
+            Dictionary<IAxis, (float, float)>,
+            Dictionary<IPanel, (float, float)>)
             GetLayout(Figure figure, Rect figureRect)
         {
             AxisManager axisManager = figure.AxisManager;
@@ -19,7 +22,10 @@ namespace Plot.Skia
             }
 
 
-            Dictionary<IAxis, float> measuredAxes = Measure(figure.AxisManager.Axes);
+            Dictionary<IAxis, float> measuredAxes
+                = MeasureAxes(figure.AxisManager.Axes);
+            Dictionary<IPanel, float> measuredPanels
+                = MeasurePanels(figure.PanelManager.Panels);
 
             (float l, float r, float t, float b) =
                 CalculateEdgeTickLabel(figure.AxisManager.Axes);
@@ -36,35 +42,63 @@ namespace Plot.Skia
             IEnumerable<IAxis> topAxes
                 = figure.AxisManager.Axes.Where(x => x.Direction == Edge.Top);
 
-
-            float left = leftAxes.Any()
+            // TODO: 是否修改成最后一个刻度字符串和measured方法的值来进行比较？
+            float leftOffsetAxis = leftAxes.Any()
                 ? leftAxes.Select(x => measuredAxes[x]).Max() : l;
-            float right = rightAxes.Any()
+            float rightOffsetAxis = rightAxes.Any()
                 ? rightAxes.Select(x => measuredAxes[x]).Max() : r;
-            float bottom = bottomAxes.Any()
+            float bottomOffsetAxis = bottomAxes.Any()
                 ? bottomAxes.Select(x => measuredAxes[x]).Max() : b;
-            float top = topAxes.Any()
+            float topOffsetAxis = topAxes.Any()
                 ? topAxes.Select(x => measuredAxes[x]).Max() : t;
 
+            // TODO: 优化加入Panel后的计算
+            IEnumerable<IPanel> leftPanels
+              = figure.PanelManager.Panels.Where(x => x.Direction == Edge.Left);
+            IEnumerable<IPanel> rightPanels
+                = figure.PanelManager.Panels.Where(x => x.Direction == Edge.Right);
+            IEnumerable<IPanel> bottomPanels
+                = figure.PanelManager.Panels.Where(x => x.Direction == Edge.Bottom);
+            IEnumerable<IPanel> topPanels
+                = figure.PanelManager.Panels.Where(x => x.Direction == Edge.Top);
+
+            float leftOffsetPanel = leftPanels.Any()
+                ? leftPanels.Select(x => measuredPanels[x]).Sum() : 0;
+            float rightOffsetPanel = rightPanels.Any()
+                ? rightPanels.Select(x => measuredPanels[x]).Sum() : 0;
+            float bottomOffsetPanel = bottomPanels.Any()
+                ? bottomPanels.Select(x => measuredPanels[x]).Sum() : 0;
+            float topOffsetPanel = topPanels.Any()
+                ? topPanels.Select(x => measuredPanels[x]).Sum() : 0;
+
+            float wOffset = leftOffsetAxis + leftOffsetPanel + rightOffsetAxis + rightOffsetPanel;
+            float hOffset = topOffsetAxis + topOffsetPanel + bottomOffsetAxis + bottomOffsetPanel;
 
             float dataRectWidth
-                = Math.Max(0, figureRect.Width - (left + right));
+                = Math.Max(0, figureRect.Width - wOffset);
             float dataRectHeight
-                = Math.Max(0, figureRect.Height - (bottom + top));
+                = Math.Max(0, figureRect.Height - hOffset);
 
             SizeF dataSize = new SizeF(dataRectWidth, dataRectHeight);
-            PointF location = new PointF(left, top);
+            PointF location = new PointF((leftOffsetAxis + leftOffsetPanel), (topOffsetAxis + topOffsetPanel));
             Rect dataRect = new Rect(location, dataSize)
+                // TODO: 移动到0，0还是-1，-1？
                 .WithPan(figureRect.Left, figureRect.Top);
 
 
             Dictionary<IAxis, (float, float)> axesInfo
                 = ArrangeAxes(figure.AxisManager.Axes, dataRect);
 
-            return (dataRect, axesInfo);
+            Dictionary<IPanel, (float, float)> panelsInfo
+                = ArrangePanels(
+                    figure.PanelManager.Panels,
+                    measuredPanels,
+                    (leftOffsetAxis, rightOffsetAxis, bottomOffsetAxis, topOffsetAxis));
+
+            return (dataRect, axesInfo, panelsInfo);
         }
 
-        private static void CalculateOffsets(IEnumerable<IAxis> axes,
+        private static void CalculateAxisOffsets(IEnumerable<IAxis> axes,
             Rect dataRect, Dictionary<IAxis, (float, float)> axesInfo)
         {
             int axisCount = axes.Count();
@@ -92,24 +126,58 @@ namespace Plot.Skia
             }
         }
 
+        private static void CalculatePanelOffsets(
+           IEnumerable<IPanel> panels,
+           float offset,
+           Dictionary<IPanel, float> measuredPanels,
+           Dictionary<IPanel, (float, float)> panelsInfo)
+        {
+            float delta = offset;
+            foreach (IPanel panel in panels)
+            {
+                panelsInfo[panel] = (delta, measuredPanels[panel]);
+                delta += measuredPanels[panel];
+            }
+        }
+
+
         private static Dictionary<IAxis, (float, float)> ArrangeAxes(
             IEnumerable<IAxis> axes, Rect dataRect)
         {
             Dictionary<IAxis, (float, float)> axesInfo = new Dictionary<IAxis, (float, float)>();
 
-            CalculateOffsets(axes.Where(x => x.Direction == Edge.Left),
+            CalculateAxisOffsets(axes.Where(x => x.Direction == Edge.Left),
                 dataRect, axesInfo);
-            CalculateOffsets(axes.Where(x => x.Direction == Edge.Right),
+            CalculateAxisOffsets(axes.Where(x => x.Direction == Edge.Right),
                 dataRect, axesInfo);
-            CalculateOffsets(axes.Where(x => x.Direction == Edge.Bottom),
+            CalculateAxisOffsets(axes.Where(x => x.Direction == Edge.Bottom),
                 dataRect, axesInfo);
-            CalculateOffsets(axes.Where(x => x.Direction == Edge.Top),
+            CalculateAxisOffsets(axes.Where(x => x.Direction == Edge.Top),
                 dataRect, axesInfo);
 
             return axesInfo;
         }
 
-        private static Dictionary<IAxis, float> Measure(IEnumerable<IAxis> axes)
+        private static Dictionary<IPanel, (float, float)> ArrangePanels(
+           IEnumerable<IPanel> panels,
+           Dictionary<IPanel, float> measuredPanels,
+           (float l, float r, float b, float t) axisOffset)
+        {
+            Dictionary<IPanel, (float, float)> panelsInfo = new Dictionary<IPanel, (float, float)>();
+
+            CalculatePanelOffsets(panels.Where(x => x.Direction == Edge.Left),
+               axisOffset.l, measuredPanels, panelsInfo);
+            CalculatePanelOffsets(panels.Where(x => x.Direction == Edge.Right),
+               axisOffset.r, measuredPanels, panelsInfo);
+            CalculatePanelOffsets(panels.Where(x => x.Direction == Edge.Bottom),
+               axisOffset.b, measuredPanels, panelsInfo);
+            CalculatePanelOffsets(panels.Where(x => x.Direction == Edge.Top),
+               axisOffset.t, measuredPanels, panelsInfo);
+
+            return panelsInfo;
+        }
+
+        private static Dictionary<IAxis, float> MeasureAxes(IEnumerable<IAxis> axes)
         {
             Dictionary<IAxis, float> measuredAxes = new Dictionary<IAxis, float>();
 
@@ -119,6 +187,18 @@ namespace Plot.Skia
             }
 
             return measuredAxes;
+        }
+
+        private static Dictionary<IPanel, float> MeasurePanels(IEnumerable<IPanel> panels)
+        {
+            Dictionary<IPanel, float> measuredPanels = new Dictionary<IPanel, float>();
+
+            foreach (IPanel panel in panels)
+            {
+                measuredPanels[panel] = panel.Measure();
+            }
+
+            return measuredPanels;
         }
 
         private static (float, float, float, float)

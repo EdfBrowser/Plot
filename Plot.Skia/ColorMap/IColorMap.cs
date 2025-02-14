@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Plot.Skia
 {
@@ -17,6 +19,18 @@ namespace Plot.Skia
             if (value.CompareTo(max) > 0) return max;
 
             return value;
+        }
+
+        internal static IEnumerable<uint> ToColorArray(this IColorMap colormap, bool vertical)
+        {
+            for (int x = 0; x < 256; x++)
+            {
+                double val = x / 255d;
+                if (vertical)
+                    val = (255 - x) / 255d;
+
+                yield return colormap.GetColor(val).UnPremulARGB;
+            }
         }
     }
 }

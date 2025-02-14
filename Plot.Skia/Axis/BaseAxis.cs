@@ -21,6 +21,7 @@ namespace Plot.Skia
         public abstract float GetPixel(double position, Rect dataRect);
         public abstract double GetWorld(float pixel, Rect dataRect);
         public abstract void Render(RenderContext rc);
+        public abstract void Render(RenderContext rc, Rect dataRect);
         public abstract float Measure();
         public abstract Rect GetDataRect(
             Rect dataRect, float delta, float size);
@@ -50,8 +51,15 @@ namespace Plot.Skia
         public void GenerateTicks(float axisLength) => TickGenerator.Generate(
             RangeMutable.ToRange, Direction, axisLength, TickLabelStyle);
 
+        protected void Render(SKCanvas canvas, Rect dataRect)
+        {
+            DrawTicks(canvas, dataRect);
+            DrawLines(canvas, dataRect);
+        }
 
-
+        // TODO: 修改Layout时存的值（不是正常的）
+        // horizontal应该修改y轴，x/y-stacked情况比较特殊，后面需要设计一个
+        // 结构体来维护delta和size(上下左右都要保存)
         protected Rect GetHorizontalRect(Rect dataRect, float delta, float size)
             => new Rect(
                 dataRect.Left + delta,

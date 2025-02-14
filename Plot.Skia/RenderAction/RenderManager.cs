@@ -22,6 +22,7 @@ namespace Plot.Skia
                 new DataBackground(),
                 new RenderSeries(),
                 new RenderAxis(),
+                new RenderPanel(),
             };
         }
 

@@ -4,26 +4,23 @@ using System.Linq;
 
 namespace Plot.Skia
 {
-    public class SignalSeries : ISeries
+    public class SignalSeries : BaseSeries
     {
         public SignalSeries(IXAxis x, IYAxis y, ISignalSource signalSource)
+            : base(x, y)
         {
-            X = x;
-            Y = y;
             SignalSource = signalSource;
             SeriesLineStyle = new LineStyle() { AntiAlias = true };
             MarkerStyle = new MarkerStyle() { Shape = MarkerShape.OpenCircle, AntiAlias = true };
             LowDensityMode = false;
         }
 
-        public IXAxis X { get; }
-        public IYAxis Y { get; }
         public ISignalSource SignalSource { get; }
         public LineStyle SeriesLineStyle { get; set; }
         public MarkerStyle MarkerStyle { get; set; }
         public bool LowDensityMode { get; set; }
 
-        public void Render(RenderContext rc)
+        public override void Render(RenderContext rc)
         {
             if (!SignalSource.GetYs().Any()) return;
 
@@ -33,9 +30,9 @@ namespace Plot.Skia
                 RenderHighDensity(rc);
         }
 
-        public RangeMutable GetXLimit() => SignalSource.GetXLimit();
+        public override RangeMutable GetXLimit() => SignalSource.GetXLimit();
 
-        public RangeMutable GetYLimit() => SignalSource.GetYLimit();
+        public override RangeMutable GetYLimit() => SignalSource.GetYLimit();
 
         private void RenderLowDensity(RenderContext rc)
         {
@@ -114,6 +111,13 @@ namespace Plot.Skia
                     y = Math.Max(y, Math.Max(y2, y3));
                 }
 
+                // 超过画图区域设为NAN
+                if (!rc.DataRect.Contains(px, y))
+                {
+                    px = float.NaN;
+                    y = float.NaN;
+                }
+
                 points.Add(new PointF(px, y));
             }
 
@@ -129,24 +133,7 @@ namespace Plot.Skia
             return (X.Width / SignalSource.SampleInterval) / dataRect.Width;
         }
 
-        // 通过X/Y轴的DataRect来取并集
-        public Rect GetDataRect(RenderContext rc, IXAxis x, IYAxis y)
-        {
-            Rect xRect = rc.GetDataRect(x);
-            Rect yRect = rc.GetDataRect(y);
-
-            float left = Math.Max(xRect.Left, yRect.Left);
-            float right = Math.Min(xRect.Right, yRect.Right);
-
-            float top = Math.Max(xRect.Top, yRect.Top);
-            float bottom = Math.Min(xRect.Bottom, yRect.Bottom);
-
-            Rect unionRect = new Rect(left, right, top, bottom);
-
-            return unionRect;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             SeriesLineStyle.Dispose();
             MarkerStyle.Dispose();

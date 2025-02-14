@@ -29,9 +29,11 @@ namespace Plot.Skia
         public override void Render(RenderContext rc)
         {
             Rect dataRect = rc.GetDataRect(this);
-            DrawTicks(rc.Canvas, dataRect);
-            DrawLines(rc.Canvas, dataRect);
+            Render(rc.Canvas, dataRect);
         }
+
+        public override void Render(RenderContext rc, Rect dataRect)
+            => Render(rc.Canvas, dataRect);
 
         public override float Measure()
         {

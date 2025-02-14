@@ -7,7 +7,7 @@ namespace Plot.Skia
     {
         private readonly Figure m_figure;
 
-        public SeriesManager(Figure figure)
+        internal SeriesManager(Figure figure)
         {
             m_figure = figure;
             Series = new List<ISeries>();

@@ -2,7 +2,7 @@ using System;
 
 namespace Plot.Skia
 {
-    public class HeatMapSeries : BaseSeries
+    public class HeatMapSeries : BaseSeries, IHasColorBar
     {
         private readonly double[,] m_intensity;
 
@@ -21,6 +21,8 @@ namespace Plot.Skia
         public IColorMap ColorMap { get; set; }
         public HeatmapStyle HeatmapStyle { get; set; }
 
+        public Range GetRange() => CalculateIntensityRange();
+
         public override RangeMutable GetXLimit()
             => new RangeMutable(0, Width - 1);
 
@@ -35,17 +37,17 @@ namespace Plot.Skia
             // 超过数据区域的部分不渲染
             if (validMinX > validMaxX || validMinY > validMaxY) return;
 
-            (double min, double max) = CalculateIntensityRange();
+            Range range = GetRange();
 
             uint[] argbs = GenerateColorMap(
-                validMinX, validMaxX, validMinY, validMaxY, min, max);
+                validMinX, validMaxX, validMinY, validMaxY, range);
 
             RenderToCanvas(rc, validMinX, validMaxX, validMinY, validMaxY, argbs);
         }
 
         private (int minX, int maxX, int minY, int maxY) GetValidRegion(RenderContext rc)
         {
-            Rect dataRect = rc.DataRect;
+            Rect dataRect = GetDataRect(rc, X, Y);
 
             int minX = int.MaxValue, maxX = int.MinValue;
             int minY = int.MaxValue, maxY = int.MinValue;
@@ -72,7 +74,7 @@ namespace Plot.Skia
             return (minX, maxX, minY, maxY);
         }
 
-        private (double min, double max) CalculateIntensityRange()
+        private Range CalculateIntensityRange()
         {
             double min = double.MaxValue;
             double max = double.MinValue;
@@ -82,14 +84,13 @@ namespace Plot.Skia
                 if (value < min) min = value;
                 if (value > max) max = value;
             }
-            return (min, max);
+            return new Range(min, max);
         }
 
         private uint[] GenerateColorMap(int minX, int maxX, int minY, int maxY,
-            double min, double max)
+            Range range)
         {
-            double range = max - min;
-            if (range == 0)
+            if (range.Span == 0)
                 throw new ArgumentException("The value of the max-min is 0");
             //range = 1; // 防止除以零
 
@@ -107,11 +108,11 @@ namespace Plot.Skia
                     double value = m_intensity[Height - 1 - y, x];
 
                     // 进行normalize，转换成(0-1)
-                    double normalized = (value - min) / range;
+                    double normalized = (value - range.Low) / range.Span;
                     //normalized = normalized.Clamp(0, 1);
 
                     int index = offset + (x - minX);
-                    argbs[index] = ColorMap.GetColor(normalized).PremultipliedARGB;
+                    argbs[index] = ColorMap.GetColor(normalized).PremulARGB;
                 }
             }
 
@@ -121,7 +122,7 @@ namespace Plot.Skia
         private void RenderToCanvas(RenderContext rc, int minX, int maxX, int minY,
             int maxY, uint[] argbs)
         {
-            Rect dataRect = rc.DataRect;
+            Rect dataRect = GetDataRect(rc, X, Y);
             float left = X.GetPixel(minX, dataRect);
             float right = X.GetPixel(maxX, dataRect);
             float top = Y.GetPixel(maxY, dataRect);

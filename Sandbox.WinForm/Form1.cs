@@ -12,10 +12,11 @@ namespace Sandbox.WinForm
 
             var axisManager = figureForm1.Figure.AxisManager;
             var seriesManager = figureForm1.Figure.SeriesManager;
+            var panelManager = figureForm1.Figure.PanelManager;
 
+            //IXAxis top = axisManager.AddNumericTopAxis();
             //axisManager.AddNumericTopAxis();
-            //axisManager.AddNumericTopAxis();
-            //axisManager.AddNumericRightAxis();
+            //IYAxis right = axisManager.AddNumericRightAxis();
             //axisManager.AddNumericRightAxis();
 
             //axisManager.Remove(Edge.Bottom);
@@ -35,12 +36,29 @@ namespace Sandbox.WinForm
             //IYAxis y4 = axisManager.AddNumericLeftAxis();
             //IYAxis y5 = axisManager.AddNumericLeftAxis();
 
-            seriesManager.AddHeatMapSeries(x1, y1, MonaLisa());
+
             //seriesManager.AddSignalSeries(x1, y1, Generate.Sin(100), 1.0 / 1);
+            //seriesManager.AddSignalSeries(x2, y2, Generate.Sin(1000), 1.0 / 1);
             //seriesManager.AddSignalSeries(x2, y2, Generate.Sin(100), 1.0 / 1);
             //seriesManager.AddSignalSeries(x3, y3, Generate.Sin(100), 1.0 / 1);
             //seriesManager.AddSignalSeries(x4, y4, Generate.Sin(100), 1.0 / 1);
             //seriesManager.AddSignalSeries(x5, y5, Generate.Sin(100), 1.0 / 1);
+
+            var hm1 = seriesManager.AddHeatMapSeries(x1, y1, MonaLisa());
+            //var hm2 = seriesManager.AddHeatMapSeries(x2, y2, MonaLisa());
+            hm1.ColorMap = new JetCMP();
+            //hm.HeatmapStyle.Smooth = true;
+
+            var cb1 = panelManager.AddColorBar(hm1, Edge.Right);
+            //var cb2 = panelManager.AddColorBar(hm2, Edge.Left);
+            //cb.HeatmapStyle.Smooth = true;
+            //panelManager.AddColorBar(hm, Edge.Bottom);
+            //panelManager.AddColorBar(hm, Edge.Right);
+            //panelManager.AddColorBar(hm, Edge.Right);
+            //panelManager.AddColorBar(hm, Edge.Left);
+            //panelManager.AddColorBar(hm, Edge.Left);
+            //panelManager.AddColorBar(hm, Edge.Top);
+            //panelManager.AddColorBar(hm, Edge.Top);
         }
 
 

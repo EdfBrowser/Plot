@@ -41,7 +41,19 @@ namespace Plot.Skia
         internal byte B => m_blue;
         internal byte A => m_alpha;
 
-        internal uint PremultipliedARGB
+        public uint UnPremulARGB
+        {
+            get
+            {
+                return
+                   ((uint)m_alpha << 24) |
+                   ((uint)m_red << 16) |
+                   ((uint)m_green << 8) |
+                   ((uint)m_blue << 0);
+            }
+        }
+
+        internal uint PremulARGB
         {
             get
             {
