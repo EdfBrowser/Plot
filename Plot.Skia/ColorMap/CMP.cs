@@ -21,7 +21,7 @@ namespace Plot.Skia
 
         public Color GetColor(double position)
         {
-            position = position.Clamp(0, 1);
+            position = NumericConversion.Clamp(position, 0, 1);
             // 255 * (0-1)之间的数
             int length = m_colors.Length - 1;
             int index = (int)(length * position);

@@ -23,10 +23,9 @@ namespace Plot.Skia
             return sig;
         }
 
-        public SignalSeries AddSignalSeries(IXAxis x, IYAxis y,
-            IList<double> ys, double sampleInterval = 1.0)
+        public SignalSeries AddSignalSeries(IXAxis x, IYAxis y, double sampleInterval = 1.0)
         {
-            ISignalSource source = new SignalSouceDouble(ys, sampleInterval);
+            ISignalSource source = new SignalSourceDouble(sampleInterval);
             return AddSignalSeries(x, y, source);
         }
 

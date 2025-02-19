@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net4.8</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\EdfParser\Parser\Parser.csproj" />
+    <ProjectReference Include="..\Plot.Skia\Plot.Skia.csproj" />
+    <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
+  </ItemGroup>
+
+</Project>
