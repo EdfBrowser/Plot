@@ -13,7 +13,7 @@ namespace Plot.Skia
             Series = new List<ISeries>();
         }
 
-        internal IList<ISeries> Series { get; }
+        public IList<ISeries> Series { get; }
 
         public SignalSeries AddSignalSeries(IXAxis x, IYAxis y, ISignalSource signalSource)
         {

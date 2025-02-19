@@ -6,7 +6,6 @@ namespace Plot.Skia
     public class SignalSouceDouble : ISignalSource
     {
         private readonly IList<double> m_ys;
-        private int Length => m_ys.Count;
         private int MinRenderringIndex => Math.Max(0, MinimumIndex);
         private int MaxRenderringIndex => Math.Min(Length - 1, MaximumIndex);
 
@@ -18,9 +17,22 @@ namespace Plot.Skia
             MaximumIndex = int.MaxValue;
         }
 
+        public int Length => m_ys.Count;
         public double SampleInterval { get; set; }
         public int MinimumIndex { get; set; }
         public int MaximumIndex { get; set; }
+        public double XOffset { get; set; }
+
+        public void Add(double val)
+        {
+            m_ys.Add(val);
+        }
+
+        public void AddRange(IEnumerable<double> vals)
+        {
+            foreach (double val in vals)
+                Add(val);
+        }
 
         public int GetIndex(double x)
         {
@@ -75,5 +87,6 @@ namespace Plot.Skia
 
             return new RangeMutable(min, max);
         }
+
     }
 }
