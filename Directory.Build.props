@@ -6,5 +6,7 @@
         <PlatformTarget>anycpu</PlatformTarget>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>disable</Nullable>
+        <PackageOutputPath>D:\.localnugetpackages</PackageOutputPath>
+        <Authors>pusong</Authors>
 	</PropertyGroup>
  </Project>

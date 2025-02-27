@@ -19,12 +19,14 @@ namespace Plot.Skia
             }
         }
 
-        private const int ChunkSize = 5000;  // 每块存储10,000个数据点
-        private const int MaxChunks = 2;     // 最多保留10块（即100,000个数据点）
+        private const int ChunkSize = 5000;
+        private const int MaxChunks = 4;
 
         private readonly LinkedList<DataChunk> _chunks = new LinkedList<DataChunk>();
-        private int _globalStartIndex = 0;     // 当前存储的最旧数据全局索引
-        private int _totalCount = 0;           // 当前存储的总数据量
+        // 当前存储的最旧数据全局索引
+        private int _globalStartIndex = 0;
+        // 当前块中存储数据的索引
+        private int _totalCount = 0;
         private double _globalMin = double.PositiveInfinity;
         private double _globalMax = double.NegativeInfinity;
 
@@ -42,14 +44,12 @@ namespace Plot.Skia
 
         public void Add(double val)
         {
-            // 获取当前块（若不存在或已满则创建新块）
             DataChunk currentChunk = _chunks.Last?.Value;
             if (currentChunk == null || currentChunk.Count >= ChunkSize)
             {
                 currentChunk = new DataChunk(ChunkSize);
                 _chunks.AddLast(currentChunk);
 
-                // 超过最大块数时删除最旧块
                 if (_chunks.Count > MaxChunks)
                 {
                     DataChunk oldestChunk = _chunks.First.Value;
