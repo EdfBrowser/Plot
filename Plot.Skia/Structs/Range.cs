@@ -16,8 +16,6 @@ namespace Plot.Skia
 
         internal double Span => m_high - m_low;
 
-        public static Range Default => new Range(-10, 10);
-
         internal bool Contains(double value) => m_low <= value && m_high >= value;
     }
 }

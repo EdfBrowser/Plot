@@ -16,7 +16,6 @@ namespace Plot.Skia
             {
                 new ClearCanvas(),
                 new ScaleAxis(),
-                new ContinuouslyAutoscale(),
                 new CalculateLayout(),
                 new FigureBackground(),
                 new GenerateTick(),
@@ -27,7 +26,7 @@ namespace Plot.Skia
             };
         }
 
-        internal bool ContinuousScale { get; set; }
+        internal bool FitY { get; set; }
         internal IEnumerable<IRenderAction> RenderOrders { get; }
         internal RenderContext LastRC { get; private set; }
 
@@ -54,7 +53,7 @@ namespace Plot.Skia
         }
 
         #region PUBLIC
-        public void Fit() => ContinuousScale = true;
+        public void Fit() => FitY = true;
         public EventHandler<RenderContext> SizeChangedEventHandler { get; set; }
         #endregion
     }

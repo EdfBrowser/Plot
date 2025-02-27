@@ -14,13 +14,20 @@ namespace Plot.Skia
         internal double Span => High - Low;
         internal double Center => (High + Low) / 2;
 
-        internal bool HasBeenSet
-            => !(double.IsNaN(Span) || double.IsInfinity(Span) || Low > High || Low == High);
+        internal bool HasBeenSet => Valid;
+
+        internal bool Valid => !(double.IsNaN(Span) || double.IsInfinity(Span) || Low > High || Low == High);
 
         internal Range ToRange => new Range(Low, High);
 
         internal static RangeMutable NotSet
             => new RangeMutable(double.PositiveInfinity, double.NegativeInfinity);
+
+        internal void Expand(double paddingRatio)
+        {
+            double padding = Span * paddingRatio / 2.0;
+            Set(Low - padding, High + padding);
+        }
 
         internal void Set(double low, double high)
         {

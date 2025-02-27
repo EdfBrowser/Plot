@@ -48,14 +48,14 @@ namespace Plot.App
 
             m_timer = new Timer();
             m_timer.Tick += Timer_Tick;
-            m_timer.Interval = 100;
+            m_timer.Interval = 500;
 
-            m_updateTimer = new Timer();
-            m_updateTimer.Tick += RefreshPlot;
-            m_updateTimer.Interval = 500;
+            //m_updateTimer = new Timer();
+            //m_updateTimer.Tick += RefreshPlot;
+            //m_updateTimer.Interval = 500;
 
-            axisManager.Remove(Edge.Bottom);
-            axisManager.AddDateTimeBottomAxis();
+            //axisManager.Remove(Edge.Bottom);
+            //axisManager.AddDateTimeBottomAxis();
 
             m_x = axisManager.DefaultBottom;
             IYAxis y = axisManager.DefaultLeft;
@@ -63,16 +63,16 @@ namespace Plot.App
             m_x.ScrollMode = AxisScrollMode.Scrolling;
 
             var seriesManager = figureForm1.Figure.SeriesManager;
-            m_sig1 = seriesManager.AddSignalSeries(m_x, y, m_data, 1.0 / 1);
+            m_sig1 = seriesManager.AddSignalSeries(m_x, y, 1.0 / 1);
 
             //((DateTimeBottomAxis)(m_x)).SetOriginDateTime(DateTime.Now);
 
 
-            IYAxis y2 = axisManager.AddNumericLeftAxis();
-            IYAxis y3 = axisManager.AddNumericLeftAxis();
+            //IYAxis y2 = axisManager.AddNumericLeftAxis();
+            //IYAxis y3 = axisManager.AddNumericLeftAxis();
 
-            m_sig2 = seriesManager.AddSignalSeries(m_x, y2, m_data2, 1.0 / 1);
-            m_sig3 = seriesManager.AddSignalSeries(m_x, y3, m_data3, 1.0 / 1);
+            //m_sig2 = seriesManager.AddSignalSeries(m_x, y2, 1.0 / 1);
+            //m_sig3 = seriesManager.AddSignalSeries(m_x, y3, 1.0 / 1);
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
             //axisManager.AddNumericLeftAxis();
@@ -80,21 +80,26 @@ namespace Plot.App
             //axisManager.AddNumericBottomAxis();
 
             m_timer.Start();
-            m_updateTimer.Start();
+            //m_updateTimer.Start();
 #endif
         }
 
         private void RefreshPlot(object sender, EventArgs e)
         {
-            m_x.ScrollPosition = m_data.Count;
-            figureForm1.Refresh();
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            m_data.Add(m_random.NextDouble());
-            m_data2.Add(m_random.NextDouble());
-            m_data3.Add(m_random.NextDouble());
+            //m_data.Add(m_random.NextDouble());
+            //m_data2.Add(m_random.NextDouble());
+            //m_data3.Add(m_random.NextDouble());
+
+            SignalSourceDouble source = (m_sig1.SignalSource) as SignalSourceDouble;
+            source.Add(m_random.NextDouble());
+            m_x.ScrollPosition = source.Length * source.SampleInterval;
+
+            figureForm1.Figure.RenderManager.Fit();
+            figureForm1.Refresh();
         }
     }
 }

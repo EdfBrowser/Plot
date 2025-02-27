@@ -10,23 +10,14 @@ namespace Plot.Skia
         {
             AxisManager axisManager = rc.Figure.AxisManager;
             IEnumerable<ISeries> series = rc.Figure.SeriesManager.Series;
-            if (series.Any())
+            // 初次初始化X轴，后续继续初始化Y轴
+            if (rc.Figure.RenderManager.FitY)
+            {
                 AutoScaleSeries(series, axisManager);
+                rc.Figure.RenderManager.FitY = false;
+            }
             else
                 ApplyDefaultLimits(axisManager);
-
-        }
-
-        private void AdjustLimit(RangeMutable limit, double defaultMin, double defaultMax)
-        {
-            if (!limit.HasBeenSet)
-                limit.Set(defaultMin, defaultMax);
-        }
-
-        private void ApplyPadding(RangeMutable limit, double paddingRatio)
-        {
-            double padding = limit.Span * paddingRatio / 2.0;
-            limit.Set(limit.Low - padding, limit.High + padding);
         }
 
         private void ProcessAxis(AxisManager axisManager,
@@ -34,8 +25,11 @@ namespace Plot.Skia
         {
             RangeMutable limit = getLimit();
 
-            AdjustLimit(limit, -10, 10);
-            ApplyPadding(limit, paddingRatio);
+            if (!limit.Valid)
+                limit.Set(0, 10);
+            else
+                limit.Expand(paddingRatio);
+
             axisManager.SetLimits(limit.ToRange, axis);
         }
 
@@ -44,14 +38,11 @@ namespace Plot.Skia
         {
             foreach (ISeries item in series)
             {
-                if (item.X.RangeMutable.HasBeenSet && item.Y.RangeMutable.HasBeenSet)
-                    continue;
+                if (!item.X.RangeMutable.HasBeenSet)
+                    ProcessAxis(axisManager, item.X, 0.1, item.GetXLimit);
 
-                ProcessAxis(axisManager, item.X, 0.1, item.GetXLimit);
                 ProcessAxis(axisManager, item.Y, 0.15, item.GetYLimit);
             }
-
-            ApplyDefaultLimits(axisManager);
         }
 
         private void ApplyDefaultLimits(AxisManager axisManager)
@@ -59,7 +50,7 @@ namespace Plot.Skia
             foreach (IAxis axis in axisManager.Axes)
             {
                 if (!axis.RangeMutable.HasBeenSet)
-                    axisManager.SetLimits(Range.Default, axis);
+                    axisManager.SetLimits(new Range(0, 10), axis);
             }
         }
     }

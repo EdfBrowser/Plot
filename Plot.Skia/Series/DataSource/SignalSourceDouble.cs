@@ -30,6 +30,9 @@ namespace Plot.Skia
         private double _globalMin = double.PositiveInfinity;
         private double _globalMax = double.NegativeInfinity;
 
+        private int MinRenderringIndex => Math.Max(_globalStartIndex, MinimumIndex);
+        private int MaxRenderringIndex => Math.Min(_globalStartIndex + _totalCount - 1, MaximumIndex);
+
         public SignalSourceDouble(double sampleInterval)
         {
             SampleInterval = sampleInterval;
@@ -126,8 +129,6 @@ namespace Plot.Skia
                 yield return GetY(i);
         }
 
-        private int MinRenderringIndex => Math.Max(_globalStartIndex, MinimumIndex);
-        private int MaxRenderringIndex => Math.Min(_globalStartIndex + _totalCount - 1, MaximumIndex);
 
         public RangeMutable GetXLimit() => new RangeMutable(
             MinRenderringIndex * SampleInterval,
@@ -138,25 +139,26 @@ namespace Plot.Skia
 
         public RangeMutable GetYLimit(int startIndex, int endIndex)
         {
-            // 全局范围直接返回缓存极值
+            // 当前索引是一整块，直接返回缓存极值
             if (startIndex <= _globalStartIndex && endIndex >= _globalStartIndex + _totalCount - 1)
                 return new RangeMutable(_globalMin, _globalMax);
 
-            // 局部范围实时计算
+            // 当前索引在一整块内或者占据在不同块，局部范围实时计算
             double min = double.PositiveInfinity;
             double max = double.NegativeInfinity;
 
             int startChunk = (startIndex - _globalStartIndex) / ChunkSize;
             int endChunk = (endIndex - _globalStartIndex) / ChunkSize;
 
+            //
             foreach (DataChunk chunk in _chunks.Skip(startChunk).Take(endChunk - startChunk + 1))
             {
                 int chunkStart = Math.Max(startIndex - _globalStartIndex - startChunk * ChunkSize, 0);
+                // chunksize - 1的原因是多块情况下，一块一块的读取最值。所以取chunsize为结束索引
                 int chunkEnd = Math.Min(endIndex - _globalStartIndex - startChunk * ChunkSize, ChunkSize - 1);
 
                 for (int i = chunkStart; i <= chunkEnd; i++)
                 {
-                    if (i >= chunk.Count) break;
                     double val = chunk.Data[i];
                     min = Math.Min(min, val);
                     max = Math.Max(max, val);
