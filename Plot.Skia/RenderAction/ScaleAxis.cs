@@ -16,8 +16,8 @@ namespace Plot.Skia
                 AutoScaleSeries(series, axisManager);
                 rc.Figure.RenderManager.FitY = false;
             }
-            else
-                ApplyDefaultLimits(axisManager);
+
+            ApplyDefaultLimits(axisManager);
         }
 
         private void ProcessAxis(AxisManager axisManager,
