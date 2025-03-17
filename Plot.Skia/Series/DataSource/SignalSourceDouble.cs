@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Plot.Skia
@@ -19,8 +20,8 @@ namespace Plot.Skia
             }
         }
 
-        private const int ChunkSize = 5000;
-        private const int MaxChunks = 4;
+        private int _chunkSize;
+        private const int MaxChunks = 2;
 
         private readonly LinkedList<DataChunk> _chunks = new LinkedList<DataChunk>();
         // 当前存储的最旧数据全局索引
@@ -38,6 +39,8 @@ namespace Plot.Skia
             SampleInterval = sampleInterval;
             MinimumIndex = 0;
             MaximumIndex = int.MaxValue;
+
+            _chunkSize = (int)(1.0 / sampleInterval);
         }
 
         public int Length => _globalStartIndex + _totalCount;
@@ -45,43 +48,102 @@ namespace Plot.Skia
         public int MinimumIndex { get; set; }
         public int MaximumIndex { get; set; }
 
-        public void Add(double val)
+        // ==============Add data==============
+        public void AddRange(IEnumerable<double> vals)
         {
-            DataChunk currentChunk = _chunks.Last?.Value;
-            if (currentChunk == null || currentChunk.Count >= ChunkSize)
+            IEnumerable<DataChunk> chunks = CreateChunks(vals);
+
+            foreach (DataChunk chunk in chunks)
             {
-                currentChunk = new DataChunk(ChunkSize);
-                _chunks.AddLast(currentChunk);
+                _chunks.AddLast(chunk);
+                _totalCount += chunk.Count;
 
-                if (_chunks.Count > MaxChunks)
+                MaintainChunkCount(true);
+                UpdateGlobalExtremes(chunk);
+            }
+        }
+
+        // ==============Prepend data===========
+        public void PrependRange(IEnumerable<double> vals)
+        {
+            var reversedChunks = CreateChunks(vals.Reverse());
+
+            foreach (var chunk in reversedChunks)
+            {
+                _chunks.AddFirst(chunk);
+                _totalCount += chunk.Count;
+
+                MaintainChunkCount(false);
+                UpdateGlobalExtremes(chunk);
+            }
+        }
+
+
+        private IEnumerable<DataChunk> CreateChunks(IEnumerable<double> vals)
+        {
+            List<double> buffer = new List<double>();
+
+            foreach (double val in vals)
+            {
+                buffer.Add(val);
+
+                if (buffer.Count == _chunkSize)
                 {
-                    DataChunk oldestChunk = _chunks.First.Value;
-                    _chunks.RemoveFirst();
-                    _globalStartIndex += oldestChunk.Count;  // 更新全局起始索引
-                    _totalCount -= oldestChunk.Count;
-
-                    // 如果被删除块包含全局极值，重新计算全局极值
-                    if (oldestChunk.Min == _globalMin || oldestChunk.Max == _globalMax)
-                        RecalculateGlobalMinMax();
+                    yield return CreateChunk(buffer);
+                    buffer.Clear();
                 }
             }
 
-            // 更新当前块的极值
-            currentChunk.Data[currentChunk.Count] = val;
-            currentChunk.Count++;
-            currentChunk.Min = Math.Min(currentChunk.Min, val);
-            currentChunk.Max = Math.Max(currentChunk.Max, val);
-
-            // 更新全局极值
-            _globalMin = Math.Min(_globalMin, val);
-            _globalMax = Math.Max(_globalMax, val);
-            _totalCount++;
+            // 
+            if (buffer.Count > 0)
+            {
+                yield return CreateChunk(buffer);
+            }
         }
 
-        public void AddRange(IEnumerable<double> vals)
+        private DataChunk CreateChunk(List<double> data)
         {
-            foreach (double val in vals)
-                Add(val);
+            DataChunk chunk = new DataChunk(_chunkSize);
+            data.CopyTo(chunk.Data);
+            chunk.Count = data.Count;
+            chunk.Min = data.Min();
+            chunk.Max = data.Max();
+
+            return chunk;
+        }
+
+
+        private void MaintainChunkCount(bool isAdd)
+        {
+            if (_chunks.Count > MaxChunks)
+            {
+                LinkedListNode<DataChunk> nodeToRemove = isAdd
+                    ? _chunks.First
+                    : _chunks.Last;
+
+                DataChunk removedChunk = nodeToRemove.Value;
+                _chunks.Remove(removedChunk);
+
+                _totalCount -= removedChunk.Count;
+                if (isAdd)
+                {
+                    _globalStartIndex += removedChunk.Count;
+                }
+                else
+                {
+                    _globalStartIndex -= removedChunk.Count;
+                    _globalStartIndex = _globalStartIndex < 0 ? 0 : _globalStartIndex;
+                }
+
+                if (removedChunk.Min == _globalMin || removedChunk.Max == _globalMax)
+                    RecalculateGlobalMinMax();
+            }
+        }
+
+        private void UpdateGlobalExtremes(DataChunk chunk)
+        {
+            _globalMin = Math.Min(_globalMin, chunk.Min);
+            _globalMax = Math.Max(_globalMax, chunk.Max);
         }
 
         private void RecalculateGlobalMinMax()
@@ -109,8 +171,8 @@ namespace Plot.Skia
                 throw new ArgumentOutOfRangeException(nameof(index));
 
             int internalIndex = index - _globalStartIndex;
-            int chunkIndex = internalIndex / ChunkSize;
-            int chunkOffset = internalIndex % ChunkSize;
+            int chunkIndex = internalIndex / _chunkSize;
+            int chunkOffset = internalIndex % _chunkSize;
 
             return _chunks
                 .Skip(chunkIndex)
@@ -147,15 +209,15 @@ namespace Plot.Skia
             double min = double.PositiveInfinity;
             double max = double.NegativeInfinity;
 
-            int startChunk = (startIndex - _globalStartIndex) / ChunkSize;
-            int endChunk = (endIndex - _globalStartIndex) / ChunkSize;
+            int startChunk = (startIndex - _globalStartIndex) / _chunkSize;
+            int endChunk = (endIndex - _globalStartIndex) / _chunkSize;
 
             //
             foreach (DataChunk chunk in _chunks.Skip(startChunk).Take(endChunk - startChunk + 1))
             {
-                int chunkStart = Math.Max(startIndex - _globalStartIndex - startChunk * ChunkSize, 0);
+                int chunkStart = Math.Max(startIndex - _globalStartIndex - startChunk * _chunkSize, 0);
                 // chunksize - 1的原因是多块情况下，一块一块的读取最值。所以取chunsize为结束索引
-                int chunkEnd = Math.Min(endIndex - _globalStartIndex - startChunk * ChunkSize, ChunkSize - 1);
+                int chunkEnd = Math.Min(endIndex - _globalStartIndex - startChunk * _chunkSize, _chunkSize - 1);
 
                 for (int i = chunkStart; i <= chunkEnd; i++)
                 {

@@ -18,7 +18,7 @@ namespace Plot.Skia
 
         internal bool Valid => !(double.IsNaN(Span) || double.IsInfinity(Span) || Low > High || Low == High);
 
-        internal Range ToRange => new Range(Low, High);
+        public Range ToRange => new Range(Low, High);
 
         internal static RangeMutable NotSet
             => new RangeMutable(double.PositiveInfinity, double.NegativeInfinity);
