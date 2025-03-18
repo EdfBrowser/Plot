@@ -67,13 +67,13 @@ namespace Plot.Skia
 
             SeriesLineStyle.Render(rc.Canvas, points);
 
-            double pointsPerPx = PointsPerPixel(rc);
-            if (pointsPerPx < 1)
-            {
-                double radius = Math.Sqrt(.2 / pointsPerPx);
-                MarkerStyle.Size = (float)(radius * 4f);
-                MarkerStyle.Render(rc.Canvas, points);
-            }
+            //double pointsPerPx = PointsPerPixel(rc);
+            //if (pointsPerPx < 1)
+            //{
+            //    double radius = Math.Sqrt(.2 / pointsPerPx);
+            //    MarkerStyle.Size = (float)(radius * 4f);
+            //    MarkerStyle.Render(rc.Canvas, points);
+            //}
         }
 
         private void RenderHighDensity(RenderContext rc)

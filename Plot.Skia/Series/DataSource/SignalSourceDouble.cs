@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Plot.Skia
@@ -20,7 +19,7 @@ namespace Plot.Skia
             }
         }
 
-        private int _chunkSize;
+        private readonly int _chunkSize;
         private const int MaxChunks = 2;
 
         private readonly LinkedList<DataChunk> _chunks = new LinkedList<DataChunk>();
