@@ -55,6 +55,7 @@ namespace Plot.Skia
         {
             DrawTicks(canvas, dataRect);
             DrawLines(canvas, dataRect);
+            DrawLabels(canvas, dataRect);
         }
 
         // TODO: 修改Layout时存的值（不是正常的）
@@ -95,6 +96,38 @@ namespace Plot.Skia
                 PointF p1 = Direction == Edge.Top ? dataRect.TopLeft : dataRect.BottomLeft;
                 PointF p2 = Direction == Edge.Top ? dataRect.TopRight : dataRect.BottomRight;
                 TickLineStyle.Render(canvas, p1, p2);
+            }
+        }
+
+        private void DrawLabels(SKCanvas canvas, Rect dataRect)
+        {
+            // Draw the Title
+
+            if (Direction.Vertical())
+            {
+                float x = Direction == Edge.Left
+                               ? dataRect.Left : dataRect.Right;
+
+                float measured = Measure();
+                x = Direction == Edge.Left
+                    ? x - measured : x;
+
+                PointF p = new PointF(x, dataRect.VerticalCenter);
+
+                Label.Render(canvas, p, SKTextAlign.Left);
+            }
+            else
+            {
+                float y = Direction == Edge.Top
+                               ? dataRect.Top : dataRect.Bottom;
+
+                float measured = Measure();
+                y = Direction == Edge.Top
+                    ? y - measured : y;
+
+                PointF p = new PointF(dataRect.HorizontalCenter, y);
+
+                Label.Render(canvas, p, SKTextAlign.Left);
             }
         }
 

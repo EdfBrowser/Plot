@@ -27,6 +27,9 @@ namespace Plot.Skia
         internal float Hoffset => Left + Right;
         internal float Voffset => Top + Bottom;
 
+        internal float HorizontalCenter => (Left + Right) / 2;
+        internal float VerticalCenter => (Top + Bottom) / 2;
+
         internal float Left => m_left;
         internal float Right => m_right;
         internal float Top => m_top;

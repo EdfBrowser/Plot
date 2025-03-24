@@ -81,7 +81,6 @@ namespace Plot.Skia
             SizeF dataSize = new SizeF(dataRectWidth, dataRectHeight);
             PointF location = new PointF((leftOffsetAxis + leftOffsetPanel), (topOffsetAxis + topOffsetPanel));
             Rect dataRect = new Rect(location, dataSize)
-                // TODO: 移动到0，0还是-1，-1？
                 .WithPan(figureRect.Left, figureRect.Top);
 
 

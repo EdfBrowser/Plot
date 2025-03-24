@@ -5,6 +5,8 @@ namespace Plot.Skia
 {
     public class Figure : IDisposable
     {
+        private bool _disposedValue;
+
         private readonly AxisManager m_axisManager;
         private readonly RenderManager m_renderManager;
         private readonly LayoutManager m_layoutManager;
@@ -34,13 +36,18 @@ namespace Plot.Skia
 
         public void Dispose()
         {
-            AxisManager.Dispose();
-            BackgroundManager.Dispose();
-            SeriesManager.Dispose();
-            PanelManager.Dispose();
+            if (!_disposedValue)
+            {
+                AxisManager.Dispose();
+                BackgroundManager.Dispose();
+                SeriesManager.Dispose();
+                PanelManager.Dispose();
+            }
+
+            _disposedValue = true;
         }
 
         public void Render(SKSurface s)
-            => m_renderManager.Render(s.Canvas, s.Canvas.LocalClipBounds.ToRect());
+            => m_renderManager.Render(s.Canvas, s.Canvas.LocalClipBounds.ToRect()); 
     }
 }

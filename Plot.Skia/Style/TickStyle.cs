@@ -19,6 +19,7 @@ namespace Plot.Skia
         public float Width { get; set; }
         public Color Color { get; set; }
         public bool AntiAlias { get; set; }
+        public bool Renderable { get; set; } = true;
 
         public void Dispose()
         {
@@ -35,6 +36,8 @@ namespace Plot.Skia
 
         internal void Render(SKCanvas canvas, PointF p1, PointF p2)
         {
+            if (!Renderable) return;
+
             Apply();
             canvas.DrawLine(p1.ToSKPoint(), p2.ToSKPoint(), m_sKPaint);
         }

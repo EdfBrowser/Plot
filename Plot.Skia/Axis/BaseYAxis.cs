@@ -49,7 +49,7 @@ namespace Plot.Skia
             if (!string.IsNullOrEmpty(Label.Text))
                 axisLabelLength = Label.Measure(Label.Text).Width;
 
-            return tickHeight + maxTickLabelLength + axisLabelLength + 10;
+            return tickHeight + maxTickLabelLength + axisLabelLength;
         }
     }
 }

@@ -62,7 +62,6 @@ namespace Plot.Skia
 
         private void SetRules(Figure figure, PointF down, PointF now)
         {
-            // TODO: 是否添加键位设置
             DragPan(figure, down, now);
             figure.FigureControl.SetCursor(CursorType);
         }

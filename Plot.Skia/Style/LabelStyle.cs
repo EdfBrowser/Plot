@@ -26,6 +26,7 @@ namespace Plot.Skia
         public float FontSize { get; set; }
         public string Text { get; set; }
         public string FontFamily { get; set; }
+        public bool Renderable { get; set; } = true;
 
         private void Apply()
         {
@@ -57,6 +58,8 @@ namespace Plot.Skia
 
         internal void Render(SKCanvas canvas, PointF p, SKTextAlign textAlign)
         {
+            if (!Renderable) return;
+
             Apply();
             if (Text.Contains('\n'))
             {

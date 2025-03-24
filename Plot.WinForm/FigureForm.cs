@@ -61,5 +61,16 @@ namespace Plot.WinForm
         {
             base.Refresh();
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                TearDownSKControl();
+                Figure?.Dispose();
+            }
+        }
     }
 }

@@ -29,7 +29,6 @@ namespace Plot.Skia
 
         public double Width => RangeMutable.Span;
 
-        // TODO: 用户可以自定义（事件或者策略模式）
         private void TriggerScrollMode()
         {
             double min = 0, max = 0;

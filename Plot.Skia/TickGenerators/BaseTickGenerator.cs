@@ -154,7 +154,6 @@ namespace Plot.Skia
             }
 
             double firstTickOffset = range.Low % increment;
-            // TODO: 是否+1/2/3？
             int tickCount = (int)(span / increment) + 2;
             //tickCount = tickCount < 1 ? 1 : tickCount;
 
