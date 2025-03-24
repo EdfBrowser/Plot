@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Plot.Skia\Plot.Skia.csproj" />
-      <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
+        <ProjectReference Include="..\Plot.Skia\Plot.Skia.csproj" />
+        <ProjectReference Include="..\Plot.WinForm\Plot.WinForm.csproj" />
     </ItemGroup>
 
 </Project>

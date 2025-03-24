@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0-windows;net4.8</TargetFrameworks>
-        <OutputType>Library</OutputType>
-        <UseWindowsForms>true</UseWindowsForms>
+        <TargetFramework>net4.8</TargetFramework>
+        <Platforms>x64;x86</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Plot.Core\Plot.Core.csproj" />
+      <PackageReference Include="SkiaSharp.Views.WindowsForms" Version="3.116.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Plot.Skia\Plot.Skia.csproj" />
     </ItemGroup>
 
 </Project>

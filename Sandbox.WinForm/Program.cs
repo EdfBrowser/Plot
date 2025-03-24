@@ -1,9 +1,9 @@
 using System;
 using System.Windows.Forms;
 
-namespace Plot.App
+namespace Sandbox.WinForm
 {
-    public static class Program
+    internal static class Program
     {
         /// <summary>
         ///  The main entry point for the application.
@@ -18,7 +18,7 @@ namespace Plot.App
             ApplicationConfiguration.Initialize();
 #endif
 
-            Application.Run(new FigureFormDemo());
+            Application.Run(new Form1());
         }
     }
 }
