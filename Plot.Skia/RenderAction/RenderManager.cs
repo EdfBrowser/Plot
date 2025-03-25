@@ -26,7 +26,8 @@ namespace Plot.Skia
             };
         }
 
-        internal bool FitY { get; set; }
+        internal bool FittedY { get; set; }
+        internal bool FittedX { get; set; }
         internal IEnumerable<IRenderAction> RenderOrders { get; }
         internal RenderContext LastRC { get; private set; }
 
@@ -53,7 +54,9 @@ namespace Plot.Skia
         }
 
         #region PUBLIC
-        public void Fit() => FitY = true;
+        public void Fit() => FittedY = FittedX = true;
+        public void FitX() => FittedX = true;
+        public void FitY() => FittedY = true;
         public EventHandler<RenderContext> SizeChangedEventHandler { get; set; }
         #endregion
     }

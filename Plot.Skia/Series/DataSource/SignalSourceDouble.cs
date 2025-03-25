@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Plot.Skia
 {
@@ -20,7 +21,6 @@ namespace Plot.Skia
         }
 
         private readonly int _chunkSize;
-        private const int MaxChunks = 2;
 
         private readonly LinkedList<DataChunk> _chunks = new LinkedList<DataChunk>();
         // 当前存储的最旧数据全局索引
@@ -31,7 +31,7 @@ namespace Plot.Skia
         private double _globalMax = double.NegativeInfinity;
 
         private int MinRenderringIndex => Math.Max(_globalStartIndex, MinimumIndex);
-        private int MaxRenderringIndex => Math.Min(_globalStartIndex + _totalCount - 1, MaximumIndex);
+        private int MaxRenderringIndex => Math.Min(_globalStartIndex + (_totalCount - 1), MaximumIndex);
 
         public SignalSourceDouble(double sampleInterval)
         {
@@ -46,6 +46,8 @@ namespace Plot.Skia
         public double SampleInterval { get; set; }
         public int MinimumIndex { get; set; }
         public int MaximumIndex { get; set; }
+        public int MaxChunks { get; set; } = 10;
+
 
         // ==============Add data==============
         public void AddRange(IEnumerable<double> vals)
@@ -166,17 +168,20 @@ namespace Plot.Skia
 
         public double GetY(int index)
         {
-            if (index < _globalStartIndex || index >= _globalStartIndex + _totalCount)
+            if (index < MinRenderringIndex || index > MaxRenderringIndex)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
-            int internalIndex = index - _globalStartIndex;
+            int internalIndex = index - MinRenderringIndex;
             int chunkIndex = internalIndex / _chunkSize;
             int chunkOffset = internalIndex % _chunkSize;
 
-            return _chunks
-                .Skip(chunkIndex)
-                .First()
-                .Data[chunkOffset];
+            LinkedListNode<DataChunk> currentNode = _chunks.First;
+            for (int i = 0; i < chunkIndex; i++)
+            {
+                currentNode = currentNode.Next;
+            }
+
+            return currentNode.Value.Data[chunkOffset];
         }
 
         public IEnumerable<double> GetYs() => GetYs(MinRenderringIndex, MaxRenderringIndex);
@@ -201,7 +206,7 @@ namespace Plot.Skia
         public RangeMutable GetYLimit(int startIndex, int endIndex)
         {
             // 当前索引是一整块，直接返回缓存极值
-            if (startIndex <= _globalStartIndex && endIndex >= _globalStartIndex + _totalCount - 1)
+            if (startIndex <= MinRenderringIndex && endIndex >= MaxRenderringIndex)
                 return new RangeMutable(_globalMin, _globalMax);
 
             // 当前索引在一整块内或者占据在不同块，局部范围实时计算

@@ -9,38 +9,54 @@ namespace Plot.Skia
         {
             AxisManager axisManager = rc.Figure.AxisManager;
             IEnumerable<ISeries> series = rc.Figure.SeriesManager.Series;
-            // 初次初始化X轴，后续继续初始化Y轴
-            if (rc.Figure.RenderManager.FitY)
+
+            if (rc.Figure.RenderManager.FittedY)
             {
-                AutoScaleSeries(series, axisManager);
-                rc.Figure.RenderManager.FitY = false;
+                FitAxis(series, axisManager, item => item.Y, item => item.GetYLimit(), 0.15);
+                rc.Figure.RenderManager.FittedY = false;
             }
 
+            if (rc.Figure.RenderManager.FittedX)
+            {
+                FitAxis(series, axisManager, item => item.X, item => item.GetXLimit(), 0.1);
+                rc.Figure.RenderManager.FittedX = false;
+            }
+
+            // 如果没有上面的设置，进行默认初始化
             ApplyDefaultLimits(axisManager);
         }
 
-        private void ProcessAxis(AxisManager axisManager,
-            IAxis axis, double paddingRatio, Func<RangeMutable> getLimit)
+        private void FitAxis<TAxis>(IEnumerable<ISeries> series, AxisManager axisManager,
+                            Func<ISeries, TAxis> getAxis, Func<ISeries, RangeMutable> getLimit, 
+                            double expandFactor) where TAxis : IAxis
         {
-            RangeMutable limit = getLimit();
+            Dictionary<TAxis, RangeMutable> axisLimits = new Dictionary<TAxis, RangeMutable>();
 
-            if (!limit.Valid)
-                limit.Set(0, 10);
-            else
-                limit.Expand(paddingRatio);
-
-            axisManager.SetLimits(limit.ToRange, axis);
-        }
-
-        private void AutoScaleSeries(IEnumerable<ISeries> series,
-            AxisManager axisManager)
-        {
             foreach (ISeries item in series)
             {
-                if (!item.X.RangeMutable.HasBeenSet)
-                    ProcessAxis(axisManager, item.X, 0.1, item.GetXLimit);
+                TAxis axis = getAxis(item);
+                if (axis == null) continue; // 添加空引用检查
 
-                ProcessAxis(axisManager, item.Y, 0.15, item.GetYLimit);
+                RangeMutable range = getLimit(item);
+                if (!range.Valid) continue;
+
+                if (axisLimits.ContainsKey(axis))
+                {
+                    RangeMutable currentLimit = axisLimits[axis];
+                    currentLimit.Low = Math.Min(currentLimit.Low, range.Low);
+                    currentLimit.High = Math.Max(currentLimit.High, range.High);
+                }
+                else
+                {
+                    axisLimits[axis] = new RangeMutable(range.Low, range.High);
+                }
+            }
+
+            foreach (var axisLimit in axisLimits)
+            {
+                RangeMutable limit = axisLimit.Value;
+                limit.Expand(expandFactor);
+                axisManager.SetLimits(limit.ToRange, axisLimit.Key);
             }
         }
 
