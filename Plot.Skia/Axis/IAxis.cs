@@ -22,7 +22,7 @@ namespace Plot.Skia
         double GetWorld(float pixel, Rect dataRect);
 
         void GenerateTicks(float axisLength);
-        float Measure();
+        float Measure(bool force = false);
         void Render(RenderContext rc);
         void Render(RenderContext rc, Rect dataRect);
 

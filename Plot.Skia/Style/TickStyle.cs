@@ -3,6 +3,7 @@ using System;
 
 namespace Plot.Skia
 {
+    // TODO: 废除，使用lineStyle
     public class TickStyle : IDisposable
     {
         private readonly SKPaint m_sKPaint;

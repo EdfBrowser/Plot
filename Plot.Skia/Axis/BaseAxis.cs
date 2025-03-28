@@ -22,7 +22,7 @@ namespace Plot.Skia
         public abstract double GetWorld(float pixel, Rect dataRect);
         public abstract void Render(RenderContext rc);
         public abstract void Render(RenderContext rc, Rect dataRect);
-        public abstract float Measure();
+        public abstract float Measure(bool force = false);
         public abstract Rect GetDataRect(
             Rect dataRect, float delta, float size);
 
@@ -46,6 +46,7 @@ namespace Plot.Skia
         public LabelStyle TickLabelStyle { get; }
         public LineStyle TickLineStyle { get; }
 
+        protected float MeasuredValue { get; set; }
 
 
         public void GenerateTicks(float axisLength) => TickGenerator.Generate(
@@ -103,31 +104,31 @@ namespace Plot.Skia
         {
             // Draw the Title
 
+            float measured = Measure();
+
             if (Direction.Vertical())
             {
                 float x = Direction == Edge.Left
                                ? dataRect.Left : dataRect.Right;
 
-                float measured = Measure();
                 x = Direction == Edge.Left
                     ? x - measured : x;
 
                 PointF p = new PointF(x, dataRect.VerticalCenter);
 
-                Label.Render(canvas, p, SKTextAlign.Left);
+                Label.Render(canvas, p);
             }
             else
             {
                 float y = Direction == Edge.Top
                                ? dataRect.Top : dataRect.Bottom;
 
-                float measured = Measure();
                 y = Direction == Edge.Top
                     ? y - measured : y;
 
                 PointF p = new PointF(dataRect.HorizontalCenter, y);
 
-                Label.Render(canvas, p, SKTextAlign.Left);
+                Label.Render(canvas, p);
             }
         }
 
@@ -156,7 +157,7 @@ namespace Plot.Skia
                 PointF p = new PointF(
                     x1 + tickLength + labelLength,
                     y1 + TickLabelStyle.Ascent() / 2);
-                TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
+                TickLabelStyle.Render(canvas, p);
             }
         }
 
@@ -191,7 +192,7 @@ namespace Plot.Skia
                     x1,
                     y1 + tickLength + ascent);
 
-                TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
+                TickLabelStyle.Render(canvas, p);
             }
         }
 

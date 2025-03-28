@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace Plot.Skia
 {
+    // TODO: 重构
     internal class AutomaticLayout : ILayout
     {
         public (Rect,
@@ -181,7 +182,7 @@ namespace Plot.Skia
 
             foreach (IAxis axis in axes)
             {
-                measuredAxes[axis] = axis.Measure();
+                measuredAxes[axis] = axis.Measure(force: true);
             }
 
             return measuredAxes;
@@ -203,7 +204,7 @@ namespace Plot.Skia
             CalculateEdgeTickLabel(IEnumerable<IAxis> axes)
         {
 
-            float left = 0f, right = 0f, top = 0f, bottom = 0f;
+            float left = 10f, right = 10f, top = 10f, bottom = 10f;
             foreach (IAxis axis in axes)
             {
                 Tick first = axis.TickGenerator.Ticks.First(t => t.MajorPos);
@@ -214,8 +215,15 @@ namespace Plot.Skia
 
                 if (axis.Direction.Horizontal())
                 {
-                    left = Math.Max(left, firstLabelSize.Width);
-                    right = Math.Max(right, LastLabelSize.Width);
+                    if (axis.TickLabelStyle.TextAlign == SkiaSharp.SKTextAlign.Right)
+                        left = Math.Max(left, firstLabelSize.Width);
+                    else if (axis.TickLabelStyle.TextAlign == SkiaSharp.SKTextAlign.Left)
+                        right = Math.Max(right, LastLabelSize.Width);
+                    else
+                    {
+                        left = Math.Max(left, firstLabelSize.Width / 2);
+                        right = Math.Max(right, firstLabelSize.Width / 2);
+                    }
                 }
                 else
                 {
