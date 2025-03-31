@@ -1,5 +1,3 @@
-using System;
-
 namespace Plot.Skia
 {
     public abstract class BaseSeries : ISeries
@@ -18,20 +16,5 @@ namespace Plot.Skia
         public abstract RangeMutable GetYLimit();
         public abstract void Render(RenderContext rc);
 
-        public virtual Rect GetDataRect(RenderContext rc, IXAxis x, IYAxis y)
-        {
-            Rect xRect = rc.GetDataRect(x);
-            Rect yRect = rc.GetDataRect(y);
-
-            float left = Math.Max(xRect.Left, yRect.Left);
-            float right = Math.Min(xRect.Right, yRect.Right);
-
-            float top = Math.Max(xRect.Top, yRect.Top);
-            float bottom = Math.Min(xRect.Bottom, yRect.Bottom);
-
-            Rect unionRect = new Rect(left, right, top, bottom);
-
-            return unionRect;
-        }
     }
 }

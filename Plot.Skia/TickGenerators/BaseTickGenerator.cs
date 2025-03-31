@@ -164,7 +164,7 @@ namespace Plot.Skia
             int exponent = (int)Math.Log(range.Span, 10);
             double initialSpace = Math.Pow(10, exponent);
             double neededSpace = CalculateNeededSpace(labelWidth);
-           
+
             IEnumerable<double> candidates
                 = GenerateSpaceCandidates(initialSpace, rangeSpan, targetTickCount).Reverse();
 

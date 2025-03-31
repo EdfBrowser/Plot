@@ -10,7 +10,5 @@ namespace Plot.Skia
         RangeMutable GetXLimit();
         RangeMutable GetYLimit();
         void Render(RenderContext rc);
-
-        Rect GetDataRect(RenderContext rc, IXAxis x, IYAxis y);
     }
 }

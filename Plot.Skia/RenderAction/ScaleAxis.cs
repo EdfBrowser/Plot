@@ -27,7 +27,7 @@ namespace Plot.Skia
         }
 
         private void FitAxis<TAxis>(IEnumerable<ISeries> series, AxisManager axisManager,
-                            Func<ISeries, TAxis> getAxis, Func<ISeries, RangeMutable> getLimit, 
+                            Func<ISeries, TAxis> getAxis, Func<ISeries, RangeMutable> getLimit,
                             double expandFactor) where TAxis : IAxis
         {
             Dictionary<TAxis, RangeMutable> axisLimits = new Dictionary<TAxis, RangeMutable>();

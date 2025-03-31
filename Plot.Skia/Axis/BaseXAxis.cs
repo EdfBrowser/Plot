@@ -53,11 +53,6 @@ namespace Plot.Skia
             RangeMutable.Set(min, max);
         }
 
-
-        public override Rect GetDataRect(
-            Rect dataRect, float delta, float size)
-            => GetHorizontalRect(dataRect, delta, size);
-
         public override float GetPixel(double position, Rect dataRect)
         {
             double pxPerUnit = dataRect.Width / Width;
@@ -91,7 +86,7 @@ namespace Plot.Skia
             float tickHeight = 0;
             float maxTickLabelLength = 0;
             float axisLabelLength = 0;
-            
+
             if (MajorTickStyle.Renderable)
             {
                 tickHeight = MajorTickStyle.Length;

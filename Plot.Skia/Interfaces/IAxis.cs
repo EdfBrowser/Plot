@@ -2,9 +2,9 @@ using System;
 
 namespace Plot.Skia
 {
-    public interface IAxis : IDisposable
+    public interface IAxis : IRenderable, IMeasureable, IDisposable
     {
-        float AxisSpacing { get; set; }
+        float AxisSpace { get; set; }
         RangeMutable RangeMutable { get; }
         ITickGenerator TickGenerator { get; }
         Edge Direction { get; }
@@ -13,8 +13,8 @@ namespace Plot.Skia
         double Max { get; }
 
         LabelStyle Label { get; }
-        TickStyle MajorTickStyle { get; }
-        TickStyle MinorTickStyle { get; }
+        LineStyle MajorTickStyle { get; }
+        LineStyle MinorTickStyle { get; }
         LabelStyle TickLabelStyle { get; }
         LineStyle TickLineStyle { get; }
 
@@ -22,11 +22,5 @@ namespace Plot.Skia
         double GetWorld(float pixel, Rect dataRect);
 
         void GenerateTicks(float axisLength);
-        float Measure(bool force = false);
-        void Render(RenderContext rc);
-        void Render(RenderContext rc, Rect dataRect);
-
-
-        Rect GetDataRect(Rect dataRect, float delta, float size);
     }
 }

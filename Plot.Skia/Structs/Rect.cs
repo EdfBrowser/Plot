@@ -24,9 +24,6 @@ namespace Plot.Skia
                   location.Y, location.Y + dataRect.Height)
         { }
 
-        internal float Hoffset => Left + Right;
-        internal float Voffset => Top + Bottom;
-
         internal float HorizontalCenter => (Left + Right) / 2;
         internal float VerticalCenter => (Top + Bottom) / 2;
 
@@ -38,10 +35,10 @@ namespace Plot.Skia
         public float Width => m_right - m_left;
         public float Height => m_bottom - m_top;
 
-        internal PointF TopLeft => new PointF(m_left, m_top);
-        internal PointF TopRight => new PointF(m_right, m_top);
-        internal PointF BottomLeft => new PointF(m_left, m_bottom);
-        internal PointF BottomRight => new PointF(m_right, m_bottom);
+        internal PointF TopLeft => new PointF(Left, Top);
+        internal PointF TopRight => new PointF(Right, Top);
+        internal PointF BottomLeft => new PointF(Left, Bottom);
+        internal PointF BottomRight => new PointF(Right, Bottom);
 
         internal Rect WithPan(PointF p) => WithPan(p.X, p.Y);
 

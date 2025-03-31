@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Xml.Linq;
 
 namespace Plot.Skia
 {
@@ -23,15 +22,13 @@ namespace Plot.Skia
             float maxSize = float.NegativeInfinity;
             string maxText = string.Empty;
 
-            List<double> majorPositionsList;
+            IEnumerable<double> majorPositions;
             IEnumerable<string> majorLabels;
             do
             {
-                IEnumerable<double> majorPositions
-                    = GenerateNumericTickPositions(range, axisLength, currentLabelLength);
-                majorPositionsList = majorPositions.ToList();
+                majorPositions = GenerateNumericTickPositions(range, axisLength, currentLabelLength);
 
-                majorLabels = MeasuredLabels(majorPositionsList, direction, tickLabelStyle,
+                majorLabels = MeasuredLabels(majorPositions, direction, tickLabelStyle,
                     ref maxText, ref maxSize);
 
                 // 使用预给出的labelLength值重新分配tick
@@ -42,11 +39,10 @@ namespace Plot.Skia
 
             } while (true);
 
-            IEnumerable<double> minorPositions
-                = GenerateMinorPositions(majorPositionsList, range);
-
+            List<double> majorPositionsList = majorPositions.ToList();
+            List<double> minorPositionsList
+                = GenerateMinorPositions(majorPositionsList, range).ToList();
             List<string> majorLabelsList = majorLabels.ToList();
-            List<double> minorPositionsList = minorPositions.ToList();
 
             Ticks = CombineTicks(majorPositionsList, majorLabelsList, minorPositionsList);
         }
@@ -107,8 +103,7 @@ namespace Plot.Skia
             }
         }
 
-
-        private IEnumerable<string> MeasuredLabels(IReadOnlyList<double> positions,
+        private IEnumerable<string> MeasuredLabels(IEnumerable<double> positions,
             Edge direction, LabelStyle style,
             ref string maxText, ref float maxSize)
         {
@@ -134,7 +129,7 @@ namespace Plot.Skia
             return labels;
         }
 
-        private IEnumerable<string> FormatLabels(IReadOnlyList<double> positions)
+        private IEnumerable<string> FormatLabels(IEnumerable<double> positions)
         {
             foreach (double pos in positions)
             {

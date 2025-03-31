@@ -1,8 +1,6 @@
 using SkiaSharp;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 
 namespace Plot.Skia
