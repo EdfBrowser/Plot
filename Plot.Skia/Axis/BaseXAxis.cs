@@ -53,11 +53,6 @@ namespace Plot.Skia
             RangeMutable.Set(min, max);
         }
 
-
-        public override Rect GetDataRect(
-            Rect dataRect, float delta, float size)
-            => GetHorizontalRect(dataRect, delta, size);
-
         public override float GetPixel(double position, Rect dataRect)
         {
             double pxPerUnit = dataRect.Width / Width;
@@ -83,21 +78,33 @@ namespace Plot.Skia
         public override void Render(RenderContext rc, Rect dataRect)
             => Render(rc.Canvas, dataRect);
 
-        public override float Measure()
+        public override float Measure(bool force = false)
         {
-            float tickHeight = MajorTickStyle.Length;
+            if (!force)
+                return MeasuredValue;
 
+            float tickHeight = 0;
             float maxTickLabelLength = 0;
-            if (TickGenerator.Ticks.Length > 0)
-                maxTickLabelLength = TickGenerator.Ticks
-                    .Select(x => TickLabelStyle.Measure(x.Label).Height)
-                    .Max();
-
             float axisLabelLength = 0;
-            if (!string.IsNullOrEmpty(Label.Text))
-                axisLabelLength = Label.Measure(Label.Text).Height;
 
-            return tickHeight + maxTickLabelLength + axisLabelLength;
+            if (MajorTickStyle.Renderable)
+            {
+                tickHeight = MajorTickStyle.Length;
+                // TODO: 优化逻辑（每次都反问全部逻辑了）或许force已经解决了，还没测试
+                if (TickGenerator.Ticks.Count() > 0)
+                    maxTickLabelLength = TickGenerator.Ticks
+                        .Select(x => TickLabelStyle.Measure(x.Label).Height)
+                        .Max();
+            }
+
+            if (Label.Renderable)
+            {
+                if (!string.IsNullOrEmpty(Label.Text))
+                    axisLabelLength = Label.Measure(Label.Text).Height;
+            }
+
+            MeasuredValue = tickHeight + maxTickLabelLength + axisLabelLength;
+            return MeasuredValue;
         }
     }
 }

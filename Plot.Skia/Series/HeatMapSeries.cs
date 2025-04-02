@@ -47,7 +47,7 @@ namespace Plot.Skia
 
         private (int minX, int maxX, int minY, int maxY) GetValidRegion(RenderContext rc)
         {
-            Rect dataRect = GetDataRect(rc, X, Y);
+            Rect dataRect = rc.DataRect;
 
             int minX = int.MaxValue, maxX = int.MinValue;
             int minY = int.MaxValue, maxY = int.MinValue;
@@ -122,7 +122,7 @@ namespace Plot.Skia
         private void RenderToCanvas(RenderContext rc, int minX, int maxX, int minY,
             int maxY, uint[] argbs)
         {
-            Rect dataRect = GetDataRect(rc, X, Y);
+            Rect dataRect = rc.DataRect;
             float left = X.GetPixel(minX, dataRect);
             float right = X.GetPixel(maxX, dataRect);
             float top = Y.GetPixel(maxY, dataRect);

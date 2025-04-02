@@ -15,12 +15,11 @@ namespace Plot.Skia
         internal DateTime OriginDateTime { get; set; }
         internal string DateTimeFormat { get; set; }
 
-        public Tick[] Ticks { get; private set; }
+        public IEnumerable<Tick> Ticks { get; private set; }
 
         public void Generate(Range range, Edge direction, float axisLength, LabelStyle tickLabelStyle)
         {
-            Ticks = GenerateTicks(range, direction, axisLength, 12f, tickLabelStyle)
-                 .ToArray();
+            Ticks = GenerateTicks(range, direction, axisLength, 12f, tickLabelStyle);
         }
 
         private IEnumerable<Tick> GenerateTicks(Range range, Edge direction,
@@ -44,8 +43,8 @@ namespace Plot.Skia
                .Select(GetPositionLabel);
 
             (string largestText, float actualMaxLength) = direction.Vertical()
-                ? MeasureString(tickLabels, x => tickLabelStyle.Measure(x).Height)
-                : MeasureString(tickLabels, x => tickLabelStyle.Measure(x).Width);
+                ? MeasureString(tickLabels, x => tickLabelStyle.Measure(x, force: true).Height)
+                : MeasureString(tickLabels, x => tickLabelStyle.Measure(x, force: true).Width);
 
             return actualMaxLength > labelLength
                 ? GenerateTicks(range, direction, axisLength, actualMaxLength, tickLabelStyle)

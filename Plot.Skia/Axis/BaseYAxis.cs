@@ -6,10 +6,6 @@ namespace Plot.Skia
     {
         public double Height => RangeMutable.Span;
 
-        public override Rect GetDataRect(
-            Rect dataRect, float delta, float size)
-          => GetVerticalRect(dataRect, delta, size);
-
         public override float GetPixel(double position, Rect dataRect)
         {
             double pxPerUnit = dataRect.Height / Height;
@@ -35,21 +31,35 @@ namespace Plot.Skia
         public override void Render(RenderContext rc, Rect dataRect)
             => Render(rc.Canvas, dataRect);
 
-        public override float Measure()
+        public override float Measure(bool force = false)
         {
-            float tickHeight = MajorTickStyle.Length;
+            if (!force)
+                return MeasuredValue;
 
+            float tickHeight = 0;
             float maxTickLabelLength = 0;
-            if (TickGenerator.Ticks.Length > 0)
-                maxTickLabelLength = TickGenerator.Ticks
-                      .Select(x => TickLabelStyle.Measure(x.Label).Width)
-                      .Max();
-
             float axisLabelLength = 0;
-            if (!string.IsNullOrEmpty(Label.Text))
-                axisLabelLength = Label.Measure(Label.Text).Width;
 
-            return tickHeight + maxTickLabelLength + axisLabelLength;
+            if (MajorTickStyle.Renderable)
+            {
+                tickHeight = MajorTickStyle.Length;
+
+                if (TickGenerator.Ticks.Count() > 0)
+                {
+                    maxTickLabelLength = TickGenerator.Ticks
+                         .Select(x => TickLabelStyle.Measure(x.Label).Width)
+                         .Max();
+                }
+            }
+
+            if (Label.Renderable)
+            {
+                if (!string.IsNullOrEmpty(Label.Text))
+                    axisLabelLength = Label.Measure(Label.Text).Width;
+            }
+
+            MeasuredValue = tickHeight + maxTickLabelLength + axisLabelLength;
+            return MeasuredValue;
         }
     }
 }

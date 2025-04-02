@@ -10,12 +10,13 @@ namespace Plot.Skia
         public LineStyle()
         {
             m_sKPaint = new SKPaint();
+            Length = 4f;
             Width = 1f;
             Color = Color.Black;
             AntiAlias = false;
         }
 
-
+        public float Length { get; set; }
         public float Width { get; set; }
         public Color Color { get; set; }
         public bool AntiAlias { get; set; }

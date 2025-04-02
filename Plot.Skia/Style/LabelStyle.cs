@@ -1,18 +1,22 @@
 using SkiaSharp;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Plot.Skia
 {
     public class LabelStyle : IDisposable
     {
-        private readonly SKPaint m_sKPaint;
-        private readonly SKFont m_sKFont;
+        private readonly Dictionary<string, SizeF> _measureCache;
+        private readonly SKPaint _sKPaint;
+        private readonly SKFont _sKFont;
 
         public LabelStyle()
         {
-            m_sKPaint = new SKPaint();
-            m_sKFont = new SKFont();
+            _measureCache = new Dictionary<string, SizeF>();
+
+            _sKPaint = new SKPaint();
+            _sKFont = new SKFont();
 
             Color = Color.Black;
             AntiAlias = false;
@@ -27,36 +31,42 @@ namespace Plot.Skia
         public string Text { get; set; }
         public string FontFamily { get; set; }
         public bool Renderable { get; set; } = true;
+        public SKTextAlign TextAlign { get; set; } = SKTextAlign.Left;
 
         private void Apply()
         {
-            m_sKFont.Size = FontSize;
-            m_sKFont.Typeface = SKTypeface.FromFamilyName(FontFamily);
+            _sKFont.Size = FontSize;
+            _sKFont.Typeface = SKTypeface.FromFamilyName(FontFamily);
 
-            m_sKPaint.Style = SKPaintStyle.Fill;
-            m_sKPaint.Color = Color.ToSkColor();
-            m_sKPaint.IsAntialias = AntiAlias;
+            _sKPaint.Style = SKPaintStyle.Fill;
+            _sKPaint.Color = Color.ToSkColor();
+            _sKPaint.IsAntialias = AntiAlias;
         }
 
         public void Dispose()
         {
-            m_sKFont?.Dispose();
-            m_sKPaint?.Dispose();
+            _sKFont?.Dispose();
+            _sKPaint?.Dispose();
         }
 
         internal float Ascent()
         {
             Apply();
-            return Math.Abs(m_sKFont.Metrics.Ascent);
+            return Math.Abs(_sKFont.Metrics.Ascent);
         }
 
         internal float Descent()
         {
             Apply();
-            return m_sKFont.Metrics.Descent;
+            return _sKFont.Metrics.Descent;
         }
 
-        internal void Render(SKCanvas canvas, PointF p, SKTextAlign textAlign)
+        internal void ClearMeasureCache()
+        {
+            _measureCache.Clear();
+        }
+
+        internal void Render(SKCanvas canvas, PointF p)
         {
             if (!Renderable) return;
 
@@ -67,29 +77,41 @@ namespace Plot.Skia
                 for (int i = 0; i < lines.Length; i++)
                 {
                     SKPoint skpoint = p.ToSKPoint();
-                    skpoint.Offset(0, i * m_sKFont.Spacing);
-                    canvas.DrawText(lines[i], skpoint, textAlign, m_sKFont, m_sKPaint);
+                    skpoint.Offset(0, i * _sKFont.Spacing);
+                    canvas.DrawText(lines[i], skpoint, TextAlign, _sKFont, _sKPaint);
                 }
             }
             else
-                canvas.DrawText(Text, p.ToSKPoint(), textAlign, m_sKFont, m_sKPaint);
+                canvas.DrawText(Text, p.ToSKPoint(), TextAlign, _sKFont, _sKPaint);
         }
 
-        internal SizeF Measure(string text)
+        internal SizeF Measure(string text, bool force = false)
         {
-            string[] lines = string.IsNullOrEmpty(text)
-                ? Array.Empty<string>() : text.Split('\n');
+            if (string.IsNullOrEmpty(text))
+                return SizeF.Empty;
+
+            if (!force)
+            {
+                if (_measureCache.TryGetValue(text, out var cachedSize))
+                    return cachedSize;
+            }
+
+            string[] lines = text.Split('\n');
 
             Apply();
 
-            float lineHeight = m_sKFont.GetFontMetrics(out SKFontMetrics metrics);
-            float[] lineWidths = lines
-                .Select(x => m_sKFont.MeasureText(x, m_sKPaint))
-                .ToArray();
+            float lineHeight = _sKFont.GetFontMetrics(out _);
+            float maxWidth = 0f;
 
-            float width = lineWidths.Length == 0 ? 0 : lineWidths.Max();
-            float height = lineHeight * lines.Length;
-            return new SizeF(width, height);
+            foreach (var line in lines)
+            {
+                float lineWidth = _sKFont.MeasureText(line, _sKPaint);
+                maxWidth = Math.Max(maxWidth, lineWidth);
+            }
+
+            var size = new SizeF(maxWidth, lineHeight * lines.Length);
+            _measureCache[text] = size;
+            return size;
         }
     }
 }

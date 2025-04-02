@@ -1,54 +1,50 @@
 using SkiaSharp;
-using System.Collections.Generic;
 
 namespace Plot.Skia
 {
     public class RenderContext
     {
-        private readonly Figure m_figure;
-        private readonly SKCanvas m_canvas;
-        private readonly Rect m_figureRect;
+        private readonly Rect _figureRect;
 
         internal RenderContext(Figure figure, SKCanvas canvas, Rect figureRect)
         {
-            m_figure = figure;
-            m_canvas = canvas;
-            m_figureRect = figureRect;
+            Figure = figure;
+            Canvas = canvas;
+            _figureRect = figureRect;
         }
 
-        private Dictionary<IAxis, (float, float)> AxesInfo { get; set; }
-        private Dictionary<IPanel, (float, float)> PanelsInfo { get; set; }
 
-        internal Figure Figure => m_figure;
-        internal SKCanvas Canvas => m_canvas;
+        internal Figure Figure { get; }
+        internal SKCanvas Canvas { get; }
 
         internal Rect ScaledFigureRect { get; private set; }
         internal Rect DataRect { get; private set; }
 
         internal void CalculateLayout()
         {
-            ScaledFigureRect = new Rect(
-                left: m_figureRect.Left / Figure.FigureControl.DisplayScale,
-                right: m_figureRect.Right / Figure.FigureControl.DisplayScale,
-                top: m_figureRect.Top / Figure.FigureControl.DisplayScale,
-                bottom: m_figureRect.Bottom / Figure.FigureControl.DisplayScale);
+            CalculateScaledFigureRect();
 
-            (DataRect, AxesInfo, PanelsInfo) = Figure.LayoutManager.Layout
-                .GetLayout(m_figure, ScaledFigureRect);
+            DataRect = Figure.LayoutManager.CalculateLayout(ScaledFigureRect);
+        }
+
+        private void CalculateScaledFigureRect()
+        {
+            float scale = Figure.FigureControl.DisplayScale;
+            ScaledFigureRect = new Rect(
+               left: _figureRect.Left / scale,
+               right: _figureRect.Right / scale,
+               top: _figureRect.Top / scale,
+               bottom: _figureRect.Bottom / scale);
         }
 
         internal Rect GetDataRect(IAxis axis)
         {
-            (float delta, float size) = AxesInfo[axis];
-            return axis.GetDataRect(DataRect, delta, size);
+            return Figure.LayoutManager.GetDataRect(axis);
         }
 
         internal Rect GetDataRect(IPanel panel)
         {
-            (float delta, float size) = PanelsInfo[panel];
-            return panel.GetDataRect(DataRect, delta, size);
+            return Figure.LayoutManager.GetDataRect(panel);
         }
-
-        internal (float, float) GetInfo(IPanel panel) => PanelsInfo[panel];
     }
 }

@@ -5,7 +5,7 @@ namespace Plot.Skia
         internal NumericBottomAxis()
         {
             Direction = Edge.Bottom;
-            TickGenerator = new NumericAutoGenerator();
+            TickGenerator = new AutoNumericGenerator();
         }
 
         public override Edge Direction { get; }

@@ -35,6 +35,8 @@ namespace Plot.Skia
                 { "year", new int[] { 1 } }
             };
 
+        private static readonly double[] _divBy10 = new[] { 2.0, 2.0, 2.5 }; // 静态预定义除数
+
         protected BaseTickGenerator()
         {
             MinorCount = 5;
@@ -108,30 +110,15 @@ namespace Plot.Skia
         }
 
         protected IEnumerable<double> GenerateNumericTickPositions(Range range,
-            float axisLength, float labelWidth, int radix = 10)
+            float axisLength, float labelWidth)
         {
-            double idealSpacing = GetIdealTickSpacing(range, axisLength, labelWidth, radix);
+            double idealSpace = GetIdealTickSpace(range, axisLength, labelWidth);
+            double firstTick = (range.Low / idealSpace) * idealSpace;
 
-            // now  that tick-spacing is known, start to generate list of ticks
-            double firstTickOffset = range.Low % idealSpacing;
-            int tickCount = (int)(range.Span / idealSpacing) + 1;
-            tickCount = tickCount > 1000 ? 1000 : tickCount;
-            tickCount = tickCount < 1 ? 1 : tickCount;
-
-            List<double> tickPositionsMajor = Enumerable.Range(0, tickCount)
-                                            .Select(x => range.Low + x * idealSpacing - firstTickOffset)
-                                            .Where(range.Contains)
-                                            .ToList();
-
-            if (tickPositionsMajor.Count < 2)
+            for (double pos = firstTick; pos <= range.High; pos += idealSpace)
             {
-                double tickBelow = range.Low - firstTickOffset;
-                double firstTick = tickPositionsMajor.Count > 0 ? tickPositionsMajor[0] : tickBelow;
-                double nextTick = tickBelow + idealSpacing;
-                tickPositionsMajor = new List<double>() { firstTick, nextTick };
+                yield return pos;
             }
-
-            return tickPositionsMajor;
         }
 
         internal static IEnumerable<double> GenerateDateTimeTickPositions(
@@ -168,53 +155,53 @@ namespace Plot.Skia
             return tickPositions;
         }
 
-        private static double GetIdealTickSpacing(Range range, float axisLength, float labelWidth,
-            int radix = 10)
+        private static double GetIdealTickSpace(Range range, float axisLength, float labelWidth)
         {
-            int targetTickCount = (int)(axisLength / labelWidth);
-            int exponent = (int)Math.Log(range.Span, radix);
-            List<double> tickSpacings = new List<double>() { Math.Pow(radix, exponent) };
+            // 通过像素来计算个数
+            int targetTickCount = Math.Max(1, (int)(axisLength / labelWidth));
+            // 通过实际范围来计算个数
+            double rangeSpan = range.Span;
+            int exponent = (int)Math.Log(range.Span, 10);
+            double initialSpace = Math.Pow(10, exponent);
+            double neededSpace = CalculateNeededSpace(labelWidth);
 
+            IEnumerable<double> candidates
+                = GenerateSpaceCandidates(initialSpace, rangeSpan, targetTickCount).Reverse();
 
-            double[] divBy;
-            if (radix == 10)
-                divBy = new double[] { 2, 2, 2.5 }; // 10,5,2.5,1
-            else
-                throw new NotImplementedException($"Unsupport the radix: {radix}");
-
-            int divisions = 0;
-            int tickCount = 0;
-            while (tickCount < targetTickCount)
+            foreach (double space in candidates)
             {
-                tickSpacings.Add(tickSpacings.Last() / divBy[divisions++ % divBy.Length]);
-                tickCount = (int)(range.Span / tickSpacings.Last());
+                double tickCount = rangeSpan / space;
+                double spacePerTick = axisLength / tickCount;
+
+                if (spacePerTick >= neededSpace)
+                    return space;
             }
 
-            // choose the densest tick spacing that is still good
-            for (int i = 0; i < tickSpacings.Count; i++)
-            {
-                double thisTickSpacing = tickSpacings[tickSpacings.Count - 1 - i];
-                double thisTickCount = range.Span / thisTickSpacing;
-                double spacePerTick = axisLength / thisTickCount;
-                double neededSpacePerTick = labelWidth;
-
-                // add more space between small labels
-                if (neededSpacePerTick < 10)
-                    neededSpacePerTick *= 2;
-                else if (neededSpacePerTick < 25)
-                    neededSpacePerTick *= 1.5;
-                else
-                    neededSpacePerTick *= 1.2;
-
-                if (spacePerTick > neededSpacePerTick)
-                {
-                    return thisTickSpacing;
-                }
-            }
-
-            return tickSpacings[0];
+            return initialSpace;
         }
 
+        private static IEnumerable<double> GenerateSpaceCandidates(
+            double initialSpace, double rangeSpan, int targetTickCount)
+        {
+            double current = initialSpace;
+            int divIndex = 0;
+
+            yield return current;
+
+            while (rangeSpan / current < targetTickCount)
+            {
+                current /= _divBy10[divIndex % _divBy10.Length];
+                divIndex++;
+                yield return current;
+            }
+        }
+
+        private static double CalculateNeededSpace(float labelWidth)
+        {
+            if (labelWidth < 10) return labelWidth * 2;
+            if (labelWidth < 25) return labelWidth * 1.5;
+            return labelWidth * 1.2;
+        }
 
         private static IEnumerable<double> GenerateIntervals()
         {

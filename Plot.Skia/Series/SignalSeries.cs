@@ -42,7 +42,7 @@ namespace Plot.Skia
 
             if (i1 == i2) return;
 
-            Rect dataRect = GetDataRect(rc, X, Y);
+            Rect dataRect = rc.DataRect;
 
             List<PointF> points = new List<PointF>();
 
@@ -77,7 +77,7 @@ namespace Plot.Skia
 
         private void RenderHighDensity(RenderContext rc)
         {
-            Rect dataRect = GetDataRect(rc, X, Y);
+            Rect dataRect = rc.DataRect;
             double unitPerPx = X.Width / dataRect.Width;
 
             IList<PointF> points = new List<PointF>();
@@ -127,9 +127,8 @@ namespace Plot.Skia
 
         private double PointsPerPixel(RenderContext rc)
         {
-            Rect dataRect = GetDataRect(rc, X, Y);
             // 1个单位需要sampleRate个点，width个单位就需要width * sampleRate
-            return (X.Width / SignalSource.SampleInterval) / dataRect.Width;
+            return (X.Width / SignalSource.SampleInterval) / rc.DataRect.Width;
         }
 
         public override void Dispose()

@@ -6,14 +6,13 @@ namespace Plot.Skia
     {
         protected BaseAxis()
         {
-            AxisSpacing = 10f;
             RangeMutable = RangeMutable.NotSet;
 
             Label = new LabelStyle();
             TickLabelStyle = new LabelStyle();
             TickLineStyle = new LineStyle();
-            MajorTickStyle = new TickStyle() { Length = 4f };
-            MinorTickStyle = new TickStyle() { Length = 2f };
+            MajorTickStyle = new LineStyle() { Length = 4f };
+            MinorTickStyle = new LineStyle() { Length = 2f };
         }
 
         public abstract Edge Direction { get; }
@@ -22,11 +21,9 @@ namespace Plot.Skia
         public abstract double GetWorld(float pixel, Rect dataRect);
         public abstract void Render(RenderContext rc);
         public abstract void Render(RenderContext rc, Rect dataRect);
-        public abstract float Measure();
-        public abstract Rect GetDataRect(
-            Rect dataRect, float delta, float size);
+        public abstract float Measure(bool force = false);
 
-        public float AxisSpacing { get; set; }
+        public float AxisSpace { get; set; }
         public RangeMutable RangeMutable { get; }
 
         public double Min
@@ -41,11 +38,12 @@ namespace Plot.Skia
         }
 
         public LabelStyle Label { get; }
-        public TickStyle MajorTickStyle { get; }
-        public TickStyle MinorTickStyle { get; }
+        public LineStyle MajorTickStyle { get; }
+        public LineStyle MinorTickStyle { get; }
         public LabelStyle TickLabelStyle { get; }
         public LineStyle TickLineStyle { get; }
 
+        protected float MeasuredValue { get; set; }
 
 
         public void GenerateTicks(float axisLength) => TickGenerator.Generate(
@@ -57,23 +55,6 @@ namespace Plot.Skia
             DrawLines(canvas, dataRect);
             DrawLabels(canvas, dataRect);
         }
-
-        // TODO: 修改Layout时存的值（不是正常的）
-        // horizontal应该修改y轴，x/y-stacked情况比较特殊，后面需要设计一个
-        // 结构体来维护delta和size(上下左右都要保存)
-        protected Rect GetHorizontalRect(Rect dataRect, float delta, float size)
-            => new Rect(
-                dataRect.Left + delta,
-                dataRect.Left + delta + size,
-                dataRect.Top,
-                dataRect.Bottom);
-
-        protected Rect GetVerticalRect(Rect dataRect, float delta, float size)
-            => new Rect(
-                dataRect.Left,
-                dataRect.Right,
-                dataRect.Top + delta,
-                dataRect.Top + delta + size);
 
         protected void DrawTicks(SKCanvas canvas, Rect dataRect)
         {
@@ -87,14 +68,14 @@ namespace Plot.Skia
         {
             if (Direction.Vertical())
             {
-                PointF p1 = Direction == Edge.Left ? dataRect.TopLeft : dataRect.TopRight;
-                PointF p2 = Direction == Edge.Left ? dataRect.BottomLeft : dataRect.BottomRight;
+                PointF p1 = Direction == Edge.Left ? dataRect.TopRight : dataRect.TopLeft;
+                PointF p2 = Direction == Edge.Left ? dataRect.BottomRight : dataRect.BottomLeft;
                 TickLineStyle.Render(canvas, p1, p2);
             }
             else
             {
-                PointF p1 = Direction == Edge.Top ? dataRect.TopLeft : dataRect.BottomLeft;
-                PointF p2 = Direction == Edge.Top ? dataRect.TopRight : dataRect.BottomRight;
+                PointF p1 = Direction == Edge.Top ? dataRect.BottomLeft : dataRect.TopLeft;
+                PointF p2 = Direction == Edge.Top ? dataRect.BottomRight : dataRect.TopRight;
                 TickLineStyle.Render(canvas, p1, p2);
             }
         }
@@ -102,32 +83,34 @@ namespace Plot.Skia
         private void DrawLabels(SKCanvas canvas, Rect dataRect)
         {
             // Draw the Title
+            if (string.IsNullOrEmpty(Label.Text))
+                return;
+
+            float measured = Measure();
 
             if (Direction.Vertical())
             {
                 float x = Direction == Edge.Left
-                               ? dataRect.Left : dataRect.Right;
+                               ? dataRect.Right : dataRect.Left;
 
-                float measured = Measure();
                 x = Direction == Edge.Left
                     ? x - measured : x;
 
                 PointF p = new PointF(x, dataRect.VerticalCenter);
 
-                Label.Render(canvas, p, SKTextAlign.Left);
+                Label.Render(canvas, p);
             }
             else
             {
                 float y = Direction == Edge.Top
-                               ? dataRect.Top : dataRect.Bottom;
+                               ? dataRect.Bottom : dataRect.Top;
 
-                float measured = Measure();
                 y = Direction == Edge.Top
                     ? y - measured : y;
 
                 PointF p = new PointF(dataRect.HorizontalCenter, y);
 
-                Label.Render(canvas, p, SKTextAlign.Left);
+                Label.Render(canvas, p);
             }
         }
 
@@ -138,10 +121,10 @@ namespace Plot.Skia
                 float tickLength = tick.MajorPos
                     ? MajorTickStyle.Length : MinorTickStyle.Length;
                 float y1 = GetPixel(tick.Position, dataRect);
-                float x1 = Direction == Edge.Left ? dataRect.Left : dataRect.Right;
+                float x1 = Direction == Edge.Left ? dataRect.Right : dataRect.Left;
                 tickLength = Direction == Edge.Left ? -tickLength : tickLength;
 
-                TickStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
+                LineStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
                 PointF p1 = new PointF(x1, y1);
                 PointF p2 = new PointF(x1 + tickLength, y1);
                 tickStyle.Render(canvas, p1, p2);
@@ -156,7 +139,7 @@ namespace Plot.Skia
                 PointF p = new PointF(
                     x1 + tickLength + labelLength,
                     y1 + TickLabelStyle.Ascent() / 2);
-                TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
+                TickLabelStyle.Render(canvas, p);
             }
         }
 
@@ -171,10 +154,10 @@ namespace Plot.Skia
                 float tickLength = tick.MajorPos
                     ? MajorTickStyle.Length : MinorTickStyle.Length;
                 float x1 = GetPixel(tick.Position, dataRect);
-                float y1 = Direction == Edge.Top ? dataRect.Top : dataRect.Bottom;
+                float y1 = Direction == Edge.Top ? dataRect.Bottom : dataRect.Top;
                 tickLength = Direction == Edge.Top ? -tickLength : tickLength;
 
-                TickStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
+                LineStyle tickStyle = tick.MajorPos ? MajorTickStyle : MinorTickStyle;
                 PointF p1 = new PointF(x1, y1);
                 PointF p2 = new PointF(x1, y1 + tickLength);
                 tickStyle.Render(canvas, p1, p2);
@@ -191,7 +174,7 @@ namespace Plot.Skia
                     x1,
                     y1 + tickLength + ascent);
 
-                TickLabelStyle.Render(canvas, p, SKTextAlign.Left);
+                TickLabelStyle.Render(canvas, p);
             }
         }
 
