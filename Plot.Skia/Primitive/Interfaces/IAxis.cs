@@ -4,10 +4,8 @@ namespace Plot.Skia
 {
     public interface IAxis : IRenderable, IMeasureable, IDisposable
     {
-        float AxisSpace { get; set; }
         RangeMutable RangeMutable { get; }
         ITickGenerator TickGenerator { get; }
-        Edge Direction { get; }
 
         double Min { get; }
         double Max { get; }

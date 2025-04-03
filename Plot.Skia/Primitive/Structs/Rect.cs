@@ -19,7 +19,7 @@ namespace Plot.Skia
         }
 
 
-        internal Rect(PointF location, SizeF dataRect)
+        internal Rect(PointF location, Size<float> dataRect)
             : this(location.X, location.X + dataRect.Width,
                   location.Y, location.Y + dataRect.Height)
         { }

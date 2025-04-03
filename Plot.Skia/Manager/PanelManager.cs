@@ -15,9 +15,9 @@ namespace Plot.Skia
 
         internal IList<IPanel> Panels { get; }
 
-        public ColorBar AddColorBar(IHasColorBar source, Edge direction)
+        public ColorBarPanel AddColorBar(IHasColorBar source, Edge direction)
         {
-            ColorBar colorBar = new ColorBar(source, direction);
+            ColorBarPanel colorBar = new ColorBarPanel(source, direction);
             Panels.Add(colorBar);
             return colorBar;
         }

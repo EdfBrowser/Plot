@@ -4,13 +4,13 @@ using System.Linq;
 
 namespace Plot.Skia
 {
-    public class ColorBar : BasePanel
+    public class ColorBarPanel : BasePanel
     {
         private readonly IHasColorBar m_source;
         private readonly IAxis m_axis;
         private readonly Rect _guessRect = new Rect(0, 600f, 0, 400f);
 
-        public ColorBar(IHasColorBar source, Edge direction)
+        public ColorBarPanel(IHasColorBar source, Edge direction)
             : base(direction)
         {
             m_source = source;

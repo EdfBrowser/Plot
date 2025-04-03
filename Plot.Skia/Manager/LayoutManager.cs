@@ -1,26 +1,26 @@
+using System;
+
 namespace Plot.Skia
 {
     internal class LayoutManager
     {
-        private readonly Figure m_figure;
+        private readonly Figure _figure;
         private readonly ILayoutStrategy _strategy;
         private readonly LayoutOptions _options;
         private LayoutResult _layoutResult;
 
         internal LayoutManager(Figure figure)
         {
-            m_figure = figure;
+            _figure = figure;
 
             _options = new LayoutOptions();
-            //_strategy = new StackedLayoutStrategy(_options);
-            _strategy = new LayeredLayoutStrategy(_options);
+            _strategy = new StackedLayoutStrategy(figure, _options);
+            //_strategy = new LayeredLayoutStrategy(_options);
         }
 
-        internal Rect CalculateLayout(Rect figureRect)
+        internal void CalculateLayout(Rect figureRect)
         {
-            _layoutResult = _strategy.CalculateLayout(m_figure, figureRect);
-
-            return _layoutResult.DataRect;
+            _layoutResult = _strategy.CalculateLayout(figureRect);
         }
 
         internal Rect GetDataRect(IAxis axis)
@@ -33,9 +33,9 @@ namespace Plot.Skia
             return _layoutResult.Panels[panel];
         }
 
-        internal Rect GetInfo(IPanel panel)
+        internal Rect GetDataRect()
         {
-            return _layoutResult.Panels[panel];
+            return _layoutResult.DataRect;
         }
     }
 }

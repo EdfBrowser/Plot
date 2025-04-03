@@ -23,7 +23,7 @@ namespace Plot.Skia
         public abstract void Render(RenderContext rc, Rect dataRect);
         public abstract float Measure(bool force = false);
 
-        public float AxisSpace { get; set; }
+        public float Space { get; set; }
         public RangeMutable RangeMutable { get; }
 
         public double Min

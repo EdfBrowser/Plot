@@ -19,5 +19,7 @@ namespace Plot.Skia
         internal bool Contains(Size<T> size)
             => Width.CompareTo(size.Width) >= 0 &&
             Height.CompareTo(size.Height) >= 0;
+
+        internal static Size<float> Empty => new Size<float>(0.0f, 0.0f);
     }
 }

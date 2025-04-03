@@ -7,6 +7,8 @@ namespace Plot.Skia
 {
     internal class AutoNumericGenerator : BaseTickGenerator, ITickGenerator
     {
+        private readonly double[] _divBy10 = new[] { 2.0, 2.0, 2.5 }; // 静态预定义除数
+
         public IEnumerable<Tick> Ticks { get; private set; }
         public Func<double, string> FormatLabel { get; set; }
 
@@ -47,96 +49,6 @@ namespace Plot.Skia
             Ticks = CombineTicks(majorPositionsList, majorLabelsList, minorPositionsList);
         }
 
-        private IEnumerable<Tick> CombineTicks(
-            IReadOnlyList<double> majorPositions, IReadOnlyList<string> majorLabels,
-            IReadOnlyList<double> minorPositions)
-        {
-            // 主刻度
-            for (int i = 0; i < majorPositions.Count; i++)
-            {
-                yield return Tick.Major(majorPositions[i], majorLabels[i]);
-            }
-
-            // 次刻度
-            foreach (double pos in minorPositions)
-            {
-                yield return Tick.Minor(pos);
-            }
-        }
-
-        private IEnumerable<double> GenerateMinorPositions(
-            IReadOnlyList<double> majorTicks, Range range)
-        {
-            if (majorTicks.Count < 2) yield break;
-
-            double majorSpace = majorTicks[1] - majorTicks[0];
-            double minorSpace = majorSpace / 5;
-
-            // 生成主刻度之前的次刻度
-            for (double majorPos = majorTicks[0] - majorSpace; majorPos >= range.Low; majorPos -= majorSpace)
-            {
-                foreach (double minorPos in GenerateMinorsForMajor(majorPos, minorSpace, range))
-                {
-                    yield return minorPos;
-                }
-            }
-
-            // 生成所有主刻度之间的次刻度
-            foreach (double majorPos in majorTicks)
-            {
-                foreach (double minorPos in GenerateMinorsForMajor(majorPos, minorSpace, range))
-                {
-                    yield return minorPos;
-                }
-            }
-        }
-
-
-        private IEnumerable<double> GenerateMinorsForMajor(
-            double majorPos, double minorSpacing, Range range)
-        {
-            for (int i = 1; i < MinorCount; i++)
-            {
-                double pos = majorPos + minorSpacing * i;
-                if (pos > range.High) yield break;
-                if (pos >= range.Low) yield return pos;
-            }
-        }
-
-        private IEnumerable<string> MeasuredLabels(IEnumerable<double> positions,
-            Edge direction, LabelStyle style,
-            ref string maxText, ref float maxSize)
-        {
-            bool vertical = direction.Vertical();
-
-            IEnumerable<string> labels = FormatLabels(positions);
-            foreach (string label in labels)
-            {
-                SizeF measuredValue = style.Measure(label, force: true);
-                float size;
-                if (vertical)
-                    size = measuredValue.Height;
-                else
-                    size = measuredValue.Width;
-
-                if (size > maxSize)
-                {
-                    maxSize = size;
-                    maxText = label;
-                }
-            }
-
-            return labels;
-        }
-
-        private IEnumerable<string> FormatLabels(IEnumerable<double> positions)
-        {
-            foreach (double pos in positions)
-            {
-                yield return GetPositionLabel(pos);
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override string GetPositionLabel(double value)
         {
@@ -144,6 +56,66 @@ namespace Plot.Skia
                 return FormatLabel.Invoke(value);
 
             return value.ToString();
+        }
+
+        private IEnumerable<double> GenerateNumericTickPositions(Range range,
+            float axisLength, float labelWidth)
+        {
+            double idealSpace = GetIdealTickSpace(range, axisLength, labelWidth);
+            double firstTick = (range.Low / idealSpace) * idealSpace;
+
+            for (double pos = firstTick; pos <= range.High; pos += idealSpace)
+            {
+                yield return pos;
+            }
+        }
+
+        private double GetIdealTickSpace(Range range, float axisLength, float labelWidth)
+        {
+            // 通过像素来计算个数
+            int targetTickCount = Math.Max(1, (int)(axisLength / labelWidth));
+            // 通过实际范围来计算个数
+            double rangeSpan = range.Span;
+            int exponent = (int)Math.Log(range.Span, 10);
+            double initialSpace = Math.Pow(10, exponent);
+            double neededSpace = CalculateNeededSpace(labelWidth);
+
+            IEnumerable<double> candidates
+                = GenerateSpaceCandidates(initialSpace, rangeSpan, targetTickCount).Reverse();
+
+            foreach (double space in candidates)
+            {
+                double tickCount = rangeSpan / space;
+                double spacePerTick = axisLength / tickCount;
+
+                if (spacePerTick >= neededSpace)
+                    return space;
+            }
+
+            return initialSpace;
+        }
+
+        private IEnumerable<double> GenerateSpaceCandidates(
+            double initialSpace, double rangeSpan, int targetTickCount)
+        {
+            double current = initialSpace;
+            int divIndex = 0;
+
+            yield return current;
+
+            while (rangeSpan / current < targetTickCount)
+            {
+                current /= _divBy10[divIndex % _divBy10.Length];
+                divIndex++;
+                yield return current;
+            }
+        }
+
+        private double CalculateNeededSpace(float labelWidth)
+        {
+            if (labelWidth < 10) return labelWidth * 2;
+            if (labelWidth < 25) return labelWidth * 1.5;
+            return labelWidth * 1.2;
         }
     }
 }

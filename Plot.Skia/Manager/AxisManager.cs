@@ -38,8 +38,19 @@ namespace Plot.Skia
         internal IEnumerable<IAxis> GetAxes(Edge direction)
             => Axes.Where(x => x.Direction == direction);
 
-        internal void GenerateTicks(float axisLength, IAxis axis)
-            => axis.GenerateTicks(axisLength);
+        internal void GenerateTicks(Rect dataRect)
+        {
+            foreach (IAxis axis in Axes)
+            {
+                GenerateTick(axis, dataRect);
+            }
+        }
+
+        internal void GenerateTick(IAxis axis, Rect dataRect)
+        {
+            float axisLength = axis.Direction.Horizontal() ? dataRect.Width : dataRect.Height;
+            axis.GenerateTicks(axisLength);
+        }
 
         internal void SetLimitsX(Range limit, IXAxis axis)
             => axis.RangeMutable.Set(limit.Low, limit.High);
