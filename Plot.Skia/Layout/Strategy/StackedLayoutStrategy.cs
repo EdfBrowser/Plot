@@ -54,7 +54,7 @@ namespace Plot.Skia
             int axisCount = axes.Count();
             if (axisCount == 0) return;
 
-            float totalSpace = axes.Sum(x => x.Space);
+            float totalSpace = axes.Skip(1).Sum(x => x.Space);
 
             float availableHorizontalSize = dataRect.Width - totalSpace;
             float horizontalAxisLength = availableHorizontalSize / axisCount;
@@ -118,7 +118,7 @@ namespace Plot.Skia
             int panelCount = panels.Count();
             if (panelCount == 0) return;
 
-            float totalSpace = panels.Sum(x => x.Space);
+            float totalSpace = panels.Skip(1).Sum(x => x.Space);
 
             float availableHorizontalSize = dataRect.Width - totalSpace;
             float horizontalAxisLength = availableHorizontalSize / panelCount;
