@@ -5,7 +5,7 @@ namespace Plot.Skia
         private readonly double m_low;
         private readonly double m_high;
 
-        public Range(double low, double high)
+        internal Range(double low, double high)
         {
             m_low = low;
             m_high = high;

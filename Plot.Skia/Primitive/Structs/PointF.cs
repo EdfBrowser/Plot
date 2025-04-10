@@ -7,7 +7,7 @@ namespace Plot.Skia
         private readonly float m_x;
         private readonly float m_y;
 
-        public PointF(float x, float y)
+        internal PointF(float x, float y)
         {
             m_x = x;
             m_y = y;

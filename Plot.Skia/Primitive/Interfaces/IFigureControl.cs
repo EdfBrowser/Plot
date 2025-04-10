@@ -12,9 +12,5 @@ namespace Plot.Skia
         void Reset(Figure figure, bool disposeOldFigure);
 
         float DetectDisplayScale();
-
-        // TODO: 是否让用户自己来管理
-        void SetCursor(CursorType cursorType);
-
     }
 }

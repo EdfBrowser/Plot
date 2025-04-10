@@ -3,7 +3,7 @@ using System;
 
 namespace Plot.Skia
 {
-    public readonly struct Rect : IEquatable<Rect>
+    public readonly struct Rect
     {
         private readonly float m_left;
         private readonly float m_right;
@@ -24,6 +24,11 @@ namespace Plot.Skia
                   location.Y, location.Y + dataRect.Height)
         { }
 
+        internal Rect(PointF p1, PointF p2)
+            : this(p1.X, p2.X,
+                  p1.Y, p2.Y)
+        { }
+
         internal float HorizontalCenter => (Left + Right) / 2;
         internal float VerticalCenter => (Top + Bottom) / 2;
 
@@ -32,8 +37,8 @@ namespace Plot.Skia
         internal float Top => m_top;
         internal float Bottom => m_bottom;
 
-        public float Width => m_right - m_left;
-        public float Height => m_bottom - m_top;
+        internal float Width => m_right - m_left;
+        internal float Height => m_bottom - m_top;
 
         internal PointF TopLeft => new PointF(Left, Top);
         internal PointF TopRight => new PointF(Right, Top);
@@ -53,12 +58,6 @@ namespace Plot.Skia
         internal bool Contains(PointF p) => Contains(p.X, p.Y);
 
         internal bool Contains(float x, float y) => ContainsX(x) && ContainsY(y);
-
-        public bool Equals(Rect other)
-            => Equals(Left, other.Left) &&
-               Equals(Right, other.Right) &&
-               Equals(Top, other.Top) &&
-               Equals(Bottom, other.Bottom);
     }
 
     internal static class RectExtensions

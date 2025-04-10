@@ -31,10 +31,6 @@ namespace Plot.Skia
 
         internal DefaultGrid DefaultGrid { get; }
 
-
-        internal void AddYAxis(IYAxis axis) => YAxes.Add(axis);
-        internal void AddXAxis(IXAxis axis) => XAxes.Add(axis);
-
         internal IEnumerable<IAxis> GetAxes(Edge direction)
             => Axes.Where(x => x.Direction == direction);
 
@@ -57,69 +53,6 @@ namespace Plot.Skia
 
         internal void SetLimitsY(Range limit, IYAxis axis)
             => axis.RangeMutable.Set(limit.Low, limit.High);
-
-        internal void PanMouse(IAxis axis, float delta, float axisLength)
-        {
-            double pxPerUnit = axisLength / axis.RangeMutable.Span;
-            double units = delta / pxPerUnit;
-            axis.RangeMutable.Pan(units);
-        }
-
-        internal void ZoomMouse(IAxis axis, float delta, float axisLength)
-        {
-            double frac = delta / (Math.Abs(delta) + axisLength);
-            double pow = Math.Pow(10, frac);
-            axis.RangeMutable.Zoom(pow, axis.RangeMutable.Center);
-        }
-
-        internal void ZoomMouse(
-            IAxis axis, double frac, float px, Rect dataRect)
-        {
-            double unit = axis.GetWorld(px, dataRect);
-            axis.RangeMutable.Zoom(frac, unit);
-        }
-
-        internal IAxis HitAxis(PointF p)
-        {
-            RenderContext rc = m_figure.RenderManager.LastRC;
-
-            IAxis closestAxis = null;
-            float minDistance = float.MaxValue;
-
-            foreach (IAxis axis in Axes)
-            {
-                Rect rect = rc.GetDataRect(axis);
-
-                if (rect.Contains(p))
-                {
-                    float distance = 0;
-
-                    switch (axis.Direction)
-                    {
-                        case Edge.Bottom:
-                            distance = p.Y - rect.Bottom;
-                            break;
-                        case Edge.Top:
-                            distance = rect.Top - p.Y;
-                            break;
-                        case Edge.Left:
-                            distance = rect.Left - p.X;
-                            break;
-                        case Edge.Right:
-                            distance = p.X - rect.Right;
-                            break;
-                    }
-
-                    if (Math.Abs(distance) < minDistance)
-                    {
-                        minDistance = Math.Abs(distance);
-                        closestAxis = axis;
-                    }
-                }
-            }
-
-            return closestAxis;
-        }
 
         public void Dispose()
         {

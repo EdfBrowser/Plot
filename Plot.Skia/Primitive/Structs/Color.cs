@@ -10,7 +10,7 @@ namespace Plot.Skia
         private readonly byte m_alpha;
 
 
-        public Color(byte red, byte green, byte blue, byte alpha = 255)
+        internal Color(byte red, byte green, byte blue, byte alpha = 255)
         {
             m_red = red;
             m_green = green;
@@ -18,7 +18,7 @@ namespace Plot.Skia
             m_alpha = alpha;
         }
 
-        public Color(float red, float green, float blue, float alpha = 1f)
+        internal Color(float red, float green, float blue, float alpha = 1f)
         {
             m_red = (byte)(red * 255);
             m_green = (byte)(green * 255);
@@ -26,7 +26,7 @@ namespace Plot.Skia
             m_alpha = (byte)(alpha * 255);
         }
 
-        public Color(uint argb)
+        internal Color(uint argb)
         {
             // byte 取最低8bit
             m_alpha = (byte)(argb >> 24);
@@ -41,7 +41,7 @@ namespace Plot.Skia
         internal byte B => m_blue;
         internal byte A => m_alpha;
 
-        public uint UnPremulARGB
+        internal uint UnPremulARGB
         {
             get
             {
@@ -69,11 +69,11 @@ namespace Plot.Skia
             }
         }
 
-        public static Color FromARGB(uint argb) => new Color(argb);
-        public static Color White => new Color(255, 255, 255);
-        public static Color Black => new Color(0, 0, 0);
-        public static Color Gray => new Color(128, 128, 128);
-        public static Color Red => new Color(255, 0, 0);
+        internal static Color FromARGB(uint argb) => new Color(argb);
+        internal static Color White => new Color(255, 255, 255);
+        internal static Color Black => new Color(0, 0, 0);
+        internal static Color Gray => new Color(128, 128, 128);
+        internal static Color Red => new Color(255, 0, 0);
     }
 
     internal static class ColorExtensions
