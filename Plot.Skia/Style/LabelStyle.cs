@@ -7,13 +7,13 @@ namespace Plot.Skia
 {
     public class LabelStyle : IDisposable
     {
-        private readonly Dictionary<string, SizeF> _measureCache;
+        private readonly Dictionary<string, Size<float>> _measureCache;
         private readonly SKPaint _sKPaint;
         private readonly SKFont _sKFont;
 
         public LabelStyle()
         {
-            _measureCache = new Dictionary<string, SizeF>();
+            _measureCache = new Dictionary<string, Size<float>>();
 
             _sKPaint = new SKPaint();
             _sKFont = new SKFont();
@@ -85,10 +85,10 @@ namespace Plot.Skia
                 canvas.DrawText(Text, p.ToSKPoint(), TextAlign, _sKFont, _sKPaint);
         }
 
-        internal SizeF Measure(string text, bool force = false)
+        internal Size<float> Measure(string text, bool force = false)
         {
             if (string.IsNullOrEmpty(text))
-                return SizeF.Empty;
+                return Size<float>.Empty;
 
             if (!force)
             {
@@ -109,7 +109,7 @@ namespace Plot.Skia
                 maxWidth = Math.Max(maxWidth, lineWidth);
             }
 
-            var size = new SizeF(maxWidth, lineHeight * lines.Length);
+            var size = new Size<float>(maxWidth, lineHeight * lines.Length);
             _measureCache[text] = size;
             return size;
         }

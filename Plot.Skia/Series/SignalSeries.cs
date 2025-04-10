@@ -22,6 +22,8 @@ namespace Plot.Skia
 
         public override void Render(RenderContext rc)
         {
+            _dataRect = GetDataRect(rc);
+
             if (!SignalSource.GetYs().Any()) return;
 
             if (PointsPerPixel(rc) < 1 || LowDensityMode)
@@ -42,17 +44,17 @@ namespace Plot.Skia
 
             if (i1 == i2) return;
 
-            Rect dataRect = rc.DataRect;
+           
 
             List<PointF> points = new List<PointF>();
 
             for (int i = i1; i <= i2; i++)
             {
-                float x = X.GetPixel(SignalSource.GetX(i), dataRect);
-                float y = Y.GetPixel(SignalSource.GetY(i), dataRect);
+                float x = X.GetPixel(SignalSource.GetX(i), _dataRect);
+                float y = Y.GetPixel(SignalSource.GetY(i), _dataRect);
 
                 // 超过画图区域设为NAN
-                if (!rc.DataRect.Contains(x, y))
+                if (!_dataRect.Contains(x, y))
                 {
                     x = float.NaN;
                     y = float.NaN;
@@ -77,15 +79,14 @@ namespace Plot.Skia
 
         private void RenderHighDensity(RenderContext rc)
         {
-            Rect dataRect = rc.DataRect;
-            double unitPerPx = X.Width / dataRect.Width;
+            double unitPerPx = X.Width / _dataRect.Width;
 
             IList<PointF> points = new List<PointF>();
 
-            for (int i = 0; i < dataRect.Width; i++)
+            for (int i = 0; i < _dataRect.Width; i++)
             {
-                float px = dataRect.Left + i;
-                double min = X.GetWorld(px, dataRect);
+                float px = _dataRect.Left + i;
+                double min = X.GetWorld(px, _dataRect);
                 double max = min + Math.Abs(unitPerPx);
 
                 // 获取该单位下的点数索引
@@ -95,8 +96,8 @@ namespace Plot.Skia
                 // 跳过超出索引范围的
                 if (i2 == i1) continue;
 
-                float y1 = Y.GetPixel(SignalSource.GetY(i1), dataRect);
-                float y4 = Y.GetPixel(SignalSource.GetY(i2), dataRect);
+                float y1 = Y.GetPixel(SignalSource.GetY(i1), _dataRect);
+                float y4 = Y.GetPixel(SignalSource.GetY(i2), _dataRect);
 
                 float y = Math.Max(y1, y4);
 
@@ -105,13 +106,13 @@ namespace Plot.Skia
                 {
                     // i1-i2之间y轴最大值和最小值
                     RangeMutable yLimit = SignalSource.GetYLimit(i1, i2);
-                    float y2 = Y.GetPixel(yLimit.Low, dataRect);
-                    float y3 = Y.GetPixel(yLimit.High, dataRect);
+                    float y2 = Y.GetPixel(yLimit.Low, _dataRect);
+                    float y3 = Y.GetPixel(yLimit.High, _dataRect);
                     y = Math.Max(y, Math.Max(y2, y3));
                 }
 
                 // 超过画图区域设为NAN
-                if (!rc.DataRect.Contains(px, y))
+                if (!_dataRect.Contains(px, y))
                 {
                     px = float.NaN;
                     y = float.NaN;
@@ -128,7 +129,7 @@ namespace Plot.Skia
         private double PointsPerPixel(RenderContext rc)
         {
             // 1个单位需要sampleRate个点，width个单位就需要width * sampleRate
-            return (X.Width / SignalSource.SampleInterval) / rc.DataRect.Width;
+            return (X.Width / SignalSource.SampleInterval) / _dataRect.Width;
         }
 
         public override void Dispose()

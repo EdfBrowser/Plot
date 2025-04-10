@@ -7,7 +7,7 @@ namespace Plot.Skia
             Direction = direction;
         }
 
-        public float PanelSpace { get; set; }
+        public float Space { get; set; }
         public Edge Direction { get; }
 
         public abstract float Measure(bool force = false);

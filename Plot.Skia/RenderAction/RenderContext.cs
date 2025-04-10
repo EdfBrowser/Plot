@@ -18,13 +18,12 @@ namespace Plot.Skia
         internal SKCanvas Canvas { get; }
 
         internal Rect ScaledFigureRect { get; private set; }
-        internal Rect DataRect { get; private set; }
 
         internal void CalculateLayout()
         {
             CalculateScaledFigureRect();
 
-            DataRect = Figure.LayoutManager.CalculateLayout(ScaledFigureRect);
+            Figure.LayoutManager.CalculateLayout(ScaledFigureRect);
         }
 
         private void CalculateScaledFigureRect()
@@ -35,6 +34,11 @@ namespace Plot.Skia
                right: _figureRect.Right / scale,
                top: _figureRect.Top / scale,
                bottom: _figureRect.Bottom / scale);
+        }
+
+        internal Rect GetDataRect()
+        {
+            return Figure.LayoutManager.GetDataRect();
         }
 
         internal Rect GetDataRect(IAxis axis)

@@ -31,6 +31,8 @@ namespace Plot.Skia
 
         public override void Render(RenderContext rc)
         {
+            _dataRect = GetDataRect(rc);
+
             (int validMinX, int validMaxX, int validMinY, int validMaxY)
                 = GetValidRegion(rc);
 
@@ -47,21 +49,19 @@ namespace Plot.Skia
 
         private (int minX, int maxX, int minY, int maxY) GetValidRegion(RenderContext rc)
         {
-            Rect dataRect = rc.DataRect;
-
             int minX = int.MaxValue, maxX = int.MinValue;
             int minY = int.MaxValue, maxY = int.MinValue;
 
             // 确定有效区域
             for (int j = 0; j < Height; j++)
             {
-                float y = Y.GetPixel(j, dataRect);
-                if (!dataRect.ContainsY(y)) continue;
+                float y = Y.GetPixel(j, _dataRect);
+                if (!_dataRect.ContainsY(y)) continue;
 
                 for (int i = 0; i < Width; i++)
                 {
-                    float x = X.GetPixel(i, dataRect);
-                    if (dataRect.ContainsX(x))
+                    float x = X.GetPixel(i, _dataRect);
+                    if (_dataRect.ContainsX(x))
                     {
                         minX = Math.Min(minX, i);
                         maxX = Math.Max(maxX, i);
@@ -122,11 +122,10 @@ namespace Plot.Skia
         private void RenderToCanvas(RenderContext rc, int minX, int maxX, int minY,
             int maxY, uint[] argbs)
         {
-            Rect dataRect = rc.DataRect;
-            float left = X.GetPixel(minX, dataRect);
-            float right = X.GetPixel(maxX, dataRect);
-            float top = Y.GetPixel(maxY, dataRect);
-            float bottom = Y.GetPixel(minY, dataRect);
+            float left = X.GetPixel(minX, _dataRect);
+            float right = X.GetPixel(maxX, _dataRect);
+            float top = Y.GetPixel(maxY, _dataRect);
+            float bottom = Y.GetPixel(minY, _dataRect);
 
             HeatmapStyle.Render(
                 rc.Canvas,

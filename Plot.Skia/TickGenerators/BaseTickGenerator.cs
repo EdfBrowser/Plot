@@ -1,42 +1,9 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Plot.Skia
 {
     internal abstract class BaseTickGenerator
     {
-        private const double m_year = 365.25;
-        private const double m_month = 30.5;
-        private const double m_day = 1.0;
-        private const double m_hour = m_day / 24.0;
-        private const double m_minute = m_hour / 60.0;
-        private const double m_second = m_minute / 60.0;
-
-        private static readonly Dictionary<string, double> m_timeUnits
-            = new Dictionary<string, double>
-            {
-                { "second", m_second },
-                { "minute", m_minute },
-                { "hour", m_hour },
-                { "day", m_day },
-                { "month", m_month },
-                { "year", m_year }
-            };
-
-        private static readonly Dictionary<string, int[]> m_multiples
-            = new Dictionary<string, int[]>
-            {
-                { "second", new int[] { 1, 2, 5, 10, 30, 60 } },
-                { "minute", new int[] { 1, 2, 5, 10, 30, 60 } },
-                { "hour", new int[] { 1, 2, 4, 8, 12 } },
-                { "day", new int[] { 1, 2, 5, 10, 30 } },
-                { "month", new int[] { 1, 2, 4, 8, 12 } },
-                { "year", new int[] { 1 } }
-            };
-
-        private static readonly double[] _divBy10 = new[] { 2.0, 2.0, 2.5 }; // 静态预定义除数
-
         protected BaseTickGenerator()
         {
             MinorCount = 5;
@@ -44,178 +11,95 @@ namespace Plot.Skia
 
         protected int MinorCount { get; set; }
 
-        protected abstract string GetPositionLabel(double value);
-
-        protected (string largestText, float actualMaxLength)
-          MeasureString(IEnumerable<string> tickLabels, Func<string, float> getSize)
+        protected IEnumerable<string> MeasuredLabels(IEnumerable<double> positions,
+           Edge direction, LabelStyle style,
+           ref string maxText, ref float maxSize)
         {
-            float maxSize = 0;
-            string maxText = string.Empty;
+            bool vertical = direction.Vertical();
 
-            foreach (string tickLabel in tickLabels)
+            IEnumerable<string> labels = FormatLabels(positions);
+            foreach (string label in labels)
             {
-                float size = getSize(tickLabel);
+                Size<float> measuredValue = style.Measure(label, force: true);
+                float size;
+                if (vertical)
+                    size = measuredValue.Height;
+                else
+                    size = measuredValue.Width;
+
                 if (size > maxSize)
                 {
                     maxSize = size;
-                    maxText = tickLabel;
+                    maxText = label;
                 }
             }
 
-            return (maxText, maxSize);
+            return labels;
         }
 
-        protected IEnumerable<Tick> GenerateFinalTicks(IEnumerable<double> positions,
-          IEnumerable<string> tickLabels, Range range)
+        protected IEnumerable<Tick> CombineTicks(
+            IReadOnlyList<double> majorPositions, IReadOnlyList<string> majorLabels,
+            IReadOnlyList<double> minorPositions)
         {
-            IEnumerable<Tick> majorTicks = positions
-                .Select((p, i) => Tick.Major(p, tickLabels.ElementAt(i)));
-
-            IEnumerable<Tick> minorTicks = GetMinorPositions(positions, range)
-                .Select(Tick.Minor);
-
-            return majorTicks.Concat(minorTicks);
-        }
-
-        protected IEnumerable<double> GetMinorPositions(
-            IEnumerable<double> majorTicks, Range range)
-        {
-            if (majorTicks is null || majorTicks.Count() < 2)
-                return Array.Empty<double>();
-
-            List<double> minorPositions = new List<double>();
-
-            double firstPos = majorTicks.ElementAt(0);
-            double secondPos = majorTicks.ElementAt(1);
-
-            double majorTickSpacing = secondPos - firstPos;
-            double minorTickSpacing = majorTickSpacing / MinorCount;
-
-            // 如果第一个刻度的起点不在“0”，需要生成第一个刻度前面空白区域的刻度
-            double previous = firstPos - majorTickSpacing;
-            List<double> niceMajorPositions = new List<double>() { previous };
-            niceMajorPositions.AddRange(majorTicks);
-
-            foreach (var majorPosition in niceMajorPositions)
+            // 主刻度
+            for (int i = 0; i < majorPositions.Count; i++)
             {
-                for (int i = 1; i < MinorCount; i++)
+                yield return Tick.Major(majorPositions[i], majorLabels[i]);
+            }
+
+            // 次刻度
+            foreach (double pos in minorPositions)
+            {
+                yield return Tick.Minor(pos);
+            }
+        }
+
+        protected IEnumerable<double> GenerateMinorPositions(
+            IReadOnlyList<double> majorTicks, Range range)
+        {
+            if (majorTicks.Count < 2) yield break;
+
+            double majorSpace = majorTicks[1] - majorTicks[0];
+            double minorSpace = majorSpace / 5;
+
+            // 生成主刻度之前的次刻度
+            for (double majorPos = majorTicks[0] - majorSpace; majorPos >= range.Low; majorPos -= majorSpace)
+            {
+                foreach (double minorPos in GenerateMinorsForMajor(majorPos, minorSpace, range))
                 {
-                    double minorPosition = majorPosition + minorTickSpacing * i;
-                    if (range.Contains(minorPosition))
-                        minorPositions.Add(minorPosition);
+                    yield return minorPos;
                 }
             }
 
-            return minorPositions;
-        }
-
-        protected IEnumerable<double> GenerateNumericTickPositions(Range range,
-            float axisLength, float labelWidth)
-        {
-            double idealSpace = GetIdealTickSpace(range, axisLength, labelWidth);
-            double firstTick = (range.Low / idealSpace) * idealSpace;
-
-            for (double pos = firstTick; pos <= range.High; pos += idealSpace)
+            // 生成所有主刻度之间的次刻度
+            foreach (double majorPos in majorTicks)
             {
-                yield return pos;
-            }
-        }
-
-        internal static IEnumerable<double> GenerateDateTimeTickPositions(
-            Range range, float axisLength, float labelWidth)
-        {
-            int targetTickCount = (int)(axisLength / labelWidth);
-
-            // TODO: 仿造数字刻度生成来修改完善
-            IEnumerable<double> intervals = GenerateIntervals();
-            double span = range.Span;
-            double increment = intervals.Last();
-            foreach (double interval in intervals)
-            {
-                int count = (int)(span / interval);
-                if (count <= targetTickCount)
+                foreach (double minorPos in GenerateMinorsForMajor(majorPos, minorSpace, range))
                 {
-                    increment = interval;
-                    break;
+                    yield return minorPos;
                 }
             }
-
-            double firstTickOffset = range.Low % increment;
-            int tickCount = (int)(span / increment) + 2;
-            //tickCount = tickCount < 1 ? 1 : tickCount;
-
-            //Debug.WriteLine($"tick/span: {tickCount}/{span}");
-
-
-            IEnumerable<double> tickPositions = Enumerable
-                .Range(0, tickCount)
-                .Select(x => x * increment + range.Low - firstTickOffset)
-                .Where(range.Contains);
-
-            return tickPositions;
         }
 
-        private static double GetIdealTickSpace(Range range, float axisLength, float labelWidth)
+        protected abstract string GetPositionLabel(double value);
+
+        private IEnumerable<double> GenerateMinorsForMajor(
+            double majorPos, double minorSpacing, Range range)
         {
-            // 通过像素来计算个数
-            int targetTickCount = Math.Max(1, (int)(axisLength / labelWidth));
-            // 通过实际范围来计算个数
-            double rangeSpan = range.Span;
-            int exponent = (int)Math.Log(range.Span, 10);
-            double initialSpace = Math.Pow(10, exponent);
-            double neededSpace = CalculateNeededSpace(labelWidth);
-
-            IEnumerable<double> candidates
-                = GenerateSpaceCandidates(initialSpace, rangeSpan, targetTickCount).Reverse();
-
-            foreach (double space in candidates)
+            for (int i = 1; i < MinorCount; i++)
             {
-                double tickCount = rangeSpan / space;
-                double spacePerTick = axisLength / tickCount;
-
-                if (spacePerTick >= neededSpace)
-                    return space;
-            }
-
-            return initialSpace;
-        }
-
-        private static IEnumerable<double> GenerateSpaceCandidates(
-            double initialSpace, double rangeSpan, int targetTickCount)
-        {
-            double current = initialSpace;
-            int divIndex = 0;
-
-            yield return current;
-
-            while (rangeSpan / current < targetTickCount)
-            {
-                current /= _divBy10[divIndex % _divBy10.Length];
-                divIndex++;
-                yield return current;
+                double pos = majorPos + minorSpacing * i;
+                if (pos > range.High) yield break;
+                if (pos >= range.Low) yield return pos;
             }
         }
 
-        private static double CalculateNeededSpace(float labelWidth)
+        private IEnumerable<string> FormatLabels(IEnumerable<double> positions)
         {
-            if (labelWidth < 10) return labelWidth * 2;
-            if (labelWidth < 25) return labelWidth * 1.5;
-            return labelWidth * 1.2;
-        }
-
-        private static IEnumerable<double> GenerateIntervals()
-        {
-            IList<double> intervals = new List<double>();
-
-            foreach (var unit in m_timeUnits)
+            foreach (double pos in positions)
             {
-                foreach (var multiple in m_multiples[unit.Key])
-                {
-                    intervals.Add(unit.Value * multiple);
-                }
+                yield return GetPositionLabel(pos);
             }
-
-            return intervals;
         }
     }
 }
